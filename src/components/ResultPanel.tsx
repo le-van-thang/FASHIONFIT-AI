@@ -10,6 +10,7 @@ interface ResultPanelProps {
   view: 'front' | 'side';
   syncState: 'idle' | 'pending' | 'saving' | 'saved' | 'error';
   savedAt: string;
+  sizeSystem: 'vietnam' | 'international';
 }
 
 export const ResultPanel: React.FC<ResultPanelProps> = ({
@@ -18,7 +19,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   onPrint,
   view,
   syncState,
-  savedAt
+  savedAt,
+  sizeSystem
 }) => {
 
   const measurementItems = view === 'front' ? [
@@ -101,7 +103,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
       {/* Sizing recommendation block */}
       <div className="sizing-recommendation-box">
         <div className="size-header">
-          <span className="box-title">Gợi ý Size trang phục thương mại (S/M/L/XL)</span>
+          <span className="box-title">Gợi ý cỡ thương mại ({sizeSystem === 'vietnam' ? 'Hệ Việt Nam - Savani' : 'Hệ Quốc Tế - US/EU'})</span>
           <div className="size-badge-wrapper">
             <span className="size-badge">{recommendation.size}</span>
             <span className="match-pct">Độ tin cậy: {recommendation.matchPercentage}%</span>

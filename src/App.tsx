@@ -48,7 +48,7 @@ function App() {
           return {
             gender: parsed.gender === 'male' ? 'male' : 'female',
             weight: typeof parsed.weight === 'number' ? parsed.weight : 55,
-            calibrationType: ['a4', 'card', 'ipd', 'height'].includes(parsed.calibrationType) ? parsed.calibrationType : 'a4',
+            calibrationType: ['a4', 'card', 'ipd', 'height'].includes(parsed.calibrationType) ? parsed.calibrationType : 'height',
             customHeight: typeof parsed.customHeight === 'number' ? parsed.customHeight : undefined,
             sizeSystem: parsed.sizeSystem === 'international' ? 'international' : 'vietnam'
           };
@@ -60,7 +60,7 @@ function App() {
     return {
       gender: 'female',
       weight: 55,
-      calibrationType: 'a4',
+      calibrationType: 'height',
       sizeSystem: 'vietnam'
     };
   });
@@ -516,6 +516,7 @@ function App() {
             view={view}
             syncState={syncState}
             savedAt={savedAt}
+            sizeSystem={input.sizeSystem}
           />
         </div>
       </main>

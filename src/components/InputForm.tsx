@@ -250,6 +250,25 @@ export const InputForm: React.FC<InputFormProps> = ({
         </div>
       )}
 
+      {/* User Guide Banner */}
+      {inputSource === 'mannequin' ? (
+        <div className="user-guide-banner mannequin">
+          <span className="banner-icon">💡</span>
+          <div className="banner-content">
+            <strong>Chế độ Mô hình 3D (Mannequin)</strong>
+            <p>Kéo chọn Giới tính, Cân nặng và Chiều cao ở bên dưới. Mô hình 3D bên phải sẽ tự động hiển thị số đo và gợi ý size phù hợp.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="user-guide-banner photo">
+          <span className="banner-icon">📸</span>
+          <div className="banner-content">
+            <strong>Chế độ Đo qua Ảnh chụp</strong>
+            <p>Tải ảnh chính diện đứng thẳng từ đầu đến chân. Nếu không có thước đo A4/ATM, chọn <strong>"Tự nhập chiều cao"</strong> bên dưới rồi kéo thanh chiều cao cho khớp thực tế để đo chính xác nhất.</p>
+          </div>
+        </div>
+      )}
+
       <div className="input-form-card">
         <div className="form-card-header">
           <h2 className="section-title">Thông Số Nhân Trắc Học</h2>

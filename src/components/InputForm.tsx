@@ -22,6 +22,9 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
   const [heightInputVal, setHeightInputVal] = useState<string>((input.customHeight || 165).toString());
   const [showCalibGuide, setShowCalibGuide] = useState(false);
+  const [showBanner, setShowBanner] = useState<boolean>(() => {
+    return localStorage.getItem('fashionfit_show_banner') !== 'false';
+  });
 
   useEffect(() => {
     setWeightInputVal(input.weight.toString());
@@ -251,22 +254,46 @@ export const InputForm: React.FC<InputFormProps> = ({
       )}
 
       {/* User Guide Banner */}
-      {inputSource === 'mannequin' ? (
-        <div className="user-guide-banner mannequin">
-          <span className="banner-icon">💡</span>
-          <div className="banner-content">
-            <strong>Chế độ Mô hình 3D (Mannequin)</strong>
-            <p>Kéo chọn Giới tính, Cân nặng và Chiều cao ở bên dưới. Mô hình 3D bên phải sẽ tự động hiển thị số đo và gợi ý size phù hợp.</p>
+      {showBanner && (
+        inputSource === 'mannequin' ? (
+          <div className="user-guide-banner mannequin">
+            <span className="banner-icon">💡</span>
+            <div className="banner-content" style={{ paddingRight: '20px' }}>
+              <strong>Chế độ Mô hình 3D (Mannequin)</strong>
+              <p>Kéo chọn Giới tính, Cân nặng và Chiều cao ở bên dưới. Mô hình 3D bên phải sẽ tự động hiển thị số đo và gợi ý size phù hợp.</p>
+            </div>
+            <button
+              type="button"
+              className="banner-close-btn"
+              onClick={() => {
+                setShowBanner(false);
+                localStorage.setItem('fashionfit_show_banner', 'false');
+              }}
+              title="Đóng thông báo"
+            >
+              <X size={14} />
+            </button>
           </div>
-        </div>
-      ) : (
-        <div className="user-guide-banner photo">
-          <span className="banner-icon">📸</span>
-          <div className="banner-content">
-            <strong>Chế độ Đo qua Ảnh chụp</strong>
-            <p>Tải ảnh chính diện đứng thẳng từ đầu đến chân. Nếu không có thước đo A4/ATM, chọn <strong>"Tự nhập chiều cao"</strong> bên dưới rồi kéo thanh chiều cao cho khớp thực tế để đo chính xác nhất.</p>
+        ) : (
+          <div className="user-guide-banner photo">
+            <span className="banner-icon">📸</span>
+            <div className="banner-content" style={{ paddingRight: '20px' }}>
+              <strong>Chế độ Đo qua Ảnh chụp</strong>
+              <p>Tải ảnh chính diện đứng thẳng từ đầu đến chân. Nếu không có thước đo A4/ATM, chọn <strong>"Tự nhập chiều cao"</strong> bên dưới rồi kéo thanh chiều cao cho khớp thực tế để đo chính xác nhất.</p>
+            </div>
+            <button
+              type="button"
+              className="banner-close-btn"
+              onClick={() => {
+                setShowBanner(false);
+                localStorage.setItem('fashionfit_show_banner', 'false');
+              }}
+              title="Đóng thông báo"
+            >
+              <X size={14} />
+            </button>
           </div>
-        </div>
+        )
       )}
 
       <div className="input-form-card">

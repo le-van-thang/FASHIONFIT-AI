@@ -5,28 +5,28 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   
   /* Harmonies Slate/Indigo Color Palette */
-  --bg-app: #f8fafc;
+  --bg-app: #f1f5f9;
   --bg-card: #ffffff;
   --text-main: #0f172a;
   --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --border-color: #cbd5e1;
   
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
   --color-primary-light: #eff6ff;
   
-  --color-green: #10b981;
+  --color-green: #059669;
   --color-green-light: #ecfdf5;
-  --color-orange: #f59e0b;
+  --color-orange: #d97706;
   --color-orange-light: #fffbeb;
-  --color-blue: #0ea5e9;
+  --color-blue: #0284c7;
   --color-blue-light: #f0f9ff;
   
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
 }
 
 * {
@@ -179,34 +179,36 @@ body {
   grid-template-columns: 1fr 1fr;
   background-color: #f1f5f9;
   padding: 0.25rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
 }
 
 .gender-btn {
   background: none;
   border: none;
-  padding: 0.5rem;
+  padding: 0.6rem;
   font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: #475569;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.gender-btn.active {
-  background-color: var(--bg-card);
+.gender-btn:hover {
   color: var(--text-main);
-  box-shadow: var(--shadow-sm);
 }
 
 .gender-btn.male.active {
-  border-left: 3px solid var(--color-primary);
+  background-color: var(--color-primary);
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 .gender-btn.female.active {
-  border-left: 3px solid #ec4899;
+  background-color: #db2777;
+  color: #ffffff;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Weight Slider & input */

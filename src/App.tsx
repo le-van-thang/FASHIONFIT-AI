@@ -202,9 +202,6 @@ function App() {
             <p className="subtitle">Hệ Thống Đo Đạc Hình Thể Tự Động Nhân Trắc Học 3D</p>
           </div>
         </div>
-        <div className="thesis-badge">
-          <span>Đề tài Nghiên cứu Khoa học & Đồ án tốt nghiệp</span>
-        </div>
       </header>
 
       {/* Main layout */}

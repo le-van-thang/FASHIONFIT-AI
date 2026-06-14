@@ -21,9 +21,17 @@ FashionFit AI giải quyết triệt để các thách thức trên thông qua *
 
 ### 2.1. Triệt tiêu sai số "Tóc phồng" bằng mốc xương cố định
 Hệ thống xác định vị trí **Gốc mũi (Nasion)** hoặc **Hốc mắt (Orbit)** làm điểm tham chiếu cố định trên hộp sọ (không bị biến dạng bởi kiểu tóc).
-*   **Công thức tính chiều cao thực tế ($H$):**
-    $$H = (Y_{\text{ankle}} - Y_{\text{nasion}}) \times \text{Scale} + 9.5\text{ cm}$$
-    *(Trong đó, $9.5\text{ cm}$ là hằng số sọ người trung bình từ gốc mũi đến đỉnh đầu).*
+
+**Công thức tính chiều cao thực tế ($H$):**
+
+$$H = (Y_{\text{ankle}} - Y_{\text{nasion}}) \times \text{Scale} + 9.5$$
+
+**Giải thích chi tiết các ký hiệu trong công thức:**
+*   **$H$**: Chiều cao thực tế cơ thể người (cm).
+*   **$Y_{\text{ankle}}$**: Tọa độ điểm trục dọc $Y$ của cổ chân (ankle) trên ảnh chụp đứng thẳng (đơn vị: pixel). Hệ tọa độ ảnh 2D mặc định có gốc tọa độ $(0,0)$ nằm ở góc trên cùng bên trái, trục $Y$ hướng từ trên xuống dưới. Vì vậy, vị trí cổ chân nằm sát đất sẽ có giá trị tọa độ $Y$ lớn nhất.
+*   **$Y_{\text{nasion}}$**: Tọa độ điểm trục dọc $Y$ của gốc mũi (nasion) trên ảnh chụp (đơn vị: pixel).
+*   **$\text{Scale}$**: Hệ số quy đổi thực tế (đơn vị: cm/pixel) tính được từ vật hiệu chuẩn (giấy A4 hoặc thẻ ngân hàng).
+*   **$9.5$**: Hằng số bù trừ nhân trắc học giải phẫu (cm). Là khoảng cách trung bình từ gốc mũi lên đỉnh đầu (đỉnh sọ) của con người. Phép bù trừ này giúp lấy chiều cao thật mà hoàn toàn loại bỏ lớp tóc dày hay mũ đội của người dùng.
 
 ### 2.2. Khóa thể tích bằng Ràng buộc Nhân trắc học (Volume Constraint)
 Hệ thống bắt buộc người dùng nhập **Giới tính** và **Cân nặng ($W$)**. 

@@ -187,6 +187,25 @@ function App() {
     };
   }, [input.gender, measurements]);
 
+  // Check for anatomical logic warnings to prevent user from dragging points out of logical bounds
+  const anatomicalWarning = useMemo(() => {
+    const { height, shoulderWidth, armLength, legLength } = measurements;
+    
+    if (height < 125 || height > 215) {
+      return "Chiều cao bất thường (Yêu cầu: 125cm - 215cm). Vui lòng kéo chỉnh lại điểm Gốc Mũi hoặc Cổ Chân.";
+    }
+    if (shoulderWidth < 26 || shoulderWidth > 60) {
+      return "Chiều rộng vai bất thường (Yêu cầu: 26cm - 60cm). Vui lòng kéo chỉnh lại khớp Vai Trái/Phải.";
+    }
+    if (armLength < 35 || armLength > 95) {
+      return "Chiều dài tay bất thường (Yêu cầu: 35cm - 95cm). Vui lòng kéo chỉnh lại các khớp Khuỷu/Cổ tay.";
+    }
+    if (legLength < 45 || legLength > 115) {
+      return "Chiều dài chân bất thường (Yêu cầu: 45cm - 115cm). Vui lòng kéo chỉnh lại các khớp Hông/Gối/Cổ chân.";
+    }
+    return null;
+  }, [measurements]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -224,6 +243,12 @@ function App() {
         </div>
 
         <div className="center-column">
+          {anatomicalWarning && (
+            <div className="anatomical-warning-banner">
+              <span>⚠️ {anatomicalWarning}</span>
+            </div>
+          )}
+          
           <BodyCanvas
             gender={input.gender}
             landmarks={view === 'front' ? landmarksFront : landmarksSide}

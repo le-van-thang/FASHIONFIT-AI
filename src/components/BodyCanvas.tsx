@@ -249,24 +249,38 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {getBones()}
 
           {/* Render interactive landmarks */}
-          {landmarks.map((point) => (
-            <g key={point.id} className="landmark-group">
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r={activePointId === point.id ? 8 : 6}
-                onMouseDown={() => handleMouseDown(point.id)}
-                className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
-              />
-              <text
-                x={point.x}
-                y={point.y - 10}
-                className="landmark-text"
-              >
-                {point.label}
-              </text>
-            </g>
-          ))}
+          {landmarks.map((point) => {
+            // Smart layout text offsets to prevent overlapping labels
+            const getTextOffset = (id: string) => {
+              if (id.includes('left')) return { dx: -12, dy: 4, anchor: 'end' as const };
+              if (id.includes('right')) return { dx: 12, dy: 4, anchor: 'start' as const };
+              if (id === 'nasion') return { dx: 0, dy: -12, anchor: 'middle' as const };
+              if (id === 'chest_depth') return { dx: 12, dy: 4, anchor: 'start' as const };
+              if (id === 'buttock_depth') return { dx: -12, dy: 4, anchor: 'end' as const };
+              return { dx: 12, dy: 4, anchor: 'start' as const };
+            };
+            const offset = getTextOffset(point.id);
+
+            return (
+              <g key={point.id} className="landmark-group">
+                <circle
+                  cx={point.x}
+                  cy={point.y}
+                  r={activePointId === point.id ? 8 : 6}
+                  onMouseDown={() => handleMouseDown(point.id)}
+                  className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
+                />
+                <text
+                  x={point.x + offset.dx}
+                  y={point.y + offset.dy}
+                  textAnchor={offset.anchor}
+                  className="landmark-text"
+                >
+                  {point.label}
+                </text>
+              </g>
+            );
+          })}
         </svg>
 
         <div className="canvas-helper-text">

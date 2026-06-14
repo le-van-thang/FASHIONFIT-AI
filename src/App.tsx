@@ -1,10 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import type { UserInput, Landmark, BodyMeasurements, SizeRecommendation } from './types';
 import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
-import { estimateCircumferences, getRecommendedSize, calculateScaleFactor } from './utils/anthropometry';
-import { Info, Activity } from 'lucide-react';
+import { estimateCircumferences, getRecommendedSize, calculateScaleFactor, formatHeightMeters } from './utils/anthropometry';
+import { Activity, History, X, Clock, Trash2, FolderOpen } from 'lucide-react';
+import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
+import type { MeasurementSession } from './lib/supabase';
 
 // Default initial keypoints for front view
 const initialFrontLandmarks: Landmark[] = [
@@ -37,19 +39,129 @@ const initialSideLandmarks: Landmark[] = [
 ];
 
 function App() {
-  const [input, setInput] = useState<UserInput>({
-    gender: 'female',
-    weight: 54,
-    calibrationType: 'a4'
+  const [input, setInput] = useState<UserInput>(() => {
+    const saved = localStorage.getItem('fashionfit_input');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return {
+            gender: parsed.gender === 'male' ? 'male' : 'female',
+            weight: typeof parsed.weight === 'number' ? parsed.weight : 55,
+            calibrationType: ['a4', 'card', 'ipd', 'height'].includes(parsed.calibrationType) ? parsed.calibrationType : 'a4',
+            customHeight: typeof parsed.customHeight === 'number' ? parsed.customHeight : undefined,
+            sizeSystem: parsed.sizeSystem === 'international' ? 'international' : 'vietnam'
+          };
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+    return {
+      gender: 'female',
+      weight: 55,
+      calibrationType: 'a4',
+      sizeSystem: 'vietnam'
+    };
   });
 
   const [referencePixels, setReferencePixels] = useState<number>(120); // Default scale pixels
   const [landmarksFront, setLandmarksFront] = useState<Landmark[]>(initialFrontLandmarks);
   const [landmarksSide, setLandmarksSide] = useState<Landmark[]>(initialSideLandmarks);
   const [view, setView] = useState<'front' | 'side'>('front');
+  const [inputSource, setInputSource] = useState<'mannequin' | 'image' | 'webcam' | 'video'>('mannequin');
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+
+  // Sync input settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('fashionfit_input', JSON.stringify(input));
+  }, [input]);
 
   const [uploadedImageFront, setUploadedImageFront] = useState<string | null>(null);
   const [uploadedImageSide, setUploadedImageSide] = useState<string | null>(null);
+
+  // Supabase history states & saving state
+  const [history, setHistory] = useState<MeasurementSession[]>([]);
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [syncState, setSyncState] = useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
+  const [savedAt, setSavedAt] = useState<string>('');
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isFirstRender = useRef(true);
+  const skipSaveRef = useRef(false);
+
+  // Fetch recent sessions from database
+  const loadHistory = async () => {
+    const { data, error } = await fetchRecentSessions();
+    if (!error) {
+      setHistory(data);
+    }
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  // Delete session from history
+  const handleDeleteSession = async (id: string) => {
+    const { error } = await deleteSession(id);
+    if (!error) {
+      loadHistory();
+      setDeletingSessionId(null);
+    } else {
+      alert("Lỗi khi xóa phiên đo: " + error);
+    }
+  };
+
+  // Load a session's parameters back into current state
+  const handleLoadSession = (session: MeasurementSession) => {
+    skipSaveRef.current = true; // Tell auto-save effect to skip this state update
+    setInput({
+      gender: session.gender,
+      weight: session.weight_kg,
+      calibrationType: (session.calibration_type as any) || 'a4',
+      customHeight: session.height_cm,
+      sizeSystem: input.sizeSystem || 'vietnam'
+    });
+    setReferencePixels(session.reference_pixels || 120);
+
+    const parseLandmarks = (val: any): Landmark[] | null => {
+      if (!val) return null;
+      let parsed = val;
+      if (typeof val === 'string') {
+        try {
+          parsed = JSON.parse(val);
+        } catch (e) {
+          return null;
+        }
+      }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const isValid = parsed.every(
+          item => item && typeof item === 'object' && 'id' in item && 'x' in item && 'y' in item
+        );
+        return isValid ? parsed : null;
+      }
+      return null;
+    };
+
+    const parsedFront = parseLandmarks(session.landmarks_front);
+    if (parsedFront) {
+      setLandmarksFront(parsedFront);
+    }
+    const parsedSide = parseLandmarks(session.landmarks_side);
+    if (parsedSide) {
+      setLandmarksSide(parsedSide);
+    }
+
+    // Switch input source back to 'mannequin' to view the 3D model
+    setInputSource('mannequin');
+    
+    // Switch view to 'front' so they can see the front view first
+    setView('front');
+
+    // Close the history drawer
+    setIsHistoryOpen(false);
+  };
 
   // Handle updates to specific landmarks
   const handleLandmarkChange = (id: string, x: number, y: number) => {
@@ -79,8 +191,22 @@ function App() {
   };
 
   const scale = useMemo(() => {
+    if (input.calibrationType === 'height') {
+      const heightVal = input.customHeight || 165;
+      const nasionPt = (view === 'front' ? landmarksFront : landmarksSide).find(l => l.id === 'nasion')!;
+      const anklePt = view === 'front'
+        ? (() => {
+            const lAnkle = landmarksFront.find(l => l.id === 'left_ankle')!;
+            const rAnkle = landmarksFront.find(l => l.id === 'right_ankle')!;
+            return { x: (lAnkle.x + rAnkle.x) / 2, y: (lAnkle.y + rAnkle.y) / 2 };
+          })()
+        : landmarksSide.find(l => l.id === 'ankle')!;
+
+      const heightPixels = Math.max(100, anklePt.y - nasionPt.y);
+      return Math.max(0.05, Math.min(1.0, (heightVal - 9.5) / heightPixels));
+    }
     return calculateScaleFactor(referencePixels, input.calibrationType);
-  }, [referencePixels, input.calibrationType]);
+  }, [referencePixels, input.calibrationType, input.customHeight, landmarksFront, landmarksSide, view]);
 
   // Human Anthropometric Computations
   const measurements = useMemo<BodyMeasurements>(() => {
@@ -106,7 +232,7 @@ function App() {
     const midAnkleY = (lAnkle.y + rAnkle.y) / 2;
     const heightPixels = midAnkleY - nasionF.y;
     // Anatomical height = Gốc mũi đến sàn + 9.5cm (độ rộng trung bình sọ đầu từ gốc mũi lên đỉnh đầu)
-    const height = Math.max(100, Math.min(220, heightPixels * scale + 9.5));
+    const height = Math.max(50, Math.min(220, heightPixels * scale + 9.5));
 
     // Shoulder Width (Bi-acromial diameter)
     const shoulderWidth = dist(lShoulder, rShoulder) * scale;
@@ -174,7 +300,7 @@ function App() {
 
   // Sizing recommendations
   const recommendation = useMemo<SizeRecommendation>(() => {
-    const sizeData = getRecommendedSize(input.gender, measurements);
+    const sizeData = getRecommendedSize(input.gender, measurements, input.sizeSystem);
     
     // Fit detail analysis based on standard deviations
     const evaluateFit = (current: number, base: number) => {
@@ -184,10 +310,14 @@ function App() {
       return 'fit' as const;
     };
 
-    // Reference base chest/waist/hip mapping
-    const baseLimits = input.gender === 'male' 
-      ? { chest: 96, waist: 84, hips: 100 } // Size M male
-      : { chest: 88, waist: 70, hips: 94 };  // Size M female
+    // Reference base chest/waist/hip mapping (Size M for selected system)
+    const baseLimits = input.sizeSystem === 'vietnam'
+      ? (input.gender === 'male' 
+          ? { chest: 92, waist: 74, hips: 94 }
+          : { chest: 86, waist: 70, hips: 92 })
+      : (input.gender === 'male'
+          ? { chest: 96, waist: 84, hips: 100 }
+          : { chest: 88, waist: 70, hips: 94 });
 
     return {
       size: sizeData.size,
@@ -219,6 +349,62 @@ function App() {
     return null;
   }, [measurements]);
 
+  const savePayload = useMemo(() => ({
+    gender: input.gender,
+    weight_kg: input.weight,
+    calibration_type: input.calibrationType,
+    reference_pixels: referencePixels,
+    height_cm: parseFloat(measurements.height.toFixed(1)),
+    shoulder_width_cm: parseFloat(measurements.shoulderWidth.toFixed(1)),
+    arm_length_cm: parseFloat(measurements.armLength.toFixed(1)),
+    bust_cm: parseFloat(measurements.chestCircumference.toFixed(1)),
+    waist_cm: parseFloat(measurements.waistCircumference.toFixed(1)),
+    hip_cm: parseFloat(measurements.hipCircumference.toFixed(1)),
+    inseam_cm: parseFloat(measurements.legLength.toFixed(1)),
+    bust_depth_cm: parseFloat((measurements.chestDepth || 0).toFixed(1)),
+    waist_depth_cm: parseFloat((measurements.waistDepth || 0).toFixed(1)),
+    hip_depth_cm: parseFloat((measurements.hipDepth || 0).toFixed(1)),
+    recommended_size: recommendation.size,
+    confidence_pct: recommendation.matchPercentage,
+    landmarks_front: landmarksFront,
+    landmarks_side: landmarksSide,
+  }), [input, referencePixels, measurements, recommendation, landmarksFront, landmarksSide]);
+
+  // Debounced auto-save effect triggered in App.tsx to allow skipping saving during session loads
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    if (skipSaveRef.current) {
+      skipSaveRef.current = false; // consume the skip flag
+      return;
+    }
+
+    setSyncState('pending');
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(async () => {
+      setSyncState('saving');
+      const { error } = await saveMeasurementSession(savePayload);
+      if (error) {
+        setSyncState('error');
+        setTimeout(() => setSyncState('idle'), 5000);
+      } else {
+        setSyncState('saved');
+        const now = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+        setSavedAt(now);
+        loadHistory(); // Refresh history panel
+      }
+    }, 2000);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [savePayload]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -234,19 +420,19 @@ function App() {
             <p className="subtitle">Hệ Thống Đo Đạc Hình Thể Tự Động Nhân Trắc Học 3D</p>
           </div>
         </div>
+        <button
+          type="button"
+          className="history-toggle-btn"
+          onClick={() => setIsHistoryOpen(true)}
+        >
+          <History size={16} />
+          <span>Lịch Sử Đo ({history.length})</span>
+        </button>
       </header>
 
       {/* Main layout */}
       <main className="main-content">
         <div className="left-column">
-          {/* Scientific summary banner */}
-          <div className="scientific-banner">
-            <Info size={16} className="text-primary" />
-            <p>
-              <strong>Cơ chế lai:</strong> Sử dụng tỷ lệ <strong>Nasion (Gốc mũi)</strong> hạ vuông góc để triệt nhiễu tóc phồng, kết hợp **Khóa Thể Tích** bằng Cân nặng và Giới tính để triệt tiêu ảnh hưởng của quần áo rộng.
-            </p>
-          </div>
-
           <InputForm
             input={input}
             onChange={setInput}
@@ -267,6 +453,10 @@ function App() {
             uploadedImage={view === 'front' ? uploadedImageFront : uploadedImageSide}
             onImageUpload={handleImageUpload}
             warning={anatomicalWarning}
+            measurements={measurements}
+            recommendation={recommendation}
+            inputSource={inputSource}
+            onInputSourceChange={setInputSource}
           />
         </div>
 
@@ -276,9 +466,116 @@ function App() {
             recommendation={recommendation}
             onPrint={handlePrint}
             view={view}
+            syncState={syncState}
+            savedAt={savedAt}
           />
         </div>
       </main>
+
+      {/* Slide-out History Drawer */}
+      <div className={`history-drawer ${isHistoryOpen ? 'open' : ''}`}>
+        <div className="drawer-header">
+          <div className="drawer-title-group">
+            <History size={18} />
+            <h3>Lịch Sử Phiên Đo</h3>
+          </div>
+          <button className="drawer-close-btn" onClick={() => setIsHistoryOpen(false)}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="drawer-content">
+          {history.length === 0 ? (
+            <div className="history-empty">
+              <Clock size={32} />
+              <p>Chưa có phiên đo nào được lưu.</p>
+              <span>Thực hiện thay đổi số đo hoặc kéo landmark để hệ thống tự động lưu vào Supabase.</span>
+            </div>
+          ) : (
+            <div className="history-list">
+              {history.map((session) => {
+                const date = session.created_at
+                  ? new Date(session.created_at).toLocaleString('vi-VN', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  : 'Không rõ';
+
+                return (
+                  <div
+                    key={session.id}
+                    className={`history-item-card ${deletingSessionId === session.id ? 'deleting' : ''}`}
+                    onClick={() => deletingSessionId !== session.id && handleLoadSession(session)}
+                  >
+                    {deletingSessionId === session.id && (
+                      <div className="card-delete-confirm-overlay" onClick={(e) => e.stopPropagation()}>
+                        <p>Xóa phiên đo này?</p>
+                        <div className="confirm-buttons">
+                          <button
+                            className="confirm-btn delete"
+                            onClick={() => handleDeleteSession(session.id!)}
+                          >
+                            Xóa
+                          </button>
+                          <button
+                            className="confirm-btn cancel"
+                            onClick={() => setDeletingSessionId(null)}
+                          >
+                            Hủy
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="item-header">
+                      <span className="item-time">{date}</span>
+                      <button
+                        className="item-delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingSessionId(session.id!);
+                        }}
+                        title="Xóa phiên đo này"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                    <div className="item-body">
+                      <div className="item-badge-row">
+                        <span className={`gender-badge ${session.gender}`}>
+                          {session.gender === 'male' ? 'Nam' : 'Nữ'}
+                        </span>
+                        <span className="size-badge-small">{session.recommended_size}</span>
+                      </div>
+                      <div className="item-metrics">
+                        <div>
+                          <span className="metric-label">Cân nặng:</span>
+                          <span className="metric-val">{session.weight_kg} kg</span>
+                        </div>
+                        <div>
+                          <span className="metric-label">Chiều cao:</span>
+                          <span className="metric-val">{session.height_cm} cm ({formatHeightMeters(session.height_cm)})</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="item-action">
+                      <FolderOpen size={12} />
+                      <span>Bấm để tải lại mô hình 3D</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Drawer Overlay */}
+      {isHistoryOpen && (
+        <div className="drawer-overlay" onClick={() => setIsHistoryOpen(false)} />
+      )}
 
       {/* Footer */}
       <footer className="app-footer">

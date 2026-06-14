@@ -123,32 +123,51 @@ export function estimateCircumferences(
  */
 export function getRecommendedSize(
   gender: Gender,
-  measurements: BodyMeasurements
+  measurements: BodyMeasurements,
+  sizeSystem: 'vietnam' | 'international' = 'vietnam'
 ): { size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'; matchPercentage: number } {
   const { chestCircumference, waistCircumference, hipCircumference } = measurements;
 
-  // Simple sizing database (thresholds for S, M, L, XL, XXL)
-  // Format: size: [minChest, minWaist, minHips]
-  const sizeChart = {
-    male: [
-      { name: 'XS' as const, limits: [80, 70, 84] },
-      { name: 'S' as const, limits: [88, 76, 92] },
-      { name: 'M' as const, limits: [96, 84, 100] },
-      { name: 'L' as const, limits: [104, 92, 108] },
-      { name: 'XL' as const, limits: [112, 100, 116] },
-      { name: 'XXL' as const, limits: [120, 108, 124] }
-    ],
-    female: [
-      { name: 'XS' as const, limits: [76, 60, 82] },
-      { name: 'S' as const, limits: [82, 64, 88] },
-      { name: 'M' as const, limits: [88, 70, 94] },
-      { name: 'L' as const, limits: [94, 76, 100] },
-      { name: 'XL' as const, limits: [100, 82, 106] },
-      { name: 'XXL' as const, limits: [108, 90, 114] }
-    ]
+  const sizeCharts = {
+    vietnam: {
+      male: [
+        { name: 'XS' as const, limits: [82, 66, 86] },
+        { name: 'S' as const, limits: [88, 70, 90] },
+        { name: 'M' as const, limits: [92, 74, 94] },
+        { name: 'L' as const, limits: [96, 78, 98] },
+        { name: 'XL' as const, limits: [100, 82, 102] },
+        { name: 'XXL' as const, limits: [104, 86, 106] }
+      ],
+      female: [
+        { name: 'XS' as const, limits: [78, 62, 84] },
+        { name: 'S' as const, limits: [82, 66, 88] },
+        { name: 'M' as const, limits: [86, 70, 92] },
+        { name: 'L' as const, limits: [90, 74, 96] },
+        { name: 'XL' as const, limits: [94, 78, 100] },
+        { name: 'XXL' as const, limits: [98, 82, 104] }
+      ]
+    },
+    international: {
+      male: [
+        { name: 'XS' as const, limits: [80, 70, 84] },
+        { name: 'S' as const, limits: [88, 76, 92] },
+        { name: 'M' as const, limits: [96, 84, 100] },
+        { name: 'L' as const, limits: [104, 92, 108] },
+        { name: 'XL' as const, limits: [112, 100, 116] },
+        { name: 'XXL' as const, limits: [120, 108, 124] }
+      ],
+      female: [
+        { name: 'XS' as const, limits: [76, 60, 82] },
+        { name: 'S' as const, limits: [82, 64, 88] },
+        { name: 'M' as const, limits: [88, 70, 94] },
+        { name: 'L' as const, limits: [94, 76, 100] },
+        { name: 'XL' as const, limits: [100, 82, 106] },
+        { name: 'XXL' as const, limits: [108, 90, 114] }
+      ]
+    }
   };
 
-  const chart = sizeChart[gender];
+  const chart = sizeCharts[sizeSystem][gender];
   
   // Find closest size using simple Euclidean distance of the three parameters
   let bestSize = chart[2]; // Default to M
@@ -167,11 +186,21 @@ export function getRecommendedSize(
   });
 
   // Calculate a match percentage based on standard deviation
-  // If the difference is 0, match is 100%. If total difference is high, match drops.
   const score = Math.max(50, Math.min(99, Math.round(100 - minDiff * 1.5)));
 
   return {
     size: bestSize.name,
     matchPercentage: score
   };
+}
+
+/**
+ * Formats a height in centimeters to a meter-centimeter representation (e.g. 175.3 -> "1m75", 92 -> "0m92")
+ */
+export function formatHeightMeters(cm: number): string {
+  if (isNaN(cm) || cm <= 0) return '';
+  const meters = Math.floor(cm / 100);
+  const remainder = Math.round(cm % 100);
+  const remainderStr = remainder < 10 ? `0${remainder}` : `${remainder}`;
+  return `${meters}m${remainderStr}`;
 }

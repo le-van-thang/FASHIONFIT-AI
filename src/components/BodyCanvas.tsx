@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import type { Landmark, Gender } from '../types';
-import { Camera, RefreshCw } from 'lucide-react';
+import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
+import { RefreshCw } from 'lucide-react';
+import { formatHeightMeters } from '../utils/anthropometry';
 
 interface BodyCanvasProps {
   gender: Gender;
@@ -13,6 +14,10 @@ interface BodyCanvasProps {
   uploadedImage: string | null;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   warning: string | null;
+  measurements?: BodyMeasurements;
+  recommendation?: SizeRecommendation;
+  inputSource: 'mannequin' | 'image' | 'webcam' | 'video';
+  onInputSourceChange: (source: 'mannequin' | 'image' | 'webcam' | 'video') => void;
 }
 
 export const BodyCanvas: React.FC<BodyCanvasProps> = ({
@@ -25,14 +30,353 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   onViewChange,
   uploadedImage,
   onImageUpload,
-  warning
+  warning,
+  measurements,
+  recommendation,
+  inputSource,
+  onInputSourceChange
 }) => {
   const containerRef = useRef<SVGSVGElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputVideoRef = useRef<HTMLInputElement | null>(null);
   const [activePointId, setActivePointId] = useState<string | null>(null);
   
   // 3D rotation angle in degrees
   const [rotationAngle, setRotationAngle] = useState<number>(0);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [isModelLoading, setIsModelLoading] = useState<boolean>(false);
+  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const cameraInstanceRef = useRef<any>(null);
+  const poseInstanceRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  // Helper to dynamically load MediaPipe scripts from CDN
+  const loadMediaPipeScripts = (): Promise<void> => {
+    return new Promise((resolve) => {
+      if ((window as any).Pose && (window as any).Camera) {
+        resolve();
+        return;
+      }
+
+      // Check if scripts are already loading/loaded in head
+      const existingCamera = document.querySelector('script[src*="camera_utils"]');
+      const existingPose = document.querySelector('script[src*="pose.js"]');
+      if (existingCamera && existingPose) {
+        const checkInterval = setInterval(() => {
+          if ((window as any).Pose && (window as any).Camera) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+        return;
+      }
+
+      const scriptCamera = document.createElement('script');
+      scriptCamera.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js';
+      scriptCamera.async = true;
+      scriptCamera.onload = () => {
+        const scriptPose = document.createElement('script');
+        scriptPose.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js';
+        scriptPose.async = true;
+        scriptPose.onload = () => {
+          resolve();
+        };
+        document.body.appendChild(scriptPose);
+      };
+      document.body.appendChild(scriptCamera);
+    });
+  };
+
+  const updateLandmarksFromMediaPipe = (results: any) => {
+    if (!results.poseLandmarks) return;
+    const mp = results.poseLandmarks;
+
+    if (view === 'front') {
+      const newLandmarks = landmarks.map(l => {
+        let mpIndex = -1;
+        switch (l.id) {
+          case 'nasion': mpIndex = 0; break;
+          case 'left_shoulder': mpIndex = 11; break;
+          case 'right_shoulder': mpIndex = 12; break;
+          case 'left_elbow': mpIndex = 13; break;
+          case 'right_elbow': mpIndex = 14; break;
+          case 'left_wrist': mpIndex = 15; break;
+          case 'right_wrist': mpIndex = 16; break;
+          case 'left_hip': mpIndex = 23; break;
+          case 'right_hip': mpIndex = 24; break;
+          case 'left_knee': mpIndex = 25; break;
+          case 'right_knee': mpIndex = 26; break;
+          case 'left_ankle': mpIndex = 27; break;
+          case 'right_ankle': mpIndex = 28; break;
+        }
+
+        if (mpIndex !== -1 && mp[mpIndex]) {
+          // Mirrored if webcam
+          const normalizedX = inputSource === 'webcam' ? (1 - mp[mpIndex].x) : mp[mpIndex].x;
+          const xVal = normalizedX * 400;
+          const yVal = mp[mpIndex].y * 650;
+          return { ...l, x: Math.round(xVal), y: Math.round(yVal) };
+        }
+        return l;
+      });
+
+      newLandmarks.forEach(l => {
+        onLandmarkChange(l.id, l.x, l.y);
+      });
+    } else {
+      const leftVisible = (mp[11]?.visibility || 0) + (mp[13]?.visibility || 0) + (mp[15]?.visibility || 0);
+      const rightVisible = (mp[12]?.visibility || 0) + (mp[14]?.visibility || 0) + (mp[16]?.visibility || 0);
+      const isLeftSide = leftVisible >= rightVisible;
+
+      const shoulderIdx = isLeftSide ? 11 : 12;
+      const elbowIdx = isLeftSide ? 13 : 14;
+      const wristIdx = isLeftSide ? 15 : 16;
+      const hipIdx = isLeftSide ? 23 : 24;
+      const kneeIdx = isLeftSide ? 25 : 26;
+      const ankleIdx = isLeftSide ? 27 : 28;
+
+      const nose = mp[0];
+      const shoulder = mp[shoulderIdx];
+      const elbow = mp[elbowIdx];
+      const wrist = mp[wristIdx];
+      const hip = mp[hipIdx];
+      const knee = mp[kneeIdx];
+      const ankle = mp[ankleIdx];
+
+      const newLandmarks = landmarks.map(l => {
+        let mpPt = null;
+        switch (l.id) {
+          case 'nasion': mpPt = nose; break;
+          case 'shoulder': mpPt = shoulder; break;
+          case 'elbow': mpPt = elbow; break;
+          case 'wrist': mpPt = wrist; break;
+          case 'hip': mpPt = hip; break;
+          case 'knee': mpPt = knee; break;
+          case 'ankle': mpPt = ankle; break;
+        }
+
+        if (mpPt) {
+          const normalizedX = inputSource === 'webcam' ? (1 - mpPt.x) : mpPt.x;
+          const xVal = normalizedX * 400;
+          const yVal = mpPt.y * 650;
+          return { ...l, x: Math.round(xVal), y: Math.round(yVal) };
+        }
+        return l;
+      });
+
+      const shoulderPt = newLandmarks.find(l => l.id === 'shoulder')!;
+      const hipPt = newLandmarks.find(l => l.id === 'hip')!;
+      const nosePt = newLandmarks.find(l => l.id === 'nasion')!;
+
+      const facingRight = nosePt.x > shoulderPt.x;
+
+      const chestDepthPt = newLandmarks.find(l => l.id === 'chest_depth')!;
+      const buttockDepthPt = newLandmarks.find(l => l.id === 'buttock_depth')!;
+
+      if (chestDepthPt) {
+        chestDepthPt.x = Math.round(facingRight ? shoulderPt.x + 35 : shoulderPt.x - 35);
+        chestDepthPt.y = Math.round(shoulderPt.y + 35);
+      }
+      if (buttockDepthPt) {
+        buttockDepthPt.x = Math.round(facingRight ? hipPt.x - 25 : hipPt.x + 25);
+        buttockDepthPt.y = Math.round(hipPt.y + 20);
+      }
+
+      newLandmarks.forEach(l => {
+        onLandmarkChange(l.id, l.x, l.y);
+      });
+    }
+  };
+
+  const startWebcam = async () => {
+    setIsModelLoading(true);
+    try {
+      await loadMediaPipeScripts();
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: 'user' }
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+
+      if (!poseInstanceRef.current) {
+        const Pose = (window as any).Pose;
+        const pose = new Pose({
+          locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+        });
+
+        pose.setOptions({
+          modelComplexity: 1,
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+
+        pose.onResults((results: any) => {
+          if (results.poseLandmarks) {
+            updateLandmarksFromMediaPipe(results);
+          }
+        });
+
+        poseInstanceRef.current = pose;
+      }
+
+      if (videoRef.current) {
+        const CameraHelper = (window as any).Camera;
+        const camera = new CameraHelper(videoRef.current, {
+          onFrame: async () => {
+            if (poseInstanceRef.current && videoRef.current && streamRef.current) {
+              try {
+                await poseInstanceRef.current.send({ image: videoRef.current });
+              } catch (e) {
+                // Ignore send errors during transitions
+              }
+            }
+          },
+          width: 640,
+          height: 480
+        });
+        camera.start();
+        cameraInstanceRef.current = camera;
+      }
+
+      setIsScanning(true);
+    } catch (err) {
+      console.error(err);
+      alert("Không thể kết nối Camera. Vui lòng kiểm tra quyền truy cập webcam.");
+      onInputSourceChange('mannequin');
+    } finally {
+      setIsModelLoading(false);
+    }
+  };
+
+  const stopWebcam = () => {
+    setIsScanning(false);
+    if (cameraInstanceRef.current) {
+      cameraInstanceRef.current.stop();
+      cameraInstanceRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
+  const startVideoScanning = async (file: File) => {
+    setIsModelLoading(true);
+    try {
+      await loadMediaPipeScripts();
+      const videoURL = URL.createObjectURL(file);
+      setUploadedVideo(videoURL);
+
+      if (!poseInstanceRef.current) {
+        const Pose = (window as any).Pose;
+        const pose = new Pose({
+          locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+        });
+
+        pose.setOptions({
+          modelComplexity: 1,
+          smoothLandmarks: true,
+          enableSegmentation: false,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+
+        pose.onResults((results: any) => {
+          if (results.poseLandmarks) {
+            updateLandmarksFromMediaPipe(results);
+          }
+        });
+
+        poseInstanceRef.current = pose;
+      }
+
+      setIsScanning(true);
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi mở tệp video");
+      onInputSourceChange('mannequin');
+    } finally {
+      setIsModelLoading(false);
+    }
+  };
+
+  // Video Frame Loop
+  useEffect(() => {
+    let active = true;
+    let animationFrameId: number;
+
+    const processVideoFrame = async () => {
+      if (!active) return;
+      if (inputSource === 'video' && videoRef.current && !videoRef.current.paused && !videoRef.current.ended && poseInstanceRef.current && isScanning) {
+        try {
+          await poseInstanceRef.current.send({ image: videoRef.current });
+        } catch (e) {
+          // Ignore frame skip errors
+        }
+      }
+      if (inputSource === 'video') {
+        animationFrameId = requestAnimationFrame(processVideoFrame);
+      }
+    };
+
+    if (inputSource === 'video' && isScanning) {
+      processVideoFrame();
+    }
+
+    return () => {
+      active = false;
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [inputSource, isScanning]);
+
+  // Input source triggers and webcam safety lifecycle
+  useEffect(() => {
+    if (inputSource === 'webcam') {
+      startWebcam();
+    } else {
+      stopWebcam();
+    }
+
+    if (inputSource === 'image' && !uploadedImage) {
+      fileInputRef.current?.click();
+    } else if (inputSource === 'video' && !uploadedVideo) {
+      fileInputVideoRef.current?.click();
+    }
+  }, [inputSource]);
+
+  // Make sure to stop webcam on component unmount
+  useEffect(() => {
+    return () => {
+      stopWebcam();
+    };
+  }, []);
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      stopWebcam();
+      if (uploadedVideo) {
+        URL.revokeObjectURL(uploadedVideo);
+      }
+    };
+  }, [uploadedVideo]);
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    startVideoScanning(file);
+  };
 
   // New rotation dragging states
   const [isRotating, setIsRotating] = useState<boolean>(false);
@@ -475,120 +819,225 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     );
   };
 
+  const hasMediaBackground = 
+    (inputSource === 'image' && uploadedImage) || 
+    (inputSource === 'webcam') || 
+    (inputSource === 'video' && uploadedVideo);
+
   return (
     <div className="canvas-wrapper">
       <div className="canvas-header">
-        <div className="tab-buttons">
+        <div className="source-select-tabs">
+          <button
+            type="button"
+            className={`source-tab ${inputSource === 'mannequin' ? 'active' : ''}`}
+            onClick={() => {
+              onInputSourceChange('mannequin');
+            }}
+          >
+            Mô hình 3D
+          </button>
+          <button
+            type="button"
+            className={`source-tab ${inputSource === 'image' ? 'active' : ''}`}
+            onClick={() => {
+              onInputSourceChange('image');
+            }}
+          >
+            Ảnh mẫu
+          </button>
+          <button
+            type="button"
+            className={`source-tab ${inputSource === 'webcam' ? 'active' : ''}`}
+            onClick={() => {
+              onInputSourceChange('webcam');
+            }}
+          >
+            Webcam AI
+          </button>
+          <button
+            type="button"
+            className={`source-tab ${inputSource === 'video' ? 'active' : ''}`}
+            onClick={() => {
+              onInputSourceChange('video');
+            }}
+          >
+            Video AI
+          </button>
+        </div>
+
+        <div className="view-toggle-tabs">
           <button
             type="button"
             className={`tab-btn ${view === 'front' ? 'active' : ''}`}
             onClick={() => onViewChange('front')}
           >
-            Mặt trước (Front)
+            Mặt trước
           </button>
           <button
             type="button"
             className={`tab-btn ${view === 'side' ? 'active' : ''}`}
             onClick={() => onViewChange('side')}
           >
-            Mặt nghiêng (Side)
+            Mặt nghiêng
           </button>
         </div>
-        
-        <button
-          type="button"
-          className="upload-trigger-btn"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <Camera size={16} />
-          <span>{uploadedImage ? 'Thay ảnh' : 'Tải ảnh lên'}</span>
-        </button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={onImageUpload}
-          accept="image/*"
-          style={{ display: 'none' }}
-        />
       </div>
 
       <div className="canvas-container">
-        <svg
-          ref={containerRef}
-          viewBox={`0 0 ${width} ${height}`}
-          className="landmark-svg"
-          onMouseDown={handleCanvasMouseDown}
-          onTouchStart={handleCanvasTouchStart}
-          style={{ cursor: isRotating ? 'grabbing' : 'grab' }}
-        >
-          {uploadedImage && (
-            <image
-              href={uploadedImage}
-              width={width}
-              height={height}
-              preserveAspectRatio="xMidYMid slice"
+        <div className="media-viewport">
+          {isModelLoading && (
+            <div className="model-loading-overlay">
+              <RefreshCw size={24} className="spin-anim" />
+              <p>Đang tải Camera & mô hình AI...</p>
+            </div>
+          )}
+
+          {inputSource === 'webcam' && (
+            <video
+              ref={videoRef}
+              className="background-media webcam-feed"
+              playsInline
+              muted
+              style={{ 
+                transform: 'scaleX(-1)', // Mirror webcam
+                display: isModelLoading ? 'none' : 'block'
+              }}
             />
           )}
 
-          {renderSilhouette()}
-
-          {/* Render 3D Wireframe Mesh if no photo is uploaded (showing anatomical rounded cross sections) */}
-          {!uploadedImage && (
-            <g className="mesh-group">
-              {projected3DMesh.map((line, idx) => (
-                <line
-                  key={`mesh-${idx}`}
-                  x1={line.x1}
-                  y1={line.y1}
-                  x2={line.x2}
-                  y2={line.y2}
-                  className={`mesh-line ${line.type}`}
-                />
-              ))}
-            </g>
+          {inputSource === 'video' && uploadedVideo && (
+            <video
+              ref={videoRef}
+              src={uploadedVideo}
+              className="background-media uploaded-video-feed"
+              controls
+              loop
+              playsInline
+              muted
+            />
           )}
 
-          {/* Render connecting bone lines in 2D calibration editing mode */}
-          {getBones()}
+          {inputSource === 'image' && uploadedImage && (
+            <img
+              src={uploadedImage}
+              className="background-media uploaded-image-view"
+              alt="Uploaded mannequin source"
+            />
+          )}
 
-          {/* Render interactive landmarks */}
-          {landmarks.map((point) => {
-            // Smart layout text offsets to prevent overlapping labels
-            const getTextOffset = (id: string) => {
-              if (id.includes('left')) return { dx: -12, dy: 4, anchor: 'end' as const };
-              if (id.includes('right')) return { dx: 12, dy: 4, anchor: 'start' as const };
-              if (id === 'nasion') return { dx: 0, dy: -12, anchor: 'middle' as const };
-              if (id === 'chest_depth') return { dx: 12, dy: 4, anchor: 'start' as const };
-              if (id === 'buttock_depth') return { dx: -12, dy: 4, anchor: 'end' as const };
-              return { dx: 12, dy: 4, anchor: 'start' as const };
-            };
-            const offset = getTextOffset(point.id);
+          <svg
+            ref={containerRef}
+            viewBox={`0 0 ${width} ${height}`}
+            className="landmark-svg"
+            onMouseDown={handleCanvasMouseDown}
+            onTouchStart={handleCanvasTouchStart}
+            style={{ 
+              cursor: isRotating ? 'grabbing' : 'grab',
+              zIndex: 10,
+              background: hasMediaBackground ? 'transparent' : 'var(--bg-card)'
+            }}
+          >
+            {/* We render background silhouette only when no media background exists */}
+            {!hasMediaBackground && renderSilhouette()}
 
-            return (
-              <g key={point.id} className="landmark-group">
-                <circle
-                  cx={point.x}
-                  cy={point.y}
-                  r={activePointId === point.id ? 8 : 6}
-                  onMouseDown={() => handleMouseDown(point.id)}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                    handleMouseDown(point.id);
-                  }}
-                  className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
-                />
-                <text
-                  x={point.x + offset.dx}
-                  y={point.y + offset.dy}
-                  textAnchor={offset.anchor}
-                  className="landmark-text"
-                >
-                  {point.label}
-                </text>
+            {/* Render 3D Wireframe Mesh if no photo/media is loaded (showing anatomical rounded cross sections) */}
+            {!hasMediaBackground && (
+              <g className="mesh-group">
+                {projected3DMesh.map((line, idx) => (
+                  <line
+                    key={`mesh-${idx}`}
+                    x1={line.x1}
+                    y1={line.y1}
+                    x2={line.x2}
+                    y2={line.y2}
+                    className={`mesh-line ${line.type}`}
+                  />
+                ))}
               </g>
-            );
-          })}
-        </svg>
+            )}
+
+            {/* Render connecting bone lines in 2D calibration editing mode */}
+            {getBones()}
+
+            {/* Render interactive landmarks */}
+            {landmarks.map((point) => {
+              // Smart layout text offsets to prevent overlapping labels
+              const getTextOffset = (id: string) => {
+                if (id.includes('left')) return { dx: -12, dy: 4, anchor: 'end' as const };
+                if (id.includes('right')) return { dx: 12, dy: 4, anchor: 'start' as const };
+                if (id === 'nasion') return { dx: 0, dy: -12, anchor: 'middle' as const };
+                if (id === 'chest_depth') return { dx: 12, dy: 4, anchor: 'start' as const };
+                if (id === 'buttock_depth') return { dx: -12, dy: 4, anchor: 'end' as const };
+                return { dx: 12, dy: 4, anchor: 'start' as const };
+              };
+              const offset = getTextOffset(point.id);
+
+              return (
+                <g key={point.id} className="landmark-group">
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={activePointId === point.id ? 8 : 6}
+                    onMouseDown={() => handleMouseDown(point.id)}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      handleMouseDown(point.id);
+                    }}
+                    className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
+                  />
+                  <text
+                    x={point.x + offset.dx}
+                    y={point.y + offset.dy}
+                    textAnchor={offset.anchor}
+                    className="landmark-text"
+                  >
+                    {point.label}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Floating AI Scanning Controls Overlay */}
+          {inputSource === 'webcam' && !isModelLoading && (
+            <div className="ai-controls-overlay">
+              <button
+                type="button"
+                className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
+                onClick={() => setIsScanning(!isScanning)}
+              >
+                {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
+                <span>{isScanning ? 'Tạm Dừng Quét AI' : 'Bắt Đầu Quét AI'}</span>
+              </button>
+              <span className={`ai-scanning-badge ${isScanning ? 'active' : ''}`}>
+                {isScanning ? '⚡ AI đang quét khớp xương...' : '⏸️ Đã ghim số đo'}
+              </span>
+            </div>
+          )}
+
+          {/* Giant HUD Overlay for distant viewing */}
+          {hasMediaBackground && measurements && recommendation && (
+            <div className="ai-hud-overlay">
+              <div className="hud-metric">
+                <span className="hud-lbl">CHIỀU CAO</span>
+                <span className="hud-val">{measurements.height.toFixed(1)}<small>cm</small> <span style={{ fontSize: '0.6em', opacity: 0.9, marginLeft: '0.2rem' }}>({formatHeightMeters(measurements.height)})</span></span>
+              </div>
+              <div className="hud-metric">
+                <span className="hud-lbl">VÒNG NGỰC</span>
+                <span className="hud-val">{measurements.chestCircumference.toFixed(1)}<small>cm</small></span>
+              </div>
+              <div className="hud-metric">
+                <span className="hud-lbl">VÒNG EO</span>
+                <span className="hud-val">{measurements.waistCircumference.toFixed(1)}<small>cm</small></span>
+              </div>
+              <div className="hud-metric highlight">
+                <span className="hud-lbl">GỢI Ý SIZE</span>
+                <span className="hud-val size">{recommendation.size}</span>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="canvas-footer">
           {warning && (
@@ -602,6 +1051,22 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </div>
         </div>
       </div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={onImageUpload}
+        accept="image/*"
+        style={{ display: 'none' }}
+      />
+      
+      <input
+        type="file"
+        ref={fileInputVideoRef}
+        onChange={handleVideoUpload}
+        accept="video/*"
+        style={{ display: 'none' }}
+      />
     </div>
   );
 };

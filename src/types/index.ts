@@ -1,12 +1,13 @@
 export type Gender = 'male' | 'female';
 
-export type CalibrationType = 'a4' | 'card' | 'ipd';
+export type CalibrationType = 'a4' | 'card' | 'ipd' | 'height';
 
 export interface UserInput {
   gender: Gender;
   weight: number; // in kg
   calibrationType: CalibrationType;
   customHeight?: number; // optional, for manual height calibration override
+  sizeSystem: 'vietnam' | 'international';
 }
 
 export interface BodyMeasurements {

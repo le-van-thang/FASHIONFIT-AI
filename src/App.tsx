@@ -78,11 +78,12 @@ function App() {
     reader.readAsDataURL(file);
   };
 
+  const scale = useMemo(() => {
+    return calculateScaleFactor(referencePixels, input.calibrationType);
+  }, [referencePixels, input.calibrationType]);
+
   // Human Anthropometric Computations
   const measurements = useMemo<BodyMeasurements>(() => {
-    // 1. Calculate pixel scale (cm per pixel)
-    const scale = calculateScaleFactor(referencePixels, input.calibrationType);
-
     // 2. Extract keypoints
     const nasionF = landmarksFront.find(l => l.id === 'nasion')!;
     const lShoulder = landmarksFront.find(l => l.id === 'left_shoulder')!;
@@ -157,7 +158,7 @@ function App() {
       waistCircumference,
       hipCircumference
     };
-  }, [input, referencePixels, landmarksFront, landmarksSide]);
+  }, [input, referencePixels, landmarksFront, landmarksSide, scale]);
 
   // Sizing recommendations
   const recommendation = useMemo<SizeRecommendation>(() => {
@@ -251,6 +252,8 @@ function App() {
           
           <BodyCanvas
             gender={input.gender}
+            weight={input.weight}
+            scaleFactor={scale}
             landmarks={view === 'front' ? landmarksFront : landmarksSide}
             onLandmarkChange={handleLandmarkChange}
             view={view}

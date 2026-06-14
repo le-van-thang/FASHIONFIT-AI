@@ -265,8 +265,9 @@ function App() {
     const expectedHipDepth = height * 0.14; 
 
     // Scale adjustments
-    const chestDepthFactor = expectedChestDepth > 0 ? chestDepthCm / expectedChestDepth : 1;
-    const hipDepthFactor = expectedHipDepth > 0 ? hipDepthCm / expectedHipDepth : 1;
+    const hasSideProfile = (inputSource === 'image' && uploadedImageSide !== null);
+    const chestDepthFactor = hasSideProfile && expectedChestDepth > 0 ? chestDepthCm / expectedChestDepth : 1;
+    const hipDepthFactor = hasSideProfile && expectedHipDepth > 0 ? hipDepthCm / expectedHipDepth : 1;
 
     // Final circumferences (combining volume lock + side silhouette inputs)
     const chestCircumference = baseCircs.chest * (0.8 + 0.2 * chestDepthFactor);
@@ -292,11 +293,11 @@ function App() {
       chestCircumference,
       waistCircumference,
       hipCircumference,
-      chestDepth: chestDepthCm,
+      chestDepth: hasSideProfile ? chestDepthCm : expectedChestDepth,
       waistDepth,
-      hipDepth: hipDepthCm
+      hipDepth: hasSideProfile ? hipDepthCm : expectedHipDepth
     };
-  }, [input, referencePixels, landmarksFront, landmarksSide, scale]);
+  }, [input, referencePixels, landmarksFront, landmarksSide, scale, inputSource, uploadedImageSide]);
 
   // Sizing recommendations
   const recommendation = useMemo<SizeRecommendation>(() => {

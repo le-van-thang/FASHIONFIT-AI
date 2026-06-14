@@ -3,7 +3,7 @@ import type { UserInput, Landmark, BodyMeasurements, SizeRecommendation } from '
 import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
-import { estimateCircumferences, getRecommendedSize, calculateScaleFactor, formatHeightMeters } from './utils/anthropometry';
+import { estimateCircumferences, getRecommendedSize, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
 import { Activity, History, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
@@ -50,7 +50,8 @@ function App() {
             weight: typeof parsed.weight === 'number' ? parsed.weight : 55,
             calibrationType: ['a4', 'card', 'ipd', 'height'].includes(parsed.calibrationType) ? parsed.calibrationType : 'height',
             customHeight: typeof parsed.customHeight === 'number' ? parsed.customHeight : undefined,
-            sizeSystem: parsed.sizeSystem === 'international' ? 'international' : 'vietnam'
+            sizeSystem: parsed.sizeSystem === 'international' ? 'international' : 'vietnam',
+            scanRange: ['full', 'half'].includes(parsed.scanRange) ? parsed.scanRange : 'full'
           };
         }
       } catch (e) {
@@ -61,7 +62,8 @@ function App() {
       gender: 'female',
       weight: 55,
       calibrationType: 'height',
-      sizeSystem: 'vietnam'
+      sizeSystem: 'vietnam',
+      scanRange: 'full'
     };
   });
 
@@ -91,6 +93,51 @@ function App() {
     }
     return initialSideLandmarks;
   });
+
+  const processedFrontLandmarks = useMemo(() => {
+    if (input.scanRange !== 'half') return landmarksFront;
+    const lHip = landmarksFront.find(l => l.id === 'left_hip')!;
+    const rHip = landmarksFront.find(l => l.id === 'right_hip')!;
+    const lShoulder = landmarksFront.find(l => l.id === 'left_shoulder')!;
+    const rShoulder = landmarksFront.find(l => l.id === 'right_shoulder')!;
+    
+    const midShoulderY = (lShoulder.y + rShoulder.y) / 2;
+    const midHipY = (lHip.y + rHip.y) / 2;
+    const torsoH = Math.max(50, midHipY - midShoulderY);
+    
+    return landmarksFront.map(l => {
+      if (l.id === 'left_knee') {
+        return { ...l, x: lHip.x, y: Math.round(lHip.y + torsoH * 0.9) };
+      }
+      if (l.id === 'right_knee') {
+        return { ...l, x: rHip.x, y: Math.round(rHip.y + torsoH * 0.9) };
+      }
+      if (l.id === 'left_ankle') {
+        return { ...l, x: lHip.x, y: Math.round(lHip.y + torsoH * 1.8) };
+      }
+      if (l.id === 'right_ankle') {
+        return { ...l, x: rHip.x, y: Math.round(rHip.y + torsoH * 1.8) };
+      }
+      return l;
+    });
+  }, [landmarksFront, input.scanRange]);
+
+  const processedSideLandmarks = useMemo(() => {
+    if (input.scanRange !== 'half') return landmarksSide;
+    const hip = landmarksSide.find(l => l.id === 'hip')!;
+    const shoulder = landmarksSide.find(l => l.id === 'shoulder')!;
+    const torsoH = Math.max(50, hip.y - shoulder.y);
+
+    return landmarksSide.map(l => {
+      if (l.id === 'knee') {
+        return { ...l, x: hip.x, y: Math.round(hip.y + torsoH * 0.9) };
+      }
+      if (l.id === 'ankle') {
+        return { ...l, x: hip.x, y: Math.round(hip.y + torsoH * 1.8) };
+      }
+      return l;
+    });
+  }, [landmarksSide, input.scanRange]);
 
   const [view, setView] = useState<'front' | 'side'>('front');
   const [inputSource, setInputSource] = useState<'mannequin' | 'image' | 'webcam' | 'video'>(() => {
@@ -237,39 +284,54 @@ function App() {
   };
 
   const scale = useMemo(() => {
+    if (input.scanRange === 'half' && inputSource !== 'mannequin') {
+      const heightVal = input.customHeight || 165;
+      const nasionPt = (view === 'front' ? processedFrontLandmarks : processedSideLandmarks).find(l => l.id === 'nasion')!;
+      const hipPt = view === 'front'
+        ? (() => {
+            const lHip = processedFrontLandmarks.find(l => l.id === 'left_hip')!;
+            const rHip = processedFrontLandmarks.find(l => l.id === 'right_hip')!;
+            return { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 };
+          })()
+        : processedSideLandmarks.find(l => l.id === 'hip')!;
+
+      const nasionToHipPixels = Math.max(80, hipPt.y - nasionPt.y);
+      return Math.max(0.05, Math.min(1.0, (heightVal * AVERAGE_NASION_TO_HIP_RATIO) / nasionToHipPixels));
+    }
+
     if (input.calibrationType === 'height' || inputSource === 'mannequin') {
       const heightVal = input.customHeight || 165;
-      const nasionPt = (view === 'front' ? landmarksFront : landmarksSide).find(l => l.id === 'nasion')!;
+      const nasionPt = (view === 'front' ? processedFrontLandmarks : processedSideLandmarks).find(l => l.id === 'nasion')!;
       const anklePt = view === 'front'
         ? (() => {
-            const lAnkle = landmarksFront.find(l => l.id === 'left_ankle')!;
-            const rAnkle = landmarksFront.find(l => l.id === 'right_ankle')!;
+            const lAnkle = processedFrontLandmarks.find(l => l.id === 'left_ankle')!;
+            const rAnkle = processedFrontLandmarks.find(l => l.id === 'right_ankle')!;
             return { x: (lAnkle.x + rAnkle.x) / 2, y: (lAnkle.y + rAnkle.y) / 2 };
           })()
-        : landmarksSide.find(l => l.id === 'ankle')!;
+        : processedSideLandmarks.find(l => l.id === 'ankle')!;
 
       const heightPixels = Math.max(100, anklePt.y - nasionPt.y);
       return Math.max(0.05, Math.min(1.0, (heightVal - 9.5) / heightPixels));
     }
     return calculateScaleFactor(referencePixels, input.calibrationType);
-  }, [referencePixels, input.calibrationType, input.customHeight, landmarksFront, landmarksSide, view, inputSource]);
+  }, [referencePixels, input.calibrationType, input.customHeight, input.scanRange, processedFrontLandmarks, processedSideLandmarks, view, inputSource]);
 
   // Human Anthropometric Computations
   const measurements = useMemo<BodyMeasurements>(() => {
     // 2. Extract keypoints
-    const nasionF = landmarksFront.find(l => l.id === 'nasion')!;
-    const lShoulder = landmarksFront.find(l => l.id === 'left_shoulder')!;
-    const rShoulder = landmarksFront.find(l => l.id === 'right_shoulder')!;
-    const lElbow = landmarksFront.find(l => l.id === 'left_elbow')!;
-    const lWrist = landmarksFront.find(l => l.id === 'left_wrist')!;
-    const rElbow = landmarksFront.find(l => l.id === 'right_elbow')!;
-    const rWrist = landmarksFront.find(l => l.id === 'right_wrist')!;
-    const lHip = landmarksFront.find(l => l.id === 'left_hip')!;
-    const rHip = landmarksFront.find(l => l.id === 'right_hip')!;
-    const lKnee = landmarksFront.find(l => l.id === 'left_knee')!;
-    const rKnee = landmarksFront.find(l => l.id === 'right_knee')!;
-    const lAnkle = landmarksFront.find(l => l.id === 'left_ankle')!;
-    const rAnkle = landmarksFront.find(l => l.id === 'right_ankle')!;
+    const nasionF = processedFrontLandmarks.find(l => l.id === 'nasion')!;
+    const lShoulder = processedFrontLandmarks.find(l => l.id === 'left_shoulder')!;
+    const rShoulder = processedFrontLandmarks.find(l => l.id === 'right_shoulder')!;
+    const lElbow = processedFrontLandmarks.find(l => l.id === 'left_elbow')!;
+    const lWrist = processedFrontLandmarks.find(l => l.id === 'left_wrist')!;
+    const rElbow = processedFrontLandmarks.find(l => l.id === 'right_elbow')!;
+    const rWrist = processedFrontLandmarks.find(l => l.id === 'right_wrist')!;
+    const lHip = processedFrontLandmarks.find(l => l.id === 'left_hip')!;
+    const rHip = processedFrontLandmarks.find(l => l.id === 'right_hip')!;
+    const lKnee = processedFrontLandmarks.find(l => l.id === 'left_knee')!;
+    const rKnee = processedFrontLandmarks.find(l => l.id === 'right_knee')!;
+    const lAnkle = processedFrontLandmarks.find(l => l.id === 'left_ankle')!;
+    const rAnkle = processedFrontLandmarks.find(l => l.id === 'right_ankle')!;
 
     const dist = (p1: Landmark, p2: Landmark) =>
       Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
@@ -277,8 +339,10 @@ function App() {
     // Height calculation (From nasion to midpoint of ankles)
     const midAnkleY = (lAnkle.y + rAnkle.y) / 2;
     const heightPixels = midAnkleY - nasionF.y;
-    // Anatomical height = Gốc mũi đến sàn + 9.5cm (độ rộng trung bình sọ đầu từ gốc mũi lên đỉnh đầu)
-    const height = Math.max(50, Math.min(220, heightPixels * scale + 9.5));
+    // Lock physical height to customHeight in half-body mode to prevent runaway values
+    const height = input.scanRange === 'half'
+      ? (input.customHeight || 165)
+      : Math.max(50, Math.min(220, heightPixels * scale + 9.5));
 
     // Shoulder Width (Bi-acromial diameter)
     const shoulderWidth = dist(lShoulder, rShoulder) * scale;
@@ -297,10 +361,10 @@ function App() {
     const baseCircs = estimateCircumferences(input.gender, input.weight, height);
 
     // 4. Refine estimates based on side-view profile depths if available
-    const shoulderS = landmarksSide.find(l => l.id === 'shoulder')!;
-    const chestDepthPt = landmarksSide.find(l => l.id === 'chest_depth')!;
-    const hipS = landmarksSide.find(l => l.id === 'hip')!;
-    const buttockDepthPt = landmarksSide.find(l => l.id === 'buttock_depth')!;
+    const shoulderS = processedSideLandmarks.find(l => l.id === 'shoulder')!;
+    const chestDepthPt = processedSideLandmarks.find(l => l.id === 'chest_depth')!;
+    const hipS = processedSideLandmarks.find(l => l.id === 'hip')!;
+    const buttockDepthPt = processedSideLandmarks.find(l => l.id === 'buttock_depth')!;
 
     // Horizontal depth in pixels
     const chestDepthCm = Math.abs(chestDepthPt.x - shoulderS.x) * scale;
@@ -343,7 +407,7 @@ function App() {
       waistDepth,
       hipDepth: hasSideProfile ? hipDepthCm : expectedHipDepth
     };
-  }, [input, referencePixels, landmarksFront, landmarksSide, scale, inputSource, uploadedImageSide]);
+  }, [input, referencePixels, processedFrontLandmarks, processedSideLandmarks, scale, inputSource, uploadedImageSide]);
 
   // Sizing recommendations
   const recommendation = useMemo<SizeRecommendation>(() => {
@@ -413,9 +477,9 @@ function App() {
     hip_depth_cm: parseFloat((measurements.hipDepth || 0).toFixed(1)),
     recommended_size: recommendation.size,
     confidence_pct: recommendation.matchPercentage,
-    landmarks_front: landmarksFront,
-    landmarks_side: landmarksSide,
-  }), [input, referencePixels, measurements, recommendation, landmarksFront, landmarksSide]);
+    landmarks_front: processedFrontLandmarks,
+    landmarks_side: processedSideLandmarks,
+  }), [input, referencePixels, measurements, recommendation, processedFrontLandmarks, processedSideLandmarks]);
 
   // Debounced auto-save effect triggered in App.tsx to allow skipping saving during session loads
   useEffect(() => {
@@ -494,7 +558,7 @@ function App() {
             gender={input.gender}
             weight={input.weight}
             scaleFactor={scale}
-            landmarks={view === 'front' ? landmarksFront : landmarksSide}
+            landmarks={view === 'front' ? processedFrontLandmarks : processedSideLandmarks}
             onLandmarkChange={handleLandmarkChange}
             view={view}
             onViewChange={setView}
@@ -505,6 +569,7 @@ function App() {
             recommendation={recommendation}
             inputSource={inputSource}
             onInputSourceChange={setInputSource}
+            scanRange={input.scanRange}
           />
         </div>
 

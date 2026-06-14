@@ -1938,4 +1938,260 @@ body {
   opacity: 1;
 }
 
+/* Short viewports vertical optimization (height scaling) */
+@media (max-height: 850px) {
+  .app-header {
+    margin: 0.5rem 1.5rem 0 1.5rem !important;
+    padding: 0.5rem 1rem !important;
+  }
+  
+  .main-content {
+    gap: 0.75rem !important;
+    padding: 0.75rem 1.5rem !important;
+  }
+  
+  .canvas-wrapper {
+    max-width: 310px !important;
+    padding: 0.75rem !important;
+    gap: 0.75rem !important;
+  }
+
+  .canvas-footer {
+    margin-top: 0.4rem !important;
+  }
+  
+  .input-form-card, .result-panel-card {
+    padding: 0.75rem !important;
+  }
+  
+  .form-group {
+    margin-bottom: 0.65rem !important;
+  }
+
+  .form-card-header {
+    margin-bottom: 0.65rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  .measurements-grid {
+    gap: 0.45rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .measure-card {
+    padding: 0.5rem 0.6rem !important;
+  }
+  
+  .measure-value {
+    font-size: 1.1rem !important;
+  }
+  
+  .sizing-recommendation-box {
+    padding: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .gender-btn {
+    padding: 0.45rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* Mobile Connect Button style */
+.mobile-connect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background-color: var(--color-green-light);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-green);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.mobile-connect-btn:hover {
+  background-color: #d1fae5;
+  border-color: var(--color-green);
+}
+
+/* Webcam Guidance Overlay styles */
+.webcam-guide-silhouette {
+  fill: rgba(5, 150, 105, 0.02);
+  stroke: #10b981;
+  stroke-width: 1.5;
+  stroke-dasharray: 5, 5;
+  pointer-events: none;
+  animation: pulseGuide 2.5s infinite ease-in-out;
+}
+
+@keyframes pulseGuide {
+  0% { opacity: 0.4; stroke: #10b981; }
+  50% { opacity: 0.8; stroke: #34d399; }
+  100% { opacity: 0.4; stroke: #10b981; }
+}
+
+.webcam-guide-line {
+  stroke: #10b981;
+  stroke-width: 1.5;
+  stroke-dasharray: 4, 4;
+  opacity: 0.6;
+}
+
+.webcam-guide-line.limit {
+  stroke-width: 2;
+  opacity: 0.8;
+}
+
+.webcam-guide-text {
+  font-size: 10px;
+  font-weight: 700;
+  fill: #047857;
+  text-anchor: middle;
+  opacity: 0.8;
+}
+
+/* Webcam guidance floating message toast */
+.webcam-guide-toast {
+  position: absolute;
+  bottom: 5.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f1f5f9;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-align: center;
+  z-index: 30;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  animation: slideInToast 0.3s ease-out;
+}
+
+@keyframes slideInToast {
+  from { transform: translate(-50%, 10px); opacity: 0; }
+  to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* HUD close and toggle styles */
+.hud-close-btn {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.3rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.7rem;
+  cursor: pointer;
+  padding: 0.1rem 0.25rem;
+  transition: color 0.15s ease;
+  pointer-events: auto; /* Enable click since parent has pointer-events: none */
+  line-height: 1;
+}
+
+.hud-close-btn:hover {
+  color: #ffffff;
+}
+
+.hud-toggle-pill-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 20px;
+  cursor: pointer;
+  z-index: 40;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: all 0.15s ease;
+}
+
+.hud-toggle-pill-btn:hover {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.webcam-guide-silhouette.half-body-fade {
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 65%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 50%, rgba(0,0,0,0) 65%);
+}
+
+/* Webcam Laptop Tilt Guide Card */
+.webcam-tilt-guide-card {
+  margin-bottom: 0.5rem;
+  background-color: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  font-size: 0.72rem;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.tilt-guide-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  background-color: #f1f5f9;
+  border: none;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.tilt-guide-header:hover {
+  background-color: #e2e8f0;
+}
+
+.tilt-guide-arrow {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+}
+
+.tilt-guide-content {
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border-color);
+  background-color: #ffffff;
+  text-align: left;
+  line-height: 1.45;
+}
+
+.tilt-step {
+  color: var(--text-muted);
+}
+
+.tilt-step strong {
+  color: var(--text-main);
+}
+
+.tilt-step ul {
+  margin: 0.2rem 0 0 1rem;
+  padding: 0;
+  list-style-type: disc;
+}
+
+.tilt-step li {
+  margin-bottom: 0.1rem;
+}
+
 

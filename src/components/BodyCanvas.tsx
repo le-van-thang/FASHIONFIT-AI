@@ -18,6 +18,7 @@ interface BodyCanvasProps {
   recommendation?: SizeRecommendation;
   inputSource: 'mannequin' | 'image' | 'webcam' | 'video';
   onInputSourceChange: (source: 'mannequin' | 'image' | 'webcam' | 'video') => void;
+  scanRange?: 'full' | 'half';
 }
 
 export const BodyCanvas: React.FC<BodyCanvasProps> = ({
@@ -34,7 +35,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   measurements,
   recommendation,
   inputSource,
-  onInputSourceChange
+  onInputSourceChange,
+  scanRange = 'full'
 }) => {
   const containerRef = useRef<SVGSVGElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -106,10 +108,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           case 'right_wrist': mpIndex = 16; break;
           case 'left_hip': mpIndex = 23; break;
           case 'right_hip': mpIndex = 24; break;
-          case 'left_knee': mpIndex = 25; break;
-          case 'right_knee': mpIndex = 26; break;
-          case 'left_ankle': mpIndex = 27; break;
-          case 'right_ankle': mpIndex = 28; break;
+          case 'left_knee': mpIndex = scanRange === 'half' ? -1 : 25; break;
+          case 'right_knee': mpIndex = scanRange === 'half' ? -1 : 26; break;
+          case 'left_ankle': mpIndex = scanRange === 'half' ? -1 : 27; break;
+          case 'right_ankle': mpIndex = scanRange === 'half' ? -1 : 28; break;
         }
 
         if (mpIndex !== -1 && mp[mpIndex]) {
@@ -123,6 +125,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       });
 
       newLandmarks.forEach(l => {
+        if (l.id.includes('knee') || l.id.includes('ankle')) {
+          if (scanRange === 'half') return; // Skip updating lower joints state in half mode
+        }
         onLandmarkChange(l.id, l.x, l.y);
       });
     } else {
@@ -153,8 +158,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           case 'elbow': mpPt = elbow; break;
           case 'wrist': mpPt = wrist; break;
           case 'hip': mpPt = hip; break;
-          case 'knee': mpPt = knee; break;
-          case 'ankle': mpPt = ankle; break;
+          case 'knee': mpPt = scanRange === 'half' ? null : knee; break;
+          case 'ankle': mpPt = scanRange === 'half' ? null : ankle; break;
         }
 
         if (mpPt) {
@@ -185,6 +190,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
 
       newLandmarks.forEach(l => {
+        if (l.id === 'knee' || l.id === 'ankle') {
+          if (scanRange === 'half') return; // Skip updating lower joints state in half mode
+        }
         onLandmarkChange(l.id, l.x, l.y);
       });
     }
@@ -380,6 +388,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   // New rotation dragging states
   const [isRotating, setIsRotating] = useState<boolean>(false);
+  const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
+  const [isHudOpen, setIsHudOpen] = useState<boolean>(true);
   const dragStartRef = useRef<{ x: number; angle: number }>({ x: 0, angle: 0 });
 
   // SVG dimensions
@@ -941,6 +951,30 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             {/* We render background silhouette only when no media background exists */}
             {!hasMediaBackground && renderSilhouette()}
 
+            {/* Render webcam guide silhouette to help user align their body */}
+            {hasMediaBackground && inputSource === 'webcam' && (
+              <g className="webcam-guide-group">
+                {gender === 'male' ? (
+                  <path
+                    d="M 200 45 C 212 45, 216 70, 216 82 C 216 90, 204 98, 200 98 C 196 98, 184 90, 184 82 C 184 70, 188 45, 200 45 Z
+                       M 200 98 C 205 98, 215 106, 228 116 C 255 136, 266 148, 270 185 C 274 220, 268 255, 262 290 C 258 310, 253 320, 248 335 C 242 355, 242 390, 242 450 C 242 510, 245 560, 240 595 C 238 610, 232 615, 222 615 C 212 615, 208 605, 206 575 C 204 545, 202 480, 200 470 C 198 480, 196 545, 194 575 C 192 605, 188 615, 178 615 C 168 615, 162 610, 160 595 C 155 560, 158 510, 158 450 C 158 390, 158 355, 152 335 C 147 320, 142 310, 138 290 C 132 255, 126 220, 130 185 C 134 148, 145 136, 172 116 C 185 106, 195 98, 200 98 Z"
+                    className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
+                  />
+                ) : (
+                  <path
+                    d="M 200 48 C 210 48, 214 70, 214 82 C 214 90, 204 96, 200 96 C 196 96, 186 90, 186 82 C 186 70, 190 48, 200 48 Z
+                       M 200 96 C 204 96, 211 104, 222 114 C 245 132, 258 145, 262 178 C 266 210, 256 242, 248 275 C 242 295, 248 312, 250 335 C 252 358, 242 395, 240 450 C 238 505, 241 555, 236 585 C 233 600, 227 605, 220 605 C 212 605, 209 595, 207 565 C 205 535, 202 480, 200 470 C 198 470, 195 535, 193 565 C 191 595, 188 605, 180 605 C 173 605, 167 600, 164 585 C 159 555, 162 505, 160 450 C 158 395, 148 358, 150 335 C 152 312, 158 295, 152 275 C 144 242, 134 210, 138 178 C 142 132, 155 132, 178 114 C 189 104, 196 96, 200 96 Z"
+                    className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
+                  />
+                )}
+                {/* Dotted lines pointing to head and ankles/hips */}
+                <line x1="0" y1="45" x2="400" y2="45" className="webcam-guide-line limit" />
+                <line x1="0" y1={scanRange === 'half' ? 350 : 615} x2="400" y2={scanRange === 'half' ? 350 : 615} className="webcam-guide-line limit" />
+                <text x="200" y="35" className="webcam-guide-text">Đỉnh đầu (Align Head)</text>
+                <text x="200" y={scanRange === 'half' ? 370 : 635} className="webcam-guide-text">{scanRange === 'half' ? 'Hông (Align Hips)' : 'Gót chân (Align Heels)'}</text>
+              </g>
+            )}
+
             {/* Render 3D Wireframe Mesh if no photo/media is loaded (showing anatomical rounded cross sections) */}
             {!hasMediaBackground && (
               <g className="mesh-group">
@@ -972,6 +1006,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 return { dx: 12, dy: 4, anchor: 'start' as const };
               };
               const offset = getTextOffset(point.id);
+              const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
+              if (isLowerJoint && scanRange === 'half') {
+                return null;
+              }
 
               return (
                 <g key={point.id} className="landmark-group">
@@ -1001,45 +1039,103 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
           {/* Floating AI Scanning Controls Overlay */}
           {inputSource === 'webcam' && !isModelLoading && (
-            <div className="ai-controls-overlay">
-              <button
-                type="button"
-                className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
-                onClick={() => setIsScanning(!isScanning)}
-              >
-                {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
-                <span>{isScanning ? 'Tạm Dừng Quét AI' : 'Bắt Đầu Quét AI'}</span>
-              </button>
-              <span className={`ai-scanning-badge ${isScanning ? 'active' : ''}`}>
-                {isScanning ? '⚡ AI đang quét khớp xương...' : '⏸️ Đã ghim số đo'}
-              </span>
-            </div>
+            <>
+              <div className="webcam-guide-toast">
+                {scanRange === 'half' ? (
+                  <span>Di chuyển đứng gần sao cho <strong>Đỉnh đầu</strong> và <strong>Hông</strong> khớp với vạch giới hạn</span>
+                ) : (
+                  <span>Di chuyển đứng lùi xa sao cho <strong>Đỉnh đầu</strong> và <strong>Gót chân</strong> khớp với vạch giới hạn</span>
+                )}
+              </div>
+              <div className="ai-controls-overlay">
+                <button
+                  type="button"
+                  className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
+                  onClick={() => setIsScanning(!isScanning)}
+                >
+                  {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
+                  <span>{isScanning ? 'Tạm Dừng Quét AI' : 'Bắt Đầu Quét AI'}</span>
+                </button>
+                <span className={`ai-scanning-badge ${isScanning ? 'active' : ''}`}>
+                  {isScanning ? '⚡ AI đang quét khớp xương...' : '⏸️ Đã ghim số đo'}
+                </span>
+              </div>
+            </>
           )}
 
           {/* Giant HUD Overlay for distant viewing */}
           {hasMediaBackground && measurements && recommendation && (
-            <div className="ai-hud-overlay">
-              <div className="hud-metric">
-                <span className="hud-lbl">CHIỀU CAO</span>
-                <span className="hud-val">{measurements.height.toFixed(1)}<small>cm</small> <span style={{ fontSize: '0.6em', opacity: 0.9, marginLeft: '0.2rem' }}>({formatHeightMeters(measurements.height)})</span></span>
+            isHudOpen ? (
+              <div className="ai-hud-overlay">
+                <button
+                  type="button"
+                  className="hud-close-btn"
+                  onClick={() => setIsHudOpen(false)}
+                  title="Ẩn hiển thị số đo trên camera"
+                >
+                  ✕
+                </button>
+                <div className="hud-metric">
+                  <span className="hud-lbl">CHIỀU CAO</span>
+                  <span className="hud-val">{measurements.height.toFixed(1)}<small>cm</small> <span style={{ fontSize: '0.6em', opacity: 0.9, marginLeft: '0.2rem' }}>({formatHeightMeters(measurements.height)})</span></span>
+                </div>
+                <div className="hud-metric">
+                  <span className="hud-lbl">VÒNG NGỰC</span>
+                  <span className="hud-val">{measurements.chestCircumference.toFixed(1)}<small>cm</small></span>
+                </div>
+                <div className="hud-metric">
+                  <span className="hud-lbl">VÒNG EO</span>
+                  <span className="hud-val">{measurements.waistCircumference.toFixed(1)}<small>cm</small></span>
+                </div>
+                <div className="hud-metric highlight">
+                  <span className="hud-lbl">GỢI Ý SIZE</span>
+                  <span className="hud-val size">{recommendation.size}</span>
+                </div>
               </div>
-              <div className="hud-metric">
-                <span className="hud-lbl">VÒNG NGỰC</span>
-                <span className="hud-val">{measurements.chestCircumference.toFixed(1)}<small>cm</small></span>
-              </div>
-              <div className="hud-metric">
-                <span className="hud-lbl">VÒNG EO</span>
-                <span className="hud-val">{measurements.waistCircumference.toFixed(1)}<small>cm</small></span>
-              </div>
-              <div className="hud-metric highlight">
-                <span className="hud-lbl">GỢI Ý SIZE</span>
-                <span className="hud-val size">{recommendation.size}</span>
-              </div>
-            </div>
+            ) : (
+              <button
+                type="button"
+                className="hud-toggle-pill-btn"
+                onClick={() => setIsHudOpen(true)}
+                title="Hiện chỉ số đo trên camera"
+              >
+                📊 Hiện số đo
+              </button>
+            )
           )}
         </div>
 
         <div className="canvas-footer">
+          {inputSource === 'webcam' && (
+            <div className="webcam-tilt-guide-card">
+              <button
+                type="button"
+                className="tilt-guide-header"
+                onClick={() => setShowTiltTips(!showTiltTips)}
+              >
+                <span>💡 Mẹo đặt Camera Laptop & Đứng Đo Chuẩn</span>
+                <span className="tilt-guide-arrow">{showTiltTips ? '▲' : '▼'}</span>
+              </button>
+              {showTiltTips && (
+                <div className="tilt-guide-content">
+                  <div className="tilt-step">
+                    <strong>1. Độ nghiêng màn hình:</strong> Gập màn hình laptop ở góc khoảng 95°-100° (nghiêng nhẹ ra sau), đặt máy trên bàn cao 70cm - 90cm.
+                  </div>
+                  <div className="tilt-step">
+                    <strong>2. Khoảng cách đứng:</strong>
+                    <ul>
+                      <li><em>Chế độ Toàn thân:</em> Đứng lùi xa 2.2m - 2.5m, đảm bảo thấy rõ cả đầu và gót chân.</li>
+                      <li><em>Chế độ Nửa người:</em> Đứng gần 1.0m - 1.2m (hoặc ngồi thẳng), chỉ cần thấy rõ từ đầu đến hông.</li>
+                    </ul>
+                  </div>
+                  <div className="tilt-step">
+                    <strong>3. Điện thoại di động:</strong> Nếu phòng hẹp hoặc webcam quá mờ, bấm <strong>"Dùng Điện Thoại"</strong> ở góc trái, quét QR để mở camera điện thoại góc rộng tiện lợi hơn rất nhiều!
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {warning && (
             <div className="anatomical-warning-inline">
               <span>⚠️ {warning}</span>

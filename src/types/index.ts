@@ -8,6 +8,7 @@ export interface UserInput {
   calibrationType: CalibrationType;
   customHeight?: number; // optional, for manual height calibration override
   sizeSystem: 'vietnam' | 'international';
+  scanRange?: 'full' | 'half';
 }
 
 export interface BodyMeasurements {

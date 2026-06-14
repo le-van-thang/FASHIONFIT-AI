@@ -25,6 +25,14 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [showBanner, setShowBanner] = useState<boolean>(() => {
     return localStorage.getItem('fashionfit_show_banner') !== 'false';
   });
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [computerIp, setComputerIp] = useState(() => {
+    return localStorage.getItem('fashionfit_computer_ip') || '';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('fashionfit_computer_ip', computerIp);
+  }, [computerIp]);
 
   useEffect(() => {
     setWeightInputVal(input.weight.toString());
@@ -298,7 +306,18 @@ export const InputForm: React.FC<InputFormProps> = ({
 
       <div className="input-form-card">
         <div className="form-card-header">
-          <h2 className="section-title">Thông Số Nhân Trắc Học</h2>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <h2 className="section-title" style={{ margin: 0 }}>Thông Số Nhân Trắc Học</h2>
+            <button
+              type="button"
+              className="mobile-connect-btn"
+              onClick={() => setShowMobileModal(true)}
+              title="Dùng camera góc rộng của điện thoại di động"
+            >
+              <Camera size={12} />
+              <span>Dùng Điện Thoại</span>
+            </button>
+          </div>
           <div className="form-card-note">
             <Info size={13} />
             <span>Tỷ lệ <strong>Nasion</strong> + khóa thể tích theo cân nặng/giới tính để loại nhiễu từ quần áo rộng</span>
@@ -352,6 +371,36 @@ export const InputForm: React.FC<InputFormProps> = ({
             </button>
           </div>
         </div>
+        {/* Scanning Range Selection */}
+        {inputSource !== 'mannequin' && (
+          <div className="form-group animate-fade-in">
+            <label className="form-label">
+              <Camera size={16} />
+              <span>Phạm vi quét cơ thể (Scanning Range)</span>
+            </label>
+            <div className="gender-toggle-wrapper">
+              <button
+                type="button"
+                className={`gender-btn male ${input.scanRange === 'full' ? 'active' : ''}`}
+                onClick={() => onChange({ ...input, scanRange: 'full' })}
+              >
+                Toàn thân (Full Body)
+              </button>
+              <button
+                type="button"
+                className={`gender-btn female ${input.scanRange === 'half' ? 'active' : ''}`}
+                onClick={() => onChange({ ...input, scanRange: 'half' })}
+              >
+                Nửa người (Half Body)
+              </button>
+            </div>
+            <p className="field-hint">
+              {input.scanRange === 'half'
+                ? '* Chế độ Nửa Người: Phù hợp khi ngồi gần webcam laptop. AI sẽ tự ước lượng khớp chân và khóa chiều cao để tránh đo sai.'
+                : '* Chế độ Toàn Thân: Yêu cầu đứng lùi xa khoảng 2.2m - 2.5m để camera thu trọn vẹn từ đầu đến chân.'}
+            </p>
+          </div>
+        )}
 
         {/* Weight Selection */}
         <div className="form-group">
@@ -555,6 +604,105 @@ export const InputForm: React.FC<InputFormProps> = ({
           </div>
         )}
       </div>
+
+      {/* Mobile Connection Modal */}
+      {showMobileModal && (
+        <div className="calib-modal-overlay" onClick={() => setShowMobileModal(false)}>
+          <div className="calib-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="calib-modal-header" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }}>
+              <div className="calib-modal-title-group">
+                <Camera size={18} style={{ color: 'var(--color-green)' }} />
+                <h3 className="calib-modal-title" style={{ color: '#14532d' }}>Kết Nối Camera Điện Thoại</h3>
+              </div>
+              <button className="calib-modal-close" onClick={() => setShowMobileModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="calib-modal-body" style={{ gap: '1.25rem' }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
+                💡 <strong>Khuyên dùng:</strong> Camera sau của điện thoại di động có góc chụp rất rộng và độ phân giải cao, giúp dễ dàng chụp được toàn thân từ khoảng cách gần (~1.5m) thay vì webcam laptop chật hẹp.
+              </p>
+
+              {/* IP Check / Instruction */}
+              {/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(window.location.hostname) ? (
+                // Already accessing via IP address
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', textAlign: 'center' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--color-green)', fontWeight: 600 }}>
+                    ✓ Đã kết nối mạng nội bộ. Quét mã QR dưới đây:
+                  </span>
+                  <div style={{ background: 'white', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(window.location.href)}`}
+                      alt="QR Code to scan" 
+                      width="180"
+                      height="180"
+                    />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', wordBreak: 'break-all', color: 'var(--text-main)', fontWeight: 500 }}>
+                    {window.location.href}
+                  </span>
+                </div>
+              ) : (
+                // Running on localhost, need to enter local IP address
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div className="guide-why-box" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', padding: '8px 12px' }}>
+                    <strong>Cách lấy địa chỉ IP của máy tính:</strong>
+                    <ol style={{ paddingLeft: '1.2rem', fontSize: '0.75rem', marginTop: '4px', color: '#1e3a8a' }}>
+                      <li>Mở <strong>cmd</strong> hoặc <strong>PowerShell</strong> trên máy tính.</li>
+                      <li>Gõ lệnh <strong>ipconfig</strong> và nhấn Enter.</li>
+                      <li>Tìm dòng <strong>IPv4 Address</strong> (ví dụ: <code>192.168.1.15</code>).</li>
+                    </ol>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.78rem' }}>
+                      <span>Nhập địa chỉ IP máy tính của bạn:</span>
+                    </label>
+                    <div className="weight-number-box" style={{ width: '100%' }}>
+                      <input
+                        type="text"
+                        placeholder="Ví dụ: 192.168.1.15"
+                        value={computerIp}
+                        onChange={(e) => setComputerIp(e.target.value.trim())}
+                        className="weight-input"
+                        style={{ textAlign: 'left' }}
+                      />
+                    </div>
+                  </div>
+
+                  {computerIp ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', textAlign: 'center', marginTop: '0.5rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--color-primary)', fontWeight: 600 }}>
+                        Dùng điện thoại quét mã QR (Kết nối chung Wi-Fi):
+                      </span>
+                      <div style={{ background: 'white', padding: '10px', borderRadius: '8px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-sm)' }}>
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`http://${computerIp}:5173`)}`}
+                          alt="QR Code to scan" 
+                          width="180"
+                          height="180"
+                        />
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                        Link: <code>http://{computerIp}:5173</code>
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '1.5rem 0', color: 'var(--text-muted)', border: '1px dashed var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+                      <span style={{ fontSize: '0.78rem' }}>Vui lòng nhập IP máy tính để tạo mã QR.</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="guide-tip-box" style={{ background: '#f8fafc', border: '1px solid var(--border-color)', color: 'var(--text-muted)', padding: '8px 12px' }}>
+                💡 <strong>Mẹo đồng bộ:</strong> Sau khi chụp ảnh và đo đạc trên điện thoại, số đo sẽ tự động được lưu vào **Lịch Sử Đo**. Bạn chỉ cần mở Lịch Sử trên máy tính và bấm chọn để tải lại mô hình 3D trên màn hình lớn!
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

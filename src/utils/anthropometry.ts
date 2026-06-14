@@ -15,6 +15,9 @@ export const A4_HEIGHT_CM = 29.7;
 export const CARD_WIDTH_CM = 8.56;
 export const CARD_HEIGHT_CM = 5.40;
 
+// Average nasion to hip midpoint distance as a ratio of total physical height
+export const AVERAGE_NASION_TO_HIP_RATIO = 0.37;
+
 /**
  * Calculates the physical scale factor (cm per pixel)
  * @param referencePixels Number of pixels for the reference object

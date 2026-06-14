@@ -782,3 +782,35 @@ body {
   stroke: rgba(99, 102, 241, 0.25);
   stroke-width: 0.8px;
 }
+
+.canvas-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.canvas-helper-text {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start !important;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 100%;
+}
+
+.anatomical-warning-inline {
+  background-color: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  color: #ef4444;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}

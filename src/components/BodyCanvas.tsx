@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { Landmark, Gender } from '../types';
-import { Camera, RefreshCw, RotateCw } from 'lucide-react';
+import { Camera, RefreshCw } from 'lucide-react';
 
 interface BodyCanvasProps {
   gender: Gender;
@@ -12,6 +12,7 @@ interface BodyCanvasProps {
   onViewChange: (view: 'front' | 'side') => void;
   uploadedImage: string | null;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  warning: string | null;
 }
 
 export const BodyCanvas: React.FC<BodyCanvasProps> = ({
@@ -23,7 +24,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   view,
   onViewChange,
   uploadedImage,
-  onImageUpload
+  onImageUpload,
+  warning
 }) => {
   const containerRef = useRef<SVGSVGElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -31,6 +33,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   
   // 3D rotation angle in degrees
   const [rotationAngle, setRotationAngle] = useState<number>(0);
+
+  // New rotation dragging states
+  const [isRotating, setIsRotating] = useState<boolean>(false);
+  const dragStartRef = useRef<{ x: number; angle: number }>({ x: 0, angle: 0 });
 
   // SVG dimensions
   const width = 400;
@@ -41,34 +47,88 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     setActivePointId(pointId);
   };
 
+  const handleCanvasMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    const target = e.target as SVGElement;
+    if (target.classList.contains('landmark-dot')) {
+      return;
+    }
+    setIsRotating(true);
+    dragStartRef.current = {
+      x: e.clientX,
+      angle: rotationAngle
+    };
+  };
+
+  const handleCanvasTouchStart = (e: React.TouchEvent<SVGSVGElement>) => {
+    const target = e.target as SVGElement;
+    if (target.classList.contains('landmark-dot')) {
+      return;
+    }
+    if (e.touches.length === 1) {
+      setIsRotating(true);
+      dragStartRef.current = {
+        x: e.touches[0].clientX,
+        angle: rotationAngle
+      };
+    }
+  };
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!activePointId || !containerRef.current) return;
+      if (activePointId && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const rawX = e.clientX - rect.left;
+        const rawY = e.clientY - rect.top;
+        
+        const x = Math.max(0, Math.min(width, (rawX / rect.width) * width));
+        const y = Math.max(0, Math.min(height, (rawY / rect.height) * height));
 
-      const rect = containerRef.current.getBoundingClientRect();
-      const rawX = e.clientX - rect.left;
-      const rawY = e.clientY - rect.top;
-      
-      const x = Math.max(0, Math.min(width, (rawX / rect.width) * width));
-      const y = Math.max(0, Math.min(height, (rawY / rect.height) * height));
-
-      onLandmarkChange(activePointId, Math.round(x), Math.round(y));
+        onLandmarkChange(activePointId, Math.round(x), Math.round(y));
+      } else if (isRotating) {
+        const deltaX = e.clientX - dragStartRef.current.x;
+        let newAngle = (dragStartRef.current.angle + deltaX * 0.8) % 360;
+        if (newAngle < 0) newAngle += 360;
+        setRotationAngle(Math.round(newAngle));
+      }
     };
 
-    const handleMouseUp = () => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (activePointId && containerRef.current && e.touches.length > 0) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const rawX = e.touches[0].clientX - rect.left;
+        const rawY = e.touches[0].clientY - rect.top;
+        
+        const x = Math.max(0, Math.min(width, (rawX / rect.width) * width));
+        const y = Math.max(0, Math.min(height, (rawY / rect.height) * height));
+
+        onLandmarkChange(activePointId, Math.round(x), Math.round(y));
+      } else if (isRotating && e.touches.length > 0) {
+        const deltaX = e.touches[0].clientX - dragStartRef.current.x;
+        let newAngle = (dragStartRef.current.angle + deltaX * 0.8) % 360;
+        if (newAngle < 0) newAngle += 360;
+        setRotationAngle(Math.round(newAngle));
+      }
+    };
+
+    const handleMouseUpOrTouchEnd = () => {
       setActivePointId(null);
+      setIsRotating(false);
     };
 
-    if (activePointId) {
+    if (activePointId || isRotating) {
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('mouseup', handleMouseUpOrTouchEnd);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleMouseUpOrTouchEnd);
     }
 
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleMouseUpOrTouchEnd);
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleMouseUpOrTouchEnd);
     };
-  }, [activePointId, onLandmarkChange]);
+  }, [activePointId, isRotating, onLandmarkChange]);
 
   // Generate bone paths between landmarks (for 2D editing mode)
   const getBones = () => {
@@ -450,29 +510,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         />
       </div>
 
-      {/* 3D Rotation control panel (only visible when not displaying an uploaded photo) */}
-      {!uploadedImage && (
-        <div className="rotation-control-panel">
-          <div className="rotation-label">
-            <RotateCw size={14} className="spin-icon" />
-            <span>Xoay Mannequin 3D: {rotationAngle}°</span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="360"
-            value={rotationAngle}
-            onChange={(e) => setRotationAngle(Number(e.target.value))}
-            className="weight-slider"
-          />
-        </div>
-      )}
-
       <div className="canvas-container">
         <svg
           ref={containerRef}
           viewBox={`0 0 ${width} ${height}`}
           className="landmark-svg"
+          onMouseDown={handleCanvasMouseDown}
+          onTouchStart={handleCanvasTouchStart}
+          style={{ cursor: isRotating ? 'grabbing' : 'grab' }}
         >
           {uploadedImage && (
             <image
@@ -524,6 +569,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   cy={point.y}
                   r={activePointId === point.id ? 8 : 6}
                   onMouseDown={() => handleMouseDown(point.id)}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    handleMouseDown(point.id);
+                  }}
                   className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
                 />
                 <text
@@ -539,9 +588,16 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           })}
         </svg>
 
-        <div className="canvas-helper-text">
-          <RefreshCw size={12} className="spin-hover" />
-          <span>Kéo thả các chấm đỏ để căn chỉnh chính xác mốc giải phẫu</span>
+        <div className="canvas-footer">
+          {warning && (
+            <div className="anatomical-warning-inline">
+              <span>⚠️ {warning}</span>
+            </div>
+          )}
+          <div className="canvas-helper-text">
+            <RefreshCw size={12} className="spin-hover" />
+            <span>Kéo thả các chấm đỏ để căn chỉnh chính xác mốc giải phẫu. Vuốt/kéo trên khung để xoay Mannequin 3D.</span>
+          </div>
         </div>
       </div>
     </div>

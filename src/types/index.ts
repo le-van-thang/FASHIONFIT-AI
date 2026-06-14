@@ -17,6 +17,9 @@ export interface BodyMeasurements {
   chestCircumference: number; // cm
   waistCircumference: number; // cm
   hipCircumference: number;   // cm
+  chestDepth?: number;        // cm
+  waistDepth?: number;        // cm
+  hipDepth?: number;          // cm
 }
 
 export interface Landmark {

@@ -6,14 +6,16 @@ interface ResultPanelProps {
   measurements: BodyMeasurements;
   recommendation: SizeRecommendation;
   onPrint: () => void;
+  view: 'front' | 'side';
 }
 
 export const ResultPanel: React.FC<ResultPanelProps> = ({
   measurements,
   recommendation,
-  onPrint
+  onPrint,
+  view
 }) => {
-  const measurementItems = [
+  const measurementItems = view === 'front' ? [
     { label: 'Chiều cao thực tế', value: measurements.height, unit: 'cm', desc: 'Đo từ gốc mũi, triệt tiêu tóc phồng' },
     { label: 'Rộng vai', value: measurements.shoulderWidth, unit: 'cm', desc: 'Chiều ngang qua các điểm Acromion' },
     { label: 'Dài tay', value: measurements.armLength, unit: 'cm', desc: 'Đo từ vai đến xương cổ tay' },
@@ -21,6 +23,11 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     { label: 'Chu vi Vòng ngực', value: measurements.chestCircumference, unit: 'cm', desc: 'Đo qua điểm ngực lớn nhất' },
     { label: 'Chu vi Vòng eo', value: measurements.waistCircumference, unit: 'cm', desc: 'Đo quanh điểm eo thắt nhỏ nhất' },
     { label: 'Chu vi Vòng mông', value: measurements.hipCircumference, unit: 'cm', desc: 'Đo quanh điểm mông lớn nhất' }
+  ] : [
+    { label: 'Chiều cao thực tế', value: measurements.height, unit: 'cm', desc: 'Đo từ gốc mũi, triệt tiêu tóc phồng' },
+    { label: 'Độ sâu Ngực (Bust Depth)', value: measurements.chestDepth || 0, unit: 'cm', desc: 'Đo khoảng cách ngang từ khớp vai qua đỉnh ngực' },
+    { label: 'Độ sâu Eo (Waist Depth)', value: measurements.waistDepth || 0, unit: 'cm', desc: 'Đo khoảng cách ngang từ cột sống qua bụng' },
+    { label: 'Độ sâu Mông (Hips Depth)', value: measurements.hipDepth || 0, unit: 'cm', desc: 'Đo khoảng cách ngang từ khớp hông qua đỉnh mông' }
   ];
 
   const getFitLabel = (fit: 'tight' | 'fit' | 'loose') => {

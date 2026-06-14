@@ -149,6 +149,15 @@ function App() {
     // Waist gets affected partially by chest and hip changes organically
     const waistCircumference = baseCircs.waist * (0.85 + 0.08 * chestDepthFactor + 0.07 * hipDepthFactor);
 
+    // Waist depth estimation from volume constraint and adjustments
+    const totalVolumeCm3 = input.weight / 0.00101;
+    const abdomenVolume = totalVolumeCm3 * 0.28;
+    const waistSegmentHeight = height * 0.10;
+    const waistArea = (abdomenVolume * 0.42) / waistSegmentHeight;
+    const waistRatio = input.gender === 'female' ? 1.30 : 1.25;
+    const baseWaistDepth = 2 * Math.sqrt(waistArea / (Math.PI * waistRatio));
+    const waistDepth = baseWaistDepth * (0.85 + 0.08 * chestDepthFactor + 0.07 * hipDepthFactor) * (input.gender === 'female' ? 0.98 : 1.02);
+
     return {
       height,
       shoulderWidth,
@@ -156,7 +165,10 @@ function App() {
       legLength,
       chestCircumference,
       waistCircumference,
-      hipCircumference
+      hipCircumference,
+      chestDepth: chestDepthCm,
+      waistDepth,
+      hipDepth: hipDepthCm
     };
   }, [input, referencePixels, landmarksFront, landmarksSide, scale]);
 
@@ -244,12 +256,6 @@ function App() {
         </div>
 
         <div className="center-column">
-          {anatomicalWarning && (
-            <div className="anatomical-warning-banner">
-              <span>⚠️ {anatomicalWarning}</span>
-            </div>
-          )}
-          
           <BodyCanvas
             gender={input.gender}
             weight={input.weight}
@@ -260,6 +266,7 @@ function App() {
             onViewChange={setView}
             uploadedImage={view === 'front' ? uploadedImageFront : uploadedImageSide}
             onImageUpload={handleImageUpload}
+            warning={anatomicalWarning}
           />
         </div>
 
@@ -268,6 +275,7 @@ function App() {
             measurements={measurements}
             recommendation={recommendation}
             onPrint={handlePrint}
+            view={view}
           />
         </div>
       </main>

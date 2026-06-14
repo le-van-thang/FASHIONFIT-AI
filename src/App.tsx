@@ -204,17 +204,17 @@ function App() {
   const anatomicalWarning = useMemo(() => {
     const { height, shoulderWidth, armLength, legLength } = measurements;
     
-    if (height < 125 || height > 215) {
-      return "Chiều cao bất thường (Yêu cầu: 125cm - 215cm). Vui lòng kéo chỉnh lại điểm Gốc Mũi hoặc Cổ Chân.";
+    if (height < 45 || height > 220) {
+      return "Chiều cao bất thường (Yêu cầu: 45cm - 220cm). Vui lòng kéo chỉnh lại điểm Gốc Mũi hoặc Cổ Chân.";
     }
-    if (shoulderWidth < 26 || shoulderWidth > 60) {
-      return "Chiều rộng vai bất thường (Yêu cầu: 26cm - 60cm). Vui lòng kéo chỉnh lại khớp Vai Trái/Phải.";
+    if (shoulderWidth < 10 || shoulderWidth > 60) {
+      return "Chiều rộng vai bất thường (Yêu cầu: 10cm - 60cm). Vui lòng kéo chỉnh lại khớp Vai Trái/Phải.";
     }
-    if (armLength < 35 || armLength > 95) {
-      return "Chiều dài tay bất thường (Yêu cầu: 35cm - 95cm). Vui lòng kéo chỉnh lại các khớp Khuỷu/Cổ tay.";
+    if (armLength < 10 || armLength > 95) {
+      return "Chiều dài tay bất thường (Yêu cầu: 10cm - 95cm). Vui lòng kéo chỉnh lại các khớp Khuỷu/Cổ tay.";
     }
-    if (legLength < 45 || legLength > 115) {
-      return "Chiều dài chân bất thường (Yêu cầu: 45cm - 115cm). Vui lòng kéo chỉnh lại các khớp Hông/Gối/Cổ chân.";
+    if (legLength < 15 || legLength > 115) {
+      return "Chiều dài chân bất thường (Yêu cầu: 15cm - 115cm). Vui lòng kéo chỉnh lại các khớp Hông/Gối/Cổ chân.";
     }
     return null;
   }, [measurements]);

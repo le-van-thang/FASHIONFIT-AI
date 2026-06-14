@@ -40,7 +40,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     setWeightInputVal(val);
     
     const parsed = parseFloat(val);
-    if (!isNaN(parsed) && parsed >= 35 && parsed <= 300) {
+    if (!isNaN(parsed) && parsed >= 2 && parsed <= 300) {
       onChange({ ...input, weight: parsed });
     }
   };
@@ -49,9 +49,9 @@ export const InputForm: React.FC<InputFormProps> = ({
     const parsed = parseFloat(weightInputVal);
     if (isNaN(parsed)) {
       setWeightInputVal(input.weight.toString());
-    } else if (parsed < 35) {
-      onChange({ ...input, weight: 35 });
-      setWeightInputVal("35");
+    } else if (parsed < 2) {
+      onChange({ ...input, weight: 2 });
+      setWeightInputVal("2");
     } else if (parsed > 300) {
       onChange({ ...input, weight: 300 });
       setWeightInputVal("300");
@@ -131,7 +131,7 @@ export const InputForm: React.FC<InputFormProps> = ({
           <div className="slider-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <input
               type="range"
-              min="35"
+              min="2"
               max="250"
               step="1"
               value={input.weight}
@@ -140,14 +140,16 @@ export const InputForm: React.FC<InputFormProps> = ({
               list="weight-ticks"
             />
             <datalist id="weight-ticks">
-              <option value="35"></option>
+              <option value="2"></option>
+              <option value="50"></option>
               <option value="100"></option>
               <option value="150"></option>
               <option value="200"></option>
               <option value="250"></option>
             </datalist>
             <div className="slider-ticks-labels">
-              <span>35kg</span>
+              <span>2kg</span>
+              <span>50kg</span>
               <span>100kg</span>
               <span>150kg</span>
               <span>200kg</span>

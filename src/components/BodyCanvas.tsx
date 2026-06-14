@@ -212,8 +212,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     const HUMAN_BODY_DENSITY = 0.00101; 
     const targetVolumeCm3 = weight / HUMAN_BODY_DENSITY;
 
-    // 2. Head volume subtraction using spherical mesh prior
-    const headRadius = bodyHeight * 0.07; // in pixels
+    // 2. Head volume subtraction using spherical mesh prior (with dynamic pediatric ratio)
+    const heightCm = bodyHeight * scaleFactor;
+    const headRatio = Math.max(0.07, Math.min(0.15, 0.15 - (heightCm - 50) * (0.08 / 120)));
+    const headRadius = bodyHeight * headRatio; // in pixels
     const headCenterY = nasionF.y - headRadius * 0.3; // in pixels
     const headRadiusCm = headRadius * scaleFactor;
     const headVolumeCm3 = (4 / 3) * Math.PI * Math.pow(headRadiusCm, 3);

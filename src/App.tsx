@@ -65,17 +65,63 @@ function App() {
     };
   });
 
-  const [referencePixels, setReferencePixels] = useState<number>(120); // Default scale pixels
-  const [landmarksFront, setLandmarksFront] = useState<Landmark[]>(initialFrontLandmarks);
-  const [landmarksSide, setLandmarksSide] = useState<Landmark[]>(initialSideLandmarks);
+  const [referencePixels, setReferencePixels] = useState<number>(() => {
+    const saved = localStorage.getItem('fashionfit_reference_pixels');
+    return saved ? Number(saved) : 120;
+  });
+
+  const [landmarksFront, setLandmarksFront] = useState<Landmark[]>(() => {
+    const saved = localStorage.getItem('fashionfit_landmarks_front');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return initialFrontLandmarks;
+  });
+
+  const [landmarksSide, setLandmarksSide] = useState<Landmark[]>(() => {
+    const saved = localStorage.getItem('fashionfit_landmarks_side');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return initialSideLandmarks;
+  });
+
   const [view, setView] = useState<'front' | 'side'>('front');
-  const [inputSource, setInputSource] = useState<'mannequin' | 'image' | 'webcam' | 'video'>('mannequin');
+  const [inputSource, setInputSource] = useState<'mannequin' | 'image' | 'webcam' | 'video'>(() => {
+    const saved = localStorage.getItem('fashionfit_input_source');
+    return ['mannequin', 'image', 'webcam', 'video'].includes(saved || '') 
+      ? (saved as any) 
+      : 'mannequin';
+  });
+
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 
-  // Sync input settings to localStorage
+  // Sync settings to localStorage
   useEffect(() => {
     localStorage.setItem('fashionfit_input', JSON.stringify(input));
   }, [input]);
+
+  useEffect(() => {
+    localStorage.setItem('fashionfit_reference_pixels', referencePixels.toString());
+  }, [referencePixels]);
+
+  useEffect(() => {
+    localStorage.setItem('fashionfit_landmarks_front', JSON.stringify(landmarksFront));
+  }, [landmarksFront]);
+
+  useEffect(() => {
+    localStorage.setItem('fashionfit_landmarks_side', JSON.stringify(landmarksSide));
+  }, [landmarksSide]);
+
+  useEffect(() => {
+    localStorage.setItem('fashionfit_input_source', inputSource);
+  }, [inputSource]);
 
   const [uploadedImageFront, setUploadedImageFront] = useState<string | null>(null);
   const [uploadedImageSide, setUploadedImageSide] = useState<string | null>(null);
@@ -191,7 +237,7 @@ function App() {
   };
 
   const scale = useMemo(() => {
-    if (input.calibrationType === 'height') {
+    if (input.calibrationType === 'height' || inputSource === 'mannequin') {
       const heightVal = input.customHeight || 165;
       const nasionPt = (view === 'front' ? landmarksFront : landmarksSide).find(l => l.id === 'nasion')!;
       const anklePt = view === 'front'
@@ -206,7 +252,7 @@ function App() {
       return Math.max(0.05, Math.min(1.0, (heightVal - 9.5) / heightPixels));
     }
     return calculateScaleFactor(referencePixels, input.calibrationType);
-  }, [referencePixels, input.calibrationType, input.customHeight, landmarksFront, landmarksSide, view]);
+  }, [referencePixels, input.calibrationType, input.customHeight, landmarksFront, landmarksSide, view, inputSource]);
 
   // Human Anthropometric Computations
   const measurements = useMemo<BodyMeasurements>(() => {
@@ -439,6 +485,7 @@ function App() {
             onChange={setInput}
             referencePixels={referencePixels}
             onReferencePixelsChange={setReferencePixels}
+            inputSource={inputSource}
           />
         </div>
 

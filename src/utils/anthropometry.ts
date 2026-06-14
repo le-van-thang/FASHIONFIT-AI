@@ -103,12 +103,14 @@ export function estimateCircumferences(
   // Apply minor adjustments based on sex-specific fat distribution patterns
   if (gender === 'female') {
     // Females naturally have higher essential body fat percentages concentrated at hips and thighs
-    hips *= 1.05;
     waist *= 0.98;
+    // Hips is typically 22cm larger than waist in standard female charts
+    hips = waist + 22.0;
   } else {
     // Males tend to carry visceral fat around the abdomen
     waist *= 1.02;
-    hips *= 0.96;
+    // Hips is typically 18cm larger than waist in standard male charts
+    hips = waist + 18.0;
   }
 
   return {

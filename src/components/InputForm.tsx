@@ -8,13 +8,15 @@ interface InputFormProps {
   onChange: (input: UserInput) => void;
   referencePixels: number;
   onReferencePixelsChange: (pixels: number) => void;
+  inputSource: 'mannequin' | 'image' | 'webcam' | 'video';
 }
 
 export const InputForm: React.FC<InputFormProps> = ({
   input,
   onChange,
   referencePixels,
-  onReferencePixelsChange
+  onReferencePixelsChange,
+  inputSource
 }) => {
   const [weightInputVal, setWeightInputVal] = useState<string>(input.weight.toString());
   const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
@@ -350,76 +352,78 @@ export const InputForm: React.FC<InputFormProps> = ({
         </div>
 
         {/* Calibration Reference Selection */}
-        <div className="form-group">
-          <div className="form-group-header">
-            <label className="form-label">
-              <Eye size={16} />
-              <span>Phương thức hiệu chuẩn</span>
-            </label>
-            <button
-              type="button"
-              className="calib-help-btn"
-              onClick={() => setShowCalibGuide(true)}
-              title="Xem hướng dẫn hiệu chuẩn"
-            >
-              <Info size={14} />
-              Hướng dẫn
-            </button>
+        {inputSource !== 'mannequin' && (
+          <div className="form-group">
+            <div className="form-group-header">
+              <label className="form-label">
+                <Eye size={16} />
+                <span>Phương thức hiệu chuẩn</span>
+              </label>
+              <button
+                type="button"
+                className="calib-help-btn"
+                onClick={() => setShowCalibGuide(true)}
+                title="Xem hướng dẫn hiệu chuẩn"
+              >
+                <Info size={14} />
+                Hướng dẫn
+              </button>
+            </div>
+            <div className="calibration-grid">
+              <button
+                type="button"
+                className={`calib-card ${input.calibrationType === 'a4' ? 'active' : ''}`}
+                onClick={() => handleCalibrationChange('a4')}
+              >
+                <FileText size={20} />
+                <div className="calib-info">
+                  <span className="calib-name">Giấy A4 chuẩn</span>
+                  <span className="calib-desc">Ngang: 21.0 cm</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={`calib-card ${input.calibrationType === 'card' ? 'active' : ''}`}
+                onClick={() => handleCalibrationChange('card')}
+              >
+                <CreditCard size={20} />
+                <div className="calib-info">
+                  <span className="calib-name">Thẻ ngân hàng</span>
+                  <span className="calib-desc">Ngang: 8.56 cm</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={`calib-card ${input.calibrationType === 'ipd' ? 'active' : ''}`}
+                onClick={() => handleCalibrationChange('ipd')}
+              >
+                <Eye size={20} />
+                <div className="calib-info">
+                  <span className="calib-name">Khoảng cách mắt</span>
+                  <span className="calib-desc">IPD: 6.3 cm</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className={`calib-card ${input.calibrationType === 'height' ? 'active' : ''}`}
+                onClick={() => handleCalibrationChange('height')}
+                style={{ gridColumn: 'span 3' }}
+              >
+                <Ruler size={20} />
+                <div className="calib-info">
+                  <span className="calib-name">Tự nhập chiều cao (Khuyên dùng cho Webcam)</span>
+                  <span className="calib-desc">Tự hiệu chuẩn mà không cần chụp cả chân</span>
+                </div>
+              </button>
+            </div>
           </div>
-          <div className="calibration-grid">
-            <button
-              type="button"
-              className={`calib-card ${input.calibrationType === 'a4' ? 'active' : ''}`}
-              onClick={() => handleCalibrationChange('a4')}
-            >
-              <FileText size={20} />
-              <div className="calib-info">
-                <span className="calib-name">Giấy A4 chuẩn</span>
-                <span className="calib-desc">Ngang: 21.0 cm</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`calib-card ${input.calibrationType === 'card' ? 'active' : ''}`}
-              onClick={() => handleCalibrationChange('card')}
-            >
-              <CreditCard size={20} />
-              <div className="calib-info">
-                <span className="calib-name">Thẻ ngân hàng</span>
-                <span className="calib-desc">Ngang: 8.56 cm</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`calib-card ${input.calibrationType === 'ipd' ? 'active' : ''}`}
-              onClick={() => handleCalibrationChange('ipd')}
-            >
-              <Eye size={20} />
-              <div className="calib-info">
-                <span className="calib-name">Khoảng cách mắt</span>
-                <span className="calib-desc">IPD: 6.3 cm</span>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              className={`calib-card ${input.calibrationType === 'height' ? 'active' : ''}`}
-              onClick={() => handleCalibrationChange('height')}
-              style={{ gridColumn: 'span 3' }}
-            >
-              <Ruler size={20} />
-              <div className="calib-info">
-                <span className="calib-name">Tự nhập chiều cao (Khuyên dùng cho Webcam)</span>
-                <span className="calib-desc">Tự hiệu chuẩn mà không cần chụp cả chân</span>
-              </div>
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Reference object size control OR Custom height control */}
-        {input.calibrationType === 'height' ? (
+        {inputSource === 'mannequin' || input.calibrationType === 'height' ? (
           <div className="form-group">
             <div className="form-group-header">
               <label className="form-label">
@@ -456,7 +460,10 @@ export const InputForm: React.FC<InputFormProps> = ({
               </div>
             </div>
             <p className="field-hint">
-              * Hệ thống dùng chiều cao này làm gốc hiệu chuẩn. Cổ chân (ở đáy ảnh) được coi là sàn đất.
+              {inputSource === 'mannequin'
+                ? '* Dùng để thay đổi chiều cao của mô hình 3D Mannequin nhằm ước lượng số đo.'
+                : '* Hệ thống dùng chiều cao này làm gốc hiệu chuẩn. Cổ chân (ở đáy ảnh) được coi là sàn đất.'
+              }
             </p>
           </div>
         ) : (

@@ -22,7 +22,7 @@ FashionFit AI giải quyết triệt để các thách thức trên thông qua *
 ### 2.1. Triệt tiêu sai số "Tóc phồng" bằng mốc xương cố định
 Hệ thống xác định vị trí **Gốc mũi (Nasion)** hoặc **Hốc mắt (Orbit)** làm điểm tham chiếu cố định trên hộp sọ (không bị biến dạng bởi kiểu tóc).
 *   **Công thức tính chiều cao thực tế ($H$):**
-    $$H = (Y_{\text{ankle\_mid}} - Y_{\text{nasion}}) \times \text{Scale} + 9.5\text{ cm}$$
+    $$H = (Y_{\text{ankle}} - Y_{\text{nasion}}) \times \text{Scale} + 9.5\text{ cm}$$
     *(Trong đó, $9.5\text{ cm}$ là hằng số sọ người trung bình từ gốc mũi đến đỉnh đầu).*
 
 ### 2.2. Khóa thể tích bằng Ràng buộc Nhân trắc học (Volume Constraint)

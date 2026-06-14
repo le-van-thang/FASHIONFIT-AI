@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Gender, CalibrationType, UserInput } from '../types';
 import { User, Scale, Eye, FileText, CreditCard } from 'lucide-react';
 
@@ -15,17 +15,82 @@ export const InputForm: React.FC<InputFormProps> = ({
   referencePixels,
   onReferencePixelsChange
 }) => {
+  const [weightInputVal, setWeightInputVal] = useState<string>(input.weight.toString());
+  const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
+
+  useEffect(() => {
+    setWeightInputVal(input.weight.toString());
+  }, [input.weight]);
+
+  useEffect(() => {
+    setRefPixelsInputVal(referencePixels.toString());
+  }, [referencePixels]);
+
   const handleGenderSelect = (gender: Gender) => {
     onChange({ ...input, gender });
   };
 
-  const handleWeightChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWeightSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const weight = Number(e.target.value);
     onChange({ ...input, weight });
   };
 
+  const handleWeightTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setWeightInputVal(val);
+    
+    const parsed = parseFloat(val);
+    if (!isNaN(parsed) && parsed >= 35 && parsed <= 300) {
+      onChange({ ...input, weight: parsed });
+    }
+  };
+
+  const handleWeightTextInputBlur = () => {
+    const parsed = parseFloat(weightInputVal);
+    if (isNaN(parsed)) {
+      setWeightInputVal(input.weight.toString());
+    } else if (parsed < 35) {
+      onChange({ ...input, weight: 35 });
+      setWeightInputVal("35");
+    } else if (parsed > 300) {
+      onChange({ ...input, weight: 300 });
+      setWeightInputVal("300");
+    } else {
+      setWeightInputVal(input.weight.toString());
+    }
+  };
+
   const handleCalibrationChange = (type: CalibrationType) => {
     onChange({ ...input, calibrationType: type });
+  };
+
+  const handleRefPixelsSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onReferencePixelsChange(Number(e.target.value));
+  };
+
+  const handleRefPixelsTextInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setRefPixelsInputVal(val);
+    
+    const parsed = parseInt(val, 10);
+    if (!isNaN(parsed) && parsed >= 30 && parsed <= 500) {
+      onReferencePixelsChange(parsed);
+    }
+  };
+
+  const handleRefPixelsTextInputBlur = () => {
+    const parsed = parseInt(refPixelsInputVal, 10);
+    if (isNaN(parsed)) {
+      setRefPixelsInputVal(referencePixels.toString());
+    } else if (parsed < 30) {
+      onReferencePixelsChange(30);
+      setRefPixelsInputVal("30");
+    } else if (parsed > 500) {
+      onReferencePixelsChange(500);
+      setRefPixelsInputVal("500");
+    } else {
+      setRefPixelsInputVal(referencePixels.toString());
+    }
   };
 
   return (
@@ -63,22 +128,38 @@ export const InputForm: React.FC<InputFormProps> = ({
           <span>Cân nặng thực tế (Volume constraint)</span>
         </label>
         <div className="weight-input-wrapper">
-          <input
-            type="range"
-            min="35"
-            max="150"
-            step="1"
-            value={input.weight}
-            onChange={handleWeightChange}
-            className="weight-slider"
-          />
+          <div className="slider-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <input
+              type="range"
+              min="35"
+              max="250"
+              step="1"
+              value={input.weight}
+              onChange={handleWeightSliderChange}
+              className="weight-slider"
+              list="weight-ticks"
+            />
+            <datalist id="weight-ticks">
+              <option value="35"></option>
+              <option value="100"></option>
+              <option value="150"></option>
+              <option value="200"></option>
+              <option value="250"></option>
+            </datalist>
+            <div className="slider-ticks-labels">
+              <span>35kg</span>
+              <span>100kg</span>
+              <span>150kg</span>
+              <span>200kg</span>
+              <span>250kg</span>
+            </div>
+          </div>
           <div className="weight-number-box">
             <input
-              type="number"
-              min="35"
-              max="150"
-              value={input.weight}
-              onChange={handleWeightChange}
+              type="text"
+              value={weightInputVal}
+              onChange={handleWeightTextInputChange}
+              onBlur={handleWeightTextInputBlur}
               className="weight-input"
             />
             <span className="unit">kg</span>
@@ -140,21 +221,35 @@ export const InputForm: React.FC<InputFormProps> = ({
           <span>Kích thước vật tham chiếu trên ảnh (Pixel)</span>
         </label>
         <div className="weight-input-wrapper">
-          <input
-            type="range"
-            min="30"
-            max="300"
-            value={referencePixels}
-            onChange={(e) => onReferencePixelsChange(Number(e.target.value))}
-            className="weight-slider"
-          />
-          <div className="weight-number-box">
+          <div className="slider-container" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <input
-              type="number"
+              type="range"
               min="30"
               max="300"
               value={referencePixels}
-              onChange={(e) => onReferencePixelsChange(Number(e.target.value))}
+              onChange={handleRefPixelsSliderChange}
+              className="weight-slider"
+              list="pixels-ticks"
+            />
+            <datalist id="pixels-ticks">
+              <option value="30"></option>
+              <option value="100"></option>
+              <option value="200"></option>
+              <option value="300"></option>
+            </datalist>
+            <div className="slider-ticks-labels">
+              <span>30px</span>
+              <span>100px</span>
+              <span>200px</span>
+              <span>300px</span>
+            </div>
+          </div>
+          <div className="weight-number-box">
+            <input
+              type="text"
+              value={refPixelsInputVal}
+              onChange={handleRefPixelsTextInputChange}
+              onBlur={handleRefPixelsTextInputBlur}
               className="weight-input"
             />
             <span className="unit">px</span>

@@ -1,9 +1,10 @@
-import React from 'react';
-import type { BodyMeasurements, SizeRecommendation } from '../types';
+import type { BodyMeasurements, SizeRecommendation, Gender } from '../types';
 import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader, CloudOff } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface ResultPanelProps {
+  gender: Gender;
+  weight: number;
   measurements: BodyMeasurements;
   recommendation: SizeRecommendation;
   onPrint: () => void;
@@ -14,6 +15,8 @@ interface ResultPanelProps {
 }
 
 export const ResultPanel: React.FC<ResultPanelProps> = ({
+  gender,
+  weight,
   measurements,
   recommendation,
   onPrint,
@@ -46,6 +49,51 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
       default:      return { text: 'Vừa vặn', color: 'text-green' };
     }
   };
+
+  const calculateBodyComposition = () => {
+    const height = measurements.height;
+    const waist = measurements.waistCircumference;
+    const hips = measurements.hipCircumference;
+    
+    // Estimate neck circumference dynamically
+    const neck = gender === 'male' ? height * 0.23 : height * 0.215;
+    
+    let bodyFat = 15.0;
+    
+    try {
+      if (gender === 'male') {
+        const waistNeckDiff = waist - neck;
+        if (waistNeckDiff > 0 && height > 0) {
+          const logVal = Math.log10(waistNeckDiff);
+          const density = 1.0324 - 0.19077 * logVal + 0.15456 * Math.log10(height);
+          bodyFat = 495 / density - 450;
+        }
+      } else {
+        const waistHipNeckDiff = waist + hips - neck;
+        if (waistHipNeckDiff > 0 && height > 0) {
+          const logVal = Math.log10(waistHipNeckDiff);
+          const density = 1.29579 - 0.35004 * logVal + 0.22100 * Math.log10(height);
+          bodyFat = 495 / density - 450;
+        }
+      }
+    } catch (e) {
+      bodyFat = 15.0;
+    }
+    
+    bodyFat = Math.max(2, Math.min(60, bodyFat));
+    
+    const fatMass = weight * (bodyFat / 100);
+    const leanMass = weight - fatMass;
+    const muscleMass = leanMass * (gender === 'male' ? 0.54 : 0.48);
+    
+    return {
+      bodyFat: parseFloat(bodyFat.toFixed(1)),
+      fatMass: parseFloat(fatMass.toFixed(1)),
+      muscleMass: parseFloat(muscleMass.toFixed(1))
+    };
+  };
+
+  const { bodyFat, fatMass, muscleMass } = calculateBodyComposition();
 
   // Small sync indicator (not a button)
   const SyncIndicator = () => {
@@ -134,7 +182,45 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         </div>
 
-        <div className="methodology-note">
+        {/* Advanced Biometrics Card */}
+        <div className="advanced-biometrics-card" style={{ marginTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem' }}>
+          <h3 className="fit-details-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38bdf8' }}>
+            🩺 Chỉ Số Thành Phần Cơ Thể (Ước Tính AI)
+          </h3>
+          <div className="fit-grid" style={{ marginTop: '0.75rem' }}>
+            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+              <span className="fit-label" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Tỷ Lệ Mỡ (Body Fat)</span>
+              <span className="measure-value" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{bodyFat}%</span>
+              <div style={{ height: '4px', width: '100%', backgroundColor: 'rgba(37, 99, 235, 0.15)', borderRadius: '2px', overflow: 'hidden', marginTop: '0.25rem' }}>
+                <div 
+                  style={{ 
+                    height: '100%', 
+                    width: `${Math.min(100, bodyFat * 2)}%`,
+                    backgroundColor: bodyFat > (gender === 'male' ? 25 : 32) ? 'var(--color-orange)' : bodyFat < (gender === 'male' ? 8 : 15) ? 'var(--color-blue)' : 'var(--color-green)',
+                    borderRadius: '2px'
+                  }}
+                ></div>
+              </div>
+              <span style={{ fontSize: '0.62rem', color: bodyFat > (gender === 'male' ? 25 : 32) ? 'var(--color-orange)' : bodyFat < (gender === 'male' ? 8 : 15) ? 'var(--color-blue)' : 'var(--color-green)', fontWeight: 600, marginTop: '0.1rem' }}>
+                {bodyFat > (gender === 'male' ? 25 : 32) ? 'Thành phần mỡ cao' : bodyFat < (gender === 'male' ? 8 : 15) ? 'Thành phần mỡ thấp' : 'Cân đối'}
+              </span>
+            </div>
+
+            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+              <span className="fit-label" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Khối Lượng Cơ</span>
+              <span className="measure-value" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{muscleMass} <small style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>kg</small></span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>Chiếm {((muscleMass / weight) * 100).toFixed(1)}% cơ thể</span>
+            </div>
+
+            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+              <span className="fit-label" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Khối Lượng Mỡ</span>
+              <span className="measure-value" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{fatMass} <small style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>kg</small></span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>Chiếm {bodyFat}% cơ thể</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="methodology-note" style={{ marginTop: '1.25rem' }}>
           <AlertCircle size={14} className="icon-alert" />
           <span>
             Hệ thống đã áp dụng các hằng số phân bổ mỡ theo giới tính sinh học và ràng buộc trọng lượng để loại bỏ ranh giới vải thừa do quần áo rộng.

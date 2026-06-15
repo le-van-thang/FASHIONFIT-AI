@@ -439,9 +439,21 @@ body {
 .canvas-header {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.5rem;
   align-items: stretch;
 }
+
+/* Row that holds view tabs + reset button side by side */
+.canvas-header-row2 {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.canvas-header-row2 .view-toggle-tabs {
+  flex: 1;
+}
+
 
 .media-viewport {
   position: relative;
@@ -2749,6 +2761,229 @@ body {
   animation: borderPulse 1.5s cubic-bezier(0.25, 0, 0, 1) 2;
   position: relative;
   z-index: 100;
+}
+
+/* ==========================================================================
+   Advanced 3D Mannequin & Historical Comparison Styling (Futuristic Upgrade)
+   ========================================================================== */
+
+/* 3D Mesh Styling Modes */
+.mesh-group.neon .mesh-line {
+  stroke: rgba(6, 182, 212, 0.6) !important;
+  filter: drop-shadow(0 0 3px rgba(6, 182, 212, 0.7));
+  animation: neonPulse 2s infinite ease-in-out;
+}
+
+.mesh-group.neon .mesh-line.ring {
+  stroke: rgba(6, 182, 212, 0.95) !important;
+  stroke-width: 1.5px !important;
+  filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.9));
+}
+
+.mesh-group.ar-overlay .mesh-line {
+  stroke: rgba(56, 189, 248, 0.35);
+  stroke-width: 0.7px;
+  animation: arScanLine 2s infinite ease-in-out;
+}
+
+.mesh-group.ar-overlay .mesh-line.ring {
+  stroke: rgba(56, 189, 248, 0.6);
+  stroke-width: 1.1px;
+}
+
+/* Specific overrides for styled camera overlays */
+.mesh-group.neon.ar-overlay .mesh-line {
+  stroke: rgba(6, 182, 212, 0.65) !important;
+}
+
+.mesh-group.neon.ar-overlay .mesh-line.ring {
+  stroke: rgba(6, 182, 212, 0.95) !important;
+}
+
+.mesh-group.heatmap.ar-overlay .mesh-line {
+  stroke-width: 0.7px;
+  animation: arScanLine 3s infinite ease-in-out;
+}
+
+.mesh-group.heatmap.ar-overlay .mesh-line.ring {
+  stroke-width: 1.1px;
+}
+
+@keyframes neonPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@keyframes arScanLine {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
+
+/* Heatmap base lines styling */
+.mesh-group.heatmap .mesh-line {
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.1));
+}
+
+/* Comparison Modal Layout & Animations */
+.compare-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1.5rem;
+  animation: compareOverlayFadeIn 0.25s ease-out;
+}
+
+@keyframes compareOverlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.compare-modal-card {
+  background-color: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 850px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+  animation: compareModalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes compareModalSlideIn {
+  from { transform: scale(0.95) translateY(15px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.compare-header {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.compare-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.compare-close-btn:hover {
+  color: #f8fafc;
+  transform: scale(1.15);
+}
+
+.compare-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background-color: #0f172a;
+}
+
+.compare-visuals-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.compare-visual-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(30, 41, 59, 0.4);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.compare-mannequin-container {
+  width: 200px;
+  height: 320px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(15, 23, 42, 0.5);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.rotation-slider-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(30, 41, 59, 0.6);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.compare-table-wrapper {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+  text-align: left;
+  color: #cbd5e1;
+}
+
+.compare-table th {
+  background-color: rgba(30, 41, 59, 0.9);
+  padding: 0.75rem 1rem;
+  color: #f8fafc;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+}
+
+.compare-table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.compare-table tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.compare-size-tag {
+  padding: 0.2rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  font-weight: 700;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.compare-size-tag.active {
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
 }
 
 

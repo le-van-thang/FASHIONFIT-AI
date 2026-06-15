@@ -3,6 +3,7 @@ import type { UserInput, Landmark, BodyMeasurements, SizeRecommendation } from '
 import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
+import { Mannequin3DView } from './components/Mannequin3DView';
 import { estimateCircumferences, getRecommendedSize, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
 import { Activity, History, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
@@ -186,6 +187,41 @@ function App() {
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
   const [syncState, setSyncState] = useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<string>('');
+  const [selectedCompareIds, setSelectedCompareIds] = useState<string[]>([]);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState<boolean>(false);
+  const [rotationCompare, setRotationCompare] = useState<number>(0);
+
+  const parseLandmarks = (val: any): Landmark[] | null => {
+    if (!val) return null;
+    let parsed = val;
+    if (typeof val === 'string') {
+      try {
+        parsed = JSON.parse(val);
+      } catch (e) {
+        return null;
+      }
+    }
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const isValid = parsed.every(
+        item => item && typeof item === 'object' && 'id' in item && 'x' in item && 'y' in item
+      );
+      return isValid ? parsed : null;
+    }
+    return null;
+  };
+
+  const handleToggleCompare = (id: string) => {
+    setSelectedCompareIds(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(x => x !== id);
+      }
+      if (prev.length >= 2) {
+        alert("Chỉ chọn tối đa 2 phiên đo để so sánh vóc dáng!");
+        return prev;
+      }
+      return [...prev, id];
+    });
+  };
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstRender = useRef(true);
@@ -226,25 +262,6 @@ function App() {
     });
     setReferencePixels(session.reference_pixels || 120);
 
-    const parseLandmarks = (val: any): Landmark[] | null => {
-      if (!val) return null;
-      let parsed = val;
-      if (typeof val === 'string') {
-        try {
-          parsed = JSON.parse(val);
-        } catch (e) {
-          return null;
-        }
-      }
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const isValid = parsed.every(
-          item => item && typeof item === 'object' && 'id' in item && 'x' in item && 'y' in item
-        );
-        return isValid ? parsed : null;
-      }
-      return null;
-    };
-
     const parsedFront = parseLandmarks(session.landmarks_front);
     if (parsedFront) {
       setLandmarksFront(parsedFront);
@@ -270,6 +287,15 @@ function App() {
       setLandmarksFront(prev => prev.map(l => (l.id === id ? { ...l, x, y } : l)));
     } else {
       setLandmarksSide(prev => prev.map(l => (l.id === id ? { ...l, x, y } : l)));
+    }
+  };
+
+  // Reset landmarks to anatomically correct default positions
+  const handleResetLandmarks = () => {
+    if (view === 'front') {
+      setLandmarksFront([...initialFrontLandmarks]);
+    } else {
+      setLandmarksSide([...initialSideLandmarks]);
     }
   };
 
@@ -568,6 +594,7 @@ function App() {
             scaleFactor={scale}
             landmarks={view === 'front' ? processedFrontLandmarks : processedSideLandmarks}
             onLandmarkChange={handleLandmarkChange}
+            onResetLandmarks={handleResetLandmarks}
             view={view}
             onViewChange={setView}
             uploadedImage={view === 'front' ? uploadedImageFront : uploadedImageSide}
@@ -583,6 +610,8 @@ function App() {
 
         <div className="right-column">
           <ResultPanel
+            gender={input.gender}
+            weight={input.weight}
             measurements={measurements}
             recommendation={recommendation}
             onPrint={handlePrint}
@@ -614,82 +643,106 @@ function App() {
               <span>Thực hiện thay đổi số đo hoặc kéo landmark để hệ thống tự động lưu vào Supabase.</span>
             </div>
           ) : (
-            <div className="history-list">
-              {history.map((session) => {
-                const date = session.created_at
-                  ? new Date(session.created_at).toLocaleString('vi-VN', {
-                      day: '2-digit',
-                      month: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  : 'Không rõ';
+            <>
+              <div className="history-list" style={{ paddingBottom: selectedCompareIds.length === 2 ? '60px' : '0' }}>
+                {history.map((session) => {
+                  const date = session.created_at
+                    ? new Date(session.created_at).toLocaleString('vi-VN', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    : 'Không rõ';
 
-                return (
-                  <div
-                    key={session.id}
-                    className={`history-item-card ${deletingSessionId === session.id ? 'deleting' : ''}`}
-                    onClick={() => deletingSessionId !== session.id && handleLoadSession(session)}
+                  return (
+                    <div
+                      key={session.id}
+                      className={`history-item-card ${deletingSessionId === session.id ? 'deleting' : ''}`}
+                      onClick={() => deletingSessionId !== session.id && handleLoadSession(session)}
+                    >
+                      {deletingSessionId === session.id && (
+                        <div className="card-delete-confirm-overlay" onClick={(e) => e.stopPropagation()}>
+                          <p>Xóa phiên đo này?</p>
+                          <div className="confirm-buttons">
+                            <button
+                              className="confirm-btn delete"
+                              onClick={() => handleDeleteSession(session.id!)}
+                            >
+                              Xóa
+                            </button>
+                            <button
+                              className="confirm-btn cancel"
+                              onClick={() => setDeletingSessionId(null)}
+                            >
+                              Hủy
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="item-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }} onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCompareIds.includes(session.id!)}
+                            onChange={() => handleToggleCompare(session.id!)}
+                            style={{ cursor: 'pointer', accentColor: '#38bdf8' }}
+                            title="Chọn để so sánh"
+                          />
+                          <span className="item-time">{date}</span>
+                        </div>
+                        <button
+                          className="item-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeletingSessionId(session.id!);
+                          }}
+                          title="Xóa phiên đo này"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      <div className="item-body">
+                        <div className="item-badge-row">
+                          <span className={`gender-badge ${session.gender}`}>
+                            {session.gender === 'male' ? 'Nam' : 'Nữ'}
+                          </span>
+                          <span className="size-badge-small">{session.recommended_size}</span>
+                        </div>
+                        <div className="item-metrics">
+                          <div>
+                            <span className="metric-label">Cân nặng:</span>
+                            <span className="metric-val">{session.weight_kg} kg</span>
+                          </div>
+                          <div>
+                            <span className="metric-label">Chiều cao:</span>
+                            <span className="metric-val">{session.height_cm} cm ({formatHeightMeters(session.height_cm)})</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="item-action">
+                        <FolderOpen size={12} />
+                        <span>Bấm để tải lại mô hình 3D</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {selectedCompareIds.length === 2 && (
+                <div className="drawer-compare-bar" style={{ padding: '0.75rem 1rem', background: 'rgba(30, 41, 59, 0.95)', borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', position: 'sticky', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
+                  <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Đã chọn 2 phiên đo</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsCompareModalOpen(true)}
+                    style={{ background: '#38bdf8', color: '#0f172a', border: 'none', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
                   >
-                    {deletingSessionId === session.id && (
-                      <div className="card-delete-confirm-overlay" onClick={(e) => e.stopPropagation()}>
-                        <p>Xóa phiên đo này?</p>
-                        <div className="confirm-buttons">
-                          <button
-                            className="confirm-btn delete"
-                            onClick={() => handleDeleteSession(session.id!)}
-                          >
-                            Xóa
-                          </button>
-                          <button
-                            className="confirm-btn cancel"
-                            onClick={() => setDeletingSessionId(null)}
-                          >
-                            Hủy
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="item-header">
-                      <span className="item-time">{date}</span>
-                      <button
-                        className="item-delete-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingSessionId(session.id!);
-                        }}
-                        title="Xóa phiên đo này"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                    <div className="item-body">
-                      <div className="item-badge-row">
-                        <span className={`gender-badge ${session.gender}`}>
-                          {session.gender === 'male' ? 'Nam' : 'Nữ'}
-                        </span>
-                        <span className="size-badge-small">{session.recommended_size}</span>
-                      </div>
-                      <div className="item-metrics">
-                        <div>
-                          <span className="metric-label">Cân nặng:</span>
-                          <span className="metric-val">{session.weight_kg} kg</span>
-                        </div>
-                        <div>
-                          <span className="metric-label">Chiều cao:</span>
-                          <span className="metric-val">{session.height_cm} cm ({formatHeightMeters(session.height_cm)})</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="item-action">
-                      <FolderOpen size={12} />
-                      <span>Bấm để tải lại mô hình 3D</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    📊 So Sánh Vóc Dáng
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -698,6 +751,179 @@ function App() {
       {isHistoryOpen && (
         <div className="drawer-overlay" onClick={() => setIsHistoryOpen(false)} />
       )}
+
+      {/* Comparison Modal */}
+      {isCompareModalOpen && (() => {
+        const sessionA = history.find(s => s.id === selectedCompareIds[0]);
+        const sessionB = history.find(s => s.id === selectedCompareIds[1]);
+        if (!sessionA || !sessionB) return null;
+
+        const dateA = sessionA.created_at ? new Date(sessionA.created_at).toLocaleDateString('vi-VN') : 'Không rõ';
+        const dateB = sessionB.created_at ? new Date(sessionB.created_at).toLocaleDateString('vi-VN') : 'Không rõ';
+
+        const lFrontA = parseLandmarks(sessionA.landmarks_front) || [];
+        const lFrontB = parseLandmarks(sessionB.landmarks_front) || [];
+
+        const scaleA = (sessionA.reference_pixels && sessionA.height_cm) ? sessionA.height_cm / sessionA.reference_pixels : 0.26;
+        const scaleB = (sessionB.reference_pixels && sessionB.height_cm) ? sessionB.height_cm / sessionB.reference_pixels : 0.26;
+
+        const renderDelta = (valA: number, valB: number, unit = 'cm') => {
+          const diff = valB - valA;
+          if (diff > 0) return <span style={{ color: '#ef4444', fontWeight: 600 }}>+{diff.toFixed(1)} {unit}</span>;
+          if (diff < 0) return <span style={{ color: '#22c55e', fontWeight: 600 }}>{diff.toFixed(1)} {unit}</span>;
+          return <span style={{ color: '#94a3b8' }}>0 {unit}</span>;
+        };
+
+        return (
+          <div className="compare-modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000, padding: '1.5rem', backdropFilter: 'blur(8px)' }}>
+            <div className="compare-modal-card" style={{ backgroundColor: '#1e293b', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: '850px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+              <div className="compare-header" style={{ padding: '1rem 1.5rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  📊 So Sánh Sự Biến Đổi Hình Thể 3D
+                </h3>
+                <button 
+                  className="compare-close-btn" 
+                  onClick={() => setIsCompareModalOpen(false)}
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer', hover: { color: '#f8fafc' } } as any}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="compare-body" style={{ padding: '1.5rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="compare-visuals-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+                  <div className="compare-visual-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                    <div className="session-title-card" style={{ width: '100%', padding: '0.6rem 0.8rem', backgroundColor: 'rgba(15, 23, 42, 0.3)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+                      <span className="date-badge" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#38bdf8', marginBottom: '0.2rem' }}>Lần 1: {dateA}</span>
+                      <span className="info-text" style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{sessionA.weight_kg} kg | {sessionA.height_cm} cm | Size: {sessionA.recommended_size}</span>
+                    </div>
+                    <div className="compare-mannequin-container" style={{ width: '200px', height: '320px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <Mannequin3DView
+                        gender={sessionA.gender}
+                        weight={sessionA.weight_kg}
+                        scaleFactor={scaleA}
+                        landmarks={lFrontA}
+                        rotationAngle={rotationCompare}
+                        meshStyle="neon"
+                        width={200}
+                        height={320}
+                        scanRange={sessionA.inseam_cm > 0 ? 'full' : 'half'}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="compare-visual-col" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                    <div className="session-title-card" style={{ width: '100%', padding: '0.6rem 0.8rem', backgroundColor: 'rgba(15, 23, 42, 0.3)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.05)', textAlign: 'center' }}>
+                      <span className="date-badge active" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#f43f5e', marginBottom: '0.2rem' }}>Lần 2: {dateB}</span>
+                      <span className="info-text" style={{ fontSize: '0.68rem', color: '#94a3b8' }}>{sessionB.weight_kg} kg | {sessionB.height_cm} cm | Size: {sessionB.recommended_size}</span>
+                    </div>
+                    <div className="compare-mannequin-container" style={{ width: '200px', height: '320px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <Mannequin3DView
+                        gender={sessionB.gender}
+                        weight={sessionB.weight_kg}
+                        scaleFactor={scaleB}
+                        landmarks={lFrontB}
+                        rotationAngle={rotationCompare}
+                        meshStyle="neon"
+                        width={200}
+                        height={320}
+                        scanRange={sessionB.inseam_cm > 0 ? 'full' : 'half'}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rotation-slider-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', backgroundColor: 'rgba(15, 23, 42, 0.2)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)' }}>
+                  <label style={{ fontSize: '0.72rem', color: '#cbd5e1', fontWeight: 500 }}>Xoay 3D Đồng Bộ: {rotationCompare}°</label>
+                  <input 
+                    type="range" 
+                    min="0" 
+                    max="360" 
+                    value={rotationCompare} 
+                    onChange={(e) => setRotationCompare(parseInt(e.target.value))} 
+                    style={{ width: '50%', cursor: 'pointer', accentColor: '#38bdf8' }}
+                  />
+                </div>
+
+                <div className="compare-table-wrapper" style={{ border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                  <table className="compare-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: 'rgba(15, 23, 42, 0.4)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <th style={{ padding: '0.6rem 0.8rem', color: '#94a3b8', fontWeight: 600 }}>Chỉ số đo</th>
+                        <th style={{ padding: '0.6rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>Lần 1 ({dateA.split(' ')[0]})</th>
+                        <th style={{ padding: '0.6rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>Lần 2 ({dateB.split(' ')[0]})</th>
+                        <th style={{ padding: '0.6rem 0.8rem', color: '#38bdf8', fontWeight: 600 }}>Biến động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Cân nặng</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.weight_kg} kg</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.weight_kg} kg</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.weight_kg, sessionB.weight_kg, 'kg')}</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Chiều cao</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.height_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.height_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.height_cm, sessionB.height_cm)}</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Vòng ngực</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.bust_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.bust_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.bust_cm, sessionB.bust_cm)}</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Vòng eo</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.waist_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.waist_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.waist_cm, sessionB.waist_cm)}</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Vòng mông</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.hip_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.hip_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.hip_cm, sessionB.hip_cm)}</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Rộng vai</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.shoulder_width_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.shoulder_width_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.shoulder_width_cm, sessionB.shoulder_width_cm)}</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Dài tay</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.arm_length_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.arm_length_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.arm_length_cm, sessionB.arm_length_cm)}</td>
+                      </tr>
+                      <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.04)' }}>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Dài chân (Inseam)</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionA.inseam_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#f8fafc', fontWeight: 600 }}>{sessionB.inseam_cm.toFixed(1)} cm</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>{renderDelta(sessionA.inseam_cm, sessionB.inseam_cm)}</td>
+                      </tr>
+                      <tr>
+                        <td style={{ padding: '0.55rem 0.8rem', color: '#cbd5e1' }}>Gợi ý Size</td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}><span className="compare-size-tag" style={{ padding: '0.2rem 0.4rem', backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: '3px', fontWeight: 700, color: '#f8fafc' }}>{sessionA.recommended_size}</span></td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}><span className="compare-size-tag active" style={{ padding: '0.2rem 0.4rem', backgroundColor: 'rgba(56, 189, 248, 0.15)', borderRadius: '3px', fontWeight: 700, color: '#38bdf8' }}>{sessionB.recommended_size}</span></td>
+                        <td style={{ padding: '0.55rem 0.8rem' }}>
+                          {sessionA.recommended_size === sessionB.recommended_size ? (
+                            <span style={{ color: '#94a3b8' }}>Giữ nguyên</span>
+                          ) : (
+                            <span style={{ color: '#38bdf8', fontWeight: 600 }}>{sessionA.recommended_size} → {sessionB.recommended_size}</span>
+                          )}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Footer */}
       <footer className="app-footer">

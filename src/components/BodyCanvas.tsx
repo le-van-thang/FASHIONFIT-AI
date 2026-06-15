@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
-import { RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
+import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface BodyCanvasProps {
@@ -9,6 +9,7 @@ interface BodyCanvasProps {
   scaleFactor: number;
   landmarks: Landmark[];
   onLandmarkChange: (id: string, x: number, y: number) => void;
+  onResetLandmarks?: () => void;
   view: 'front' | 'side';
   onViewChange: (view: 'front' | 'side') => void;
   uploadedImage: string | null;
@@ -27,6 +28,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   scaleFactor,
   landmarks,
   onLandmarkChange,
+  onResetLandmarks,
   view,
   onViewChange,
   uploadedImage,
@@ -274,6 +276,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         cameraInstanceRef.current = camera;
       }
 
+      setIsWebcamActive(true);
       setIsScanning(true);
     } catch (err) {
       console.error(err);
@@ -286,6 +289,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   const stopWebcam = () => {
     setIsScanning(false);
+    setIsWebcamActive(false);
     if (cameraInstanceRef.current) {
       cameraInstanceRef.current.stop();
       cameraInstanceRef.current = null;
@@ -370,9 +374,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   // Input source triggers and webcam safety lifecycle
   useEffect(() => {
-    if (inputSource === 'webcam') {
-      startWebcam();
-    } else {
+    if (inputSource !== 'webcam') {
       stopWebcam();
     }
 
@@ -408,6 +410,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   // New rotation dragging states
   const [isRotating, setIsRotating] = useState<boolean>(false);
+  const [meshStyle, setMeshStyle] = useState<'solid' | 'neon' | 'heatmap'>('solid');
+  const [isWebcamActive, setIsWebcamActive] = useState<boolean>(false);
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
   const [isHudOpen, setIsHudOpen] = useState<boolean>(true);
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
@@ -647,7 +651,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   };
 
   // Generate 3D Wireframe Mannequin mesh points and project them to 2D
-  const projected3DMesh = useMemo(() => {
+  const projected3DData = useMemo(() => {
     // Rotation matrix variables
     const rad = (rotationAngle * Math.PI) / 180;
     const cosA = Math.cos(rad);
@@ -869,25 +873,149 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
     }
 
-    return meshLines;
+    return {
+      meshLines,
+      ringsPoints2D,
+      headCenterY,
+      headRadius
+    };
   }, [rotationAngle, landmarks, gender, weight, scaleFactor]);
+
+  const projected3DMesh = projected3DData.meshLines;
 
   // Mannequin SVG Path Render for background reference
   const renderSilhouette = () => {
-    if (uploadedImage) return null;
+    const { ringsPoints2D, headCenterY, headRadius } = projected3DData;
+
+    if (hasMediaBackground && meshStyle !== 'solid') {
+      return null;
+    }
+
+    if (ringsPoints2D.length < 6) return null;
+
+    const getOuterPoints = (ringPoints: { x: number; y: number }[]) => {
+      let left = ringPoints[0];
+      let right = ringPoints[0];
+      ringPoints.forEach(pt => {
+        if (pt.x < left.x) left = pt;
+        if (pt.x > right.x) right = pt;
+      });
+      return { left, right };
+    };
+
+    const pNeck = getOuterPoints(ringsPoints2D[0]);
+    const pShoulder = getOuterPoints(ringsPoints2D[1]);
+    const pChest = getOuterPoints(ringsPoints2D[2]);
+    const pWaist = getOuterPoints(ringsPoints2D[3]);
+    const pHips = getOuterPoints(ringsPoints2D[4]);
+    const pThighs = getOuterPoints(ringsPoints2D[5]);
+
+    // Find knees and ankles for dynamic leg taper
+    const lKnee = landmarks.find(l => l.id === 'left_knee') || landmarks.find(l => l.id === 'knee') || { x: 185, y: 460 };
+    const rKnee = landmarks.find(l => l.id === 'right_knee') || landmarks.find(l => l.id === 'knee') || { x: 215, y: 460 };
+    const lAnkle = landmarks.find(l => l.id === 'left_ankle') || landmarks.find(l => l.id === 'ankle') || { x: 185, y: 610 };
+    const rAnkle = landmarks.find(l => l.id === 'right_ankle') || landmarks.find(l => l.id === 'ankle') || { x: 215, y: 610 };
+
+    // Gradients & styling based on meshStyle
+    let fillUrl = 'url(#body3dGrad)';
+    let strokeColor = 'url(#body3dStroke)';
+    let strokeWidth = '1.5';
+    let opacity = 1.0;
+
+    if (meshStyle === 'heatmap') {
+      fillUrl = 'url(#bodyHeatGrad)';
+      strokeColor = 'rgba(255, 255, 255, 0.2)';
+    } else if (meshStyle === 'neon') {
+      fillUrl = 'rgba(15, 23, 42, 0.7)';
+      strokeColor = '#06b6d4';
+      strokeWidth = '2';
+    } else if (hasMediaBackground) {
+      // Semi-transparent overlay on top of photo/camera
+      fillUrl = 'url(#body3dGrad)';
+      opacity = 0.45;
+    }
+
+    // Torso path construction
+    const pathParts = [];
+    pathParts.push(`M ${pNeck.left.x} ${pNeck.left.y}`);
+    
+    // Shoulder Left
+    pathParts.push(`C ${pNeck.left.x - 4} ${(pNeck.left.y + pShoulder.left.y)/2}, ${pShoulder.left.x} ${pShoulder.left.y - 12}, ${pShoulder.left.x} ${pShoulder.left.y}`);
+    
+    // Chest Left
+    pathParts.push(`C ${pShoulder.left.x} ${pShoulder.left.y + 12}, ${pChest.left.x - 4} ${pChest.left.y - 12}, ${pChest.left.x} ${pChest.left.y}`);
+    
+    // Waist Left (smooth curve inward)
+    pathParts.push(`C ${pChest.left.x + 3} ${pChest.left.y + 18}, ${pWaist.left.x + 2} ${pWaist.left.y - 18}, ${pWaist.left.x} ${pWaist.left.y}`);
+    
+    // Hips Left (smooth curve outward)
+    pathParts.push(`C ${pWaist.left.x - 2} ${pWaist.left.y + 18}, ${pHips.left.x - 6} ${pHips.left.y - 18}, ${pHips.left.x} ${pHips.left.y}`);
+    
+    // Thighs Left
+    pathParts.push(`C ${pHips.left.x + 2} ${pHips.left.y + 18}, ${pThighs.left.x - 4} ${pThighs.left.y - 8}, ${pThighs.left.x} ${pThighs.left.y}`);
+
+    if (scanRange === 'full') {
+      // Left leg outer -> bottom -> inner
+      pathParts.push(`L ${lKnee.x - 12} ${lKnee.y}`);
+      pathParts.push(`L ${lAnkle.x - 8} ${lAnkle.y}`);
+      pathParts.push(`L ${lAnkle.x + 8} ${lAnkle.y}`);
+      pathParts.push(`L ${lKnee.x + 10} ${lKnee.y}`);
+      pathParts.push(`L 200 ${pThighs.left.y + 20}`); // Crotch area
+      
+      // Right leg inner -> bottom -> outer
+      pathParts.push(`L ${rKnee.x - 10} ${rKnee.y}`);
+      pathParts.push(`L ${rAnkle.x - 8} ${rAnkle.y}`);
+      pathParts.push(`L ${rAnkle.x + 8} ${rAnkle.y}`);
+      pathParts.push(`L ${rKnee.x + 12} ${rKnee.y}`);
+      pathParts.push(`L ${pThighs.right.x} ${pThighs.right.y}`);
+    } else {
+      // Half body rounded crotch bottom
+      pathParts.push(`C ${pThighs.left.x} ${pThighs.left.y + 22}, ${pThighs.right.x} ${pThighs.right.y + 22}, ${pThighs.right.x} ${pThighs.right.y}`);
+    }
+
+    // Thighs Right to Hips Right
+    pathParts.push(`C ${pThighs.right.x - 2} ${pThighs.right.y - 8}, ${pHips.right.x + 2} ${pHips.right.y + 18}, ${pHips.right.x} ${pHips.right.y}`);
+    
+    // Waist Right
+    pathParts.push(`C ${pHips.right.x - 6} ${pHips.right.y - 18}, ${pWaist.right.x - 2} ${pWaist.right.y + 18}, ${pWaist.right.x} ${pWaist.right.y}`);
+    
+    // Chest Right
+    pathParts.push(`C ${pWaist.right.x + 2} ${pWaist.right.y - 18}, ${pChest.right.x - 3} ${pChest.right.y + 18}, ${pChest.right.x} ${pChest.right.y}`);
+    
+    // Shoulder Right
+    pathParts.push(`C ${pChest.right.x + 4} ${pChest.right.y - 12}, ${pShoulder.right.x} ${pShoulder.right.y + 12}, ${pShoulder.right.x} ${pShoulder.right.y}`);
+    
+    // Neck Right
+    pathParts.push(`C ${pShoulder.right.x} ${pShoulder.right.y - 12}, ${pNeck.right.x + 4} ${(pNeck.right.y + pShoulder.right.y)/2}, ${pNeck.right.x} ${pNeck.right.y}`);
+    
+    // Close to Neck Left
+    pathParts.push(`L ${pNeck.left.x} ${pNeck.left.y}`);
+
+    const bodyPathD = pathParts.join(' ');
 
     return (
       <>
         <defs>
-          <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(59, 130, 246, 0.18)" />
-            <stop offset="50%" stopColor="rgba(99, 102, 241, 0.08)" />
-            <stop offset="100%" stopColor="rgba(236, 72, 153, 0.03)" />
+          {/* Metallic 3D Mannequin Shading Gradient */}
+          <radialGradient id="body3dGrad" cx="50%" cy="30%" r="70%" fx="50%" fy="20%">
+            <stop offset="0%" stopColor="#f8fafc" />
+            <stop offset="30%" stopColor="#e2e8f0" />
+            <stop offset="65%" stopColor="#94a3b8" />
+            <stop offset="85%" stopColor="#475569" />
+            <stop offset="100%" stopColor="#1e293b" />
+          </radialGradient>
+          <linearGradient id="body3dStroke" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#64748b" />
+            <stop offset="100%" stopColor="#334155" />
           </linearGradient>
-          <linearGradient id="bodyStroke" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(59, 130, 246, 0.5)" />
-            <stop offset="50%" stopColor="rgba(99, 102, 241, 0.3)" />
-            <stop offset="100%" stopColor="rgba(236, 72, 153, 0.2)" />
+
+          {/* Scientific thermal heatmap gradient */}
+          <linearGradient id="bodyHeatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#38bdf8" />  {/* Blue (neck) */}
+            <stop offset="25%" stopColor="#22c55e" /> {/* Green (chest) */}
+            <stop offset="50%" stopColor="#eab308" /> {/* Yellow (waist) */}
+            <stop offset="75%" stopColor="#f97316" /> {/* Orange (hips) */}
+            <stop offset="100%" stopColor="#ef4444" /> {/* Red (thighs) */}
           </linearGradient>
           
           {/* Subtle grid pattern for scientific feel */}
@@ -896,46 +1024,99 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </pattern>
         </defs>
 
-        {/* Grid Background */}
-        <rect width={width} height={height} fill="url(#grid)" />
+        {/* Grid Background only when no media background */}
+        {!hasMediaBackground && <rect width={width} height={height} fill="url(#grid)" />}
 
-        {view === 'front' ? (
-          gender === 'male' ? (
-            <path
-              d="M 200 45 C 212 45, 216 70, 216 82 C 216 90, 204 98, 200 98 C 196 98, 184 90, 184 82 C 184 70, 188 45, 200 45 Z
-                 M 200 98 C 205 98, 215 106, 228 116 C 255 136, 266 148, 270 185 C 274 220, 268 255, 262 290 C 258 310, 253 320, 248 335 C 242 355, 242 390, 242 450 C 242 510, 245 560, 240 595 C 238 610, 232 615, 222 615 C 212 615, 208 605, 206 575 C 204 545, 202 480, 200 470 C 198 480, 196 545, 194 575 C 192 605, 188 615, 178 615 C 168 615, 162 610, 160 595 C 155 560, 158 510, 158 450 C 158 390, 158 355, 152 335 C 147 320, 142 310, 138 290 C 132 255, 126 220, 130 185 C 134 148, 145 136, 172 116 C 185 106, 195 98, 200 98 Z"
-              fill="url(#bodyGrad)"
-              stroke="url(#bodyStroke)"
-              strokeWidth="1.5"
-            />
-          ) : (
-            <path
-              d="M 200 48 C 210 48, 214 70, 214 82 C 214 90, 204 96, 200 96 C 196 96, 186 90, 186 82 C 186 70, 190 48, 200 48 Z
-                 M 200 96 C 204 96, 211 104, 222 114 C 245 132, 258 145, 262 178 C 266 210, 256 242, 248 275 C 242 295, 248 312, 250 335 C 252 358, 242 395, 240 450 C 238 505, 241 555, 236 585 C 233 600, 227 605, 220 605 C 212 605, 209 595, 207 565 C 205 535, 202 480, 200 470 C 198 470, 195 535, 193 565 C 191 595, 188 605, 180 605 C 173 605, 167 600, 164 585 C 159 555, 162 505, 160 450 C 158 395, 148 358, 150 335 C 152 312, 158 295, 152 275 C 144 242, 134 210, 138 178 C 142 132, 155 132, 178 114 C 189 104, 196 96, 200 96 Z"
-              fill="url(#bodyGrad)"
-              stroke="url(#bodyStroke)"
-              strokeWidth="1.5"
-            />
-          )
-        ) : (
-          gender === 'male' ? (
-            <path
-              d="M 195 45 C 208 45, 212 70, 210 82 C 208 90, 198 98, 195 98 C 186 98, 182 85, 182 76 C 182 62, 186 45, 195 45 Z
-                 M 195 98 C 199 100, 208 108, 215 120 C 230 140, 233 172, 230 210 C 226 242, 218 270, 221 308 C 224 340, 228 362, 224 410 C 220 455, 224 512, 216 565 C 214 580, 207 585, 198 585 C 190 585, 186 575, 186 550 C 186 525, 182 450, 178 410 C 174 362, 176 325, 173 298 C 170 270, 163 232, 168 195 C 173 158, 180 120, 195 98 Z"
-              fill="url(#bodyGrad)"
-              stroke="url(#bodyStroke)"
-              strokeWidth="1.5"
-            />
-          ) : (
-            <path
-              d="M 195 48 C 206 48, 210 70, 208 82 C 206 90, 197 96, 195 96 C 187 96, 183 83, 183 74 C 183 60, 187 48, 195 48 Z
-                 M 195 96 C 198 98, 206 106, 212 118 C 226 136, 231 168, 226 200 C 220 228, 209 255, 218 292 C 225 320, 222 348, 217 398 C 212 445, 216 505, 210 558 C 208 572, 201 578, 193 578 C 185 578, 181 568, 181 545 C 181 522, 176 448, 173 398 C 170 348, 172 318, 168 290 C 164 262, 158 225, 162 192 C 166 160, 174 120, 195 96 Z"
-              fill="url(#bodyGrad)"
-              stroke="url(#bodyStroke)"
-              strokeWidth="1.5"
-            />
-          )
-        )}
+        <g style={{ opacity, transition: 'opacity 0.25s ease' }}>
+          {/* Head Sphere */}
+          <circle
+            cx={200}
+            cy={headCenterY}
+            r={headRadius}
+            fill={fillUrl}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+          {/* Torso & Legs */}
+          <path
+            d={bodyPathD}
+            fill={fillUrl}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+          
+          {/* Anatomical Shading for 3D realism (pecs/breasts, abs, waist shadow) */}
+          {meshStyle === 'solid' && (
+            <>
+              {/* Center line highlight */}
+              <path
+                d={`M 200 ${pNeck.left.y} L 200 ${pThighs.left.y}`}
+                stroke="rgba(255, 255, 255, 0.2)"
+                strokeWidth="1.5"
+                strokeDasharray="2,4"
+              />
+              {/* Female breasts shading */}
+              {gender === 'female' && (
+                <>
+                  {/* Left Breast curve */}
+                  <path
+                    d={`M ${200 - 15} ${pChest.left.y + 5} Q ${pChest.left.x + 15} ${pChest.left.y + 15} ${200 - 3} ${pChest.left.y + 20}`}
+                    fill="none"
+                    stroke="rgba(255, 255, 255, 0.25)"
+                    strokeWidth="2.5"
+                  />
+                  <path
+                    d={`M ${200 - 15} ${pChest.left.y + 7} Q ${pChest.left.x + 15} ${pChest.left.y + 17} ${200 - 3} ${pChest.left.y + 22}`}
+                    fill="none"
+                    stroke="rgba(15, 23, 42, 0.35)"
+                    strokeWidth="3.5"
+                  />
+                  {/* Right Breast curve */}
+                  <path
+                    d={`M ${200 + 15} ${pChest.right.y + 5} Q ${pChest.right.x - 15} ${pChest.right.y + 15} ${200 + 3} ${pChest.right.y + 20}`}
+                    fill="none"
+                    stroke="rgba(255, 255, 255, 0.25)"
+                    strokeWidth="2.5"
+                  />
+                  <path
+                    d={`M ${200 + 15} ${pChest.right.y + 7} Q ${pChest.right.x - 15} ${pChest.right.y + 17} ${200 + 3} ${pChest.right.y + 22}`}
+                    fill="none"
+                    stroke="rgba(15, 23, 42, 0.35)"
+                    strokeWidth="3.5"
+                  />
+                </>
+              )}
+              
+              {/* Male chest/pecs shading */}
+              {gender === 'male' && (
+                <>
+                  <path
+                    d={`M ${pChest.left.x + 15} ${pChest.left.y + 5} L ${200 - 5} ${pChest.left.y + 12} L ${200 - 5} ${pChest.left.y + 14} L ${pChest.left.x + 18} ${pChest.left.y + 7}`}
+                    fill="rgba(15, 23, 42, 0.25)"
+                  />
+                  <path
+                    d={`M ${pChest.right.x - 15} ${pChest.right.y + 5} L ${200 + 5} ${pChest.right.y + 12} L ${200 + 5} ${pChest.right.y + 14} L ${pChest.right.x - 18} ${pChest.right.y + 7}`}
+                    fill="rgba(15, 23, 42, 0.25)"
+                  />
+                </>
+              )}
+              
+              {/* Waist shading (curved shadows on the side to emphasize thinness/abdominal shape) */}
+              <path
+                d={`M ${pChest.left.x + 8} ${pChest.left.y + 10} Q ${pWaist.left.x + 10} ${pWaist.left.y} ${pHips.left.x + 8} ${pHips.left.y}`}
+                fill="none"
+                stroke="rgba(15, 23, 42, 0.15)"
+                strokeWidth="4"
+              />
+              <path
+                d={`M ${pChest.right.x - 8} ${pChest.right.y + 10} Q ${pWaist.right.x - 10} ${pWaist.right.y} ${pHips.right.x - 8} ${pHips.right.y}`}
+                fill="none"
+                stroke="rgba(15, 23, 42, 0.15)"
+                strokeWidth="4"
+              />
+            </>
+          )}
+        </g>
       </>
     );
   };
@@ -987,26 +1168,86 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </button>
         </div>
 
-        <div className="view-toggle-tabs">
-          <button
-            type="button"
-            className={`tab-btn ${view === 'front' ? 'active' : ''}`}
-            onClick={() => onViewChange('front')}
-          >
-            Mặt trước
-          </button>
-          <button
-            type="button"
-            className={`tab-btn ${view === 'side' ? 'active' : ''}`}
-            onClick={() => onViewChange('side')}
-          >
-            Mặt nghiêng
-          </button>
+        <div className="canvas-header-row2">
+          <div className="view-toggle-tabs">
+            <button
+              type="button"
+              className={`tab-btn ${view === 'front' ? 'active' : ''}`}
+              onClick={() => onViewChange('front')}
+            >
+              Mặt trước
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${view === 'side' ? 'active' : ''}`}
+              onClick={() => onViewChange('side')}
+            >
+              Mặt nghiêng
+            </button>
+          </div>
+          {/* Reset landmark dots button */}
+          {onResetLandmarks && (
+            <button
+              type="button"
+              onClick={onResetLandmarks}
+              title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.3rem 0.55rem',
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                color: '#ef4444',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+            >
+              <RefreshCw size={11} />
+              Reset chấm
+            </button>
+          )}
         </div>
       </div>
 
+
       <div className="canvas-container">
         <div className="media-viewport">
+          {(inputSource !== 'webcam' || isWebcamActive) && (
+            <div className="mesh-style-controls" style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 30, display: 'flex', gap: '0.25rem', background: 'rgba(15, 23, 42, 0.85)', padding: '0.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+              <button
+                type="button"
+                className={`style-btn ${meshStyle === 'solid' ? 'active' : ''}`}
+                onClick={() => setMeshStyle('solid')}
+                style={{ background: meshStyle === 'solid' ? '#3b82f6' : 'transparent', color: '#fff', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '3px', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Khối đặc
+              </button>
+              <button
+                type="button"
+                className={`style-btn ${meshStyle === 'neon' ? 'active' : ''}`}
+                onClick={() => setMeshStyle('neon')}
+                style={{ background: meshStyle === 'neon' ? '#3b82f6' : 'transparent', color: '#fff', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '3px', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Neon
+              </button>
+              <button
+                type="button"
+                className={`style-btn ${meshStyle === 'heatmap' ? 'active' : ''}`}
+                onClick={() => setMeshStyle('heatmap')}
+                style={{ background: meshStyle === 'heatmap' ? '#3b82f6' : 'transparent', color: '#fff', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '3px', fontSize: '0.65rem', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Nhiệt (AI)
+              </button>
+            </div>
+          )}
           {hasMediaBackground && (
             <button
               type="button"
@@ -1025,7 +1266,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {inputSource === 'webcam' && (
+          {inputSource === 'webcam' && isWebcamActive && (
             <video
               ref={videoRef}
               className="background-media webcam-feed"
@@ -1036,6 +1277,70 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 display: isModelLoading ? 'none' : 'block'
               }}
             />
+          )}
+          {inputSource === 'webcam' && !isWebcamActive && !isModelLoading && (
+            <div className="webcam-placeholder-overlay" style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%)',
+              color: '#f8fafc',
+              padding: '2rem',
+              textAlign: 'center',
+              zIndex: 5,
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <div style={{
+                background: 'rgba(37, 99, 235, 0.1)',
+                border: '1px solid rgba(37, 99, 235, 0.25)',
+                borderRadius: '50%',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 20px rgba(37, 99, 235, 0.15)',
+                animation: 'neonPulse 3s infinite ease-in-out'
+              }}>
+                <CameraOff size={40} style={{ color: '#60a5fa' }} />
+              </div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
+                Webcam AI Chưa Khởi Động
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '300px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
+                Bấm nút bên dưới để cấp quyền camera và bắt đầu phân tích hình thể 3D thời gian thực.
+              </p>
+              <button
+                type="button"
+                onClick={startWebcam}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: '#2563eb',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = '#1d4ed8';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <Camera size={15} />
+                Bắt Đầu Quét AI
+              </button>
+            </div>
           )}
 
           {inputSource === 'video' && uploadedVideo && (
@@ -1097,19 +1402,38 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </g>
             )}
 
-            {/* Render 3D Wireframe Mesh if no photo/media is loaded (showing anatomical rounded cross sections) */}
-            {!hasMediaBackground && (
-              <g className="mesh-group">
-                {projected3DMesh.map((line, idx) => (
-                  <line
-                    key={`mesh-${idx}`}
-                    x1={line.x1}
-                    y1={line.y1}
-                    x2={line.x2}
-                    y2={line.y2}
-                    className={`mesh-line ${line.type}`}
-                  />
-                ))}
+            {/* Render 3D Wireframe Mesh if in mannequin mode OR if webcam scanning is active */}
+            {(!hasMediaBackground || meshStyle !== 'solid' || (isScanning && (inputSource === 'webcam' || inputSource === 'video'))) && (
+              <g className={`mesh-group ${meshStyle} ${hasMediaBackground ? 'ar-overlay' : ''}`}>
+                {projected3DMesh.map((line, idx) => {
+                  let strokeColor = undefined;
+                  if (meshStyle === 'heatmap') {
+                    const y = (line.y1 + line.y2) / 2;
+                    if (y < 160) {
+                      strokeColor = '#38bdf8'; // Blue (neck)
+                    } else if (y < 230) {
+                      strokeColor = '#f43f5e'; // Pink/Red (chest/bust depth area)
+                    } else if (y < 330) {
+                      strokeColor = '#fb923c'; // Orange (waist/belly fat area)
+                    } else if (y < 460) {
+                      strokeColor = '#fbbf24'; // Yellow (hips/glute depth area)
+                    } else {
+                      strokeColor = '#4ade80'; // Green (thighs/legs)
+                    }
+                  }
+
+                  return (
+                    <line
+                      key={`mesh-${idx}`}
+                      x1={line.x1}
+                      y1={line.y1}
+                      x2={line.x2}
+                      y2={line.y2}
+                      className={`mesh-line ${line.type}`}
+                      style={strokeColor ? { stroke: strokeColor, strokeWidth: line.type === 'ring' ? '1.2px' : '0.6px' } : undefined}
+                    />
+                  );
+                })}
               </g>
             )}
 
@@ -1160,7 +1484,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </svg>
 
           {/* Floating AI Scanning Controls Overlay */}
-          {inputSource === 'webcam' && !isModelLoading && (
+          {inputSource === 'webcam' && isWebcamActive && !isModelLoading && (
             <div className="ai-controls-overlay">
               <button
                 type="button"

@@ -3,6 +3,50 @@ import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../
 import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
+const getLimbSilhouettePath = (
+  limbPoints: { x: number; y: number }[][],
+  dx2d: number,
+  dy2d: number
+): string => {
+  const nx = -dy2d;
+  const ny = dx2d;
+  const leftSide: { x: number; y: number }[] = [];
+  const rightSide: { x: number; y: number }[] = [];
+
+  limbPoints.forEach((ring) => {
+    let minDot = Infinity;
+    let maxDot = -Infinity;
+    let minPt = ring[0];
+    let maxPt = ring[0];
+
+    ring.forEach((pt) => {
+      const dot = pt.x * nx + pt.y * ny;
+      if (dot < minDot) {
+        minDot = dot;
+        minPt = pt;
+      }
+      if (dot > maxDot) {
+        maxDot = dot;
+        maxPt = pt;
+      }
+    });
+
+    leftSide.push(minPt);
+    rightSide.push(maxPt);
+  });
+
+  const pathParts: string[] = [];
+  pathParts.push(`M ${leftSide[0].x} ${leftSide[0].y}`);
+  for (let i = 1; i < leftSide.length; i++) {
+    pathParts.push(`L ${leftSide[i].x} ${leftSide[i].y}`);
+  }
+  for (let i = rightSide.length - 1; i >= 0; i--) {
+    pathParts.push(`L ${rightSide[i].x} ${rightSide[i].y}`);
+  }
+  pathParts.push('Z');
+  return pathParts.join(' ');
+};
+
 interface BodyCanvasProps {
   gender: Gender;
   weight: number;
@@ -614,23 +658,31 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         ['right_elbow', 'right_wrist'],
         ['left_shoulder', 'left_hip'],
         ['right_shoulder', 'right_hip'],
-        ['left_hip', 'right_hip'],
-        ['left_hip', 'left_knee'],
-        ['left_knee', 'left_ankle'],
-        ['right_hip', 'right_knee'],
-        ['right_knee', 'right_ankle']
+        ['left_hip', 'right_hip']
       );
+      if (scanRange === 'full' || inputSource === 'mannequin') {
+        connections.push(
+          ['left_hip', 'left_knee'],
+          ['left_knee', 'left_ankle'],
+          ['right_hip', 'right_knee'],
+          ['right_knee', 'right_ankle']
+        );
+      }
     } else {
       connections.push(
         ['nasion', 'shoulder'],
         ['shoulder', 'elbow'],
         ['elbow', 'wrist'],
         ['shoulder', 'hip'],
-        ['hip', 'knee'],
-        ['knee', 'ankle'],
         ['hip', 'chest_depth'],
         ['hip', 'buttock_depth']
       );
+      if (scanRange === 'full' || inputSource === 'mannequin') {
+        connections.push(
+          ['hip', 'knee'],
+          ['knee', 'ankle']
+        );
+      }
     }
 
     return connections.map(([startId, endId], index) => {
@@ -665,17 +717,127 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       return { x: 200 + rotatedX, y: y3d };
     };
 
-    // Calculate dimensions from landmarks to shape the 3D mannequin
-    const nasionF = landmarks.find(l => l.id === 'nasion') || { x: 200, y: 75 };
-    const lShoulder = landmarks.find(l => l.id === 'left_shoulder') || { x: 165, y: 125 };
-    const rShoulder = landmarks.find(l => l.id === 'right_shoulder') || { x: 235, y: 125 };
-    const lHip = landmarks.find(l => l.id === 'left_hip') || { x: 175, y: 300 };
-    const rHip = landmarks.find(l => l.id === 'right_hip') || { x: 225, y: 300 };
-    const rAnkle = landmarks.find(l => l.id === 'right_ankle') || { x: 225, y: 610 };
+    const isSide = view === 'side';
 
-    const bodyHeight = rAnkle.y - nasionF.y;
-    const shoulderWidth = Math.abs(rShoulder.x - lShoulder.x);
-    const hipWidth = Math.abs(rHip.x - lHip.x);
+    // Joint landmarks search
+    const nasionF = landmarks.find(l => l.id === 'nasion') || { x: 200, y: 75 };
+    const lShoulderVal = landmarks.find(l => l.id === 'left_shoulder') || { x: 165, y: 125 };
+    const rShoulderVal = landmarks.find(l => l.id === 'right_shoulder') || { x: 235, y: 125 };
+    const lElbowVal = landmarks.find(l => l.id === 'left_elbow') || { x: 155, y: 220 };
+    const rElbowVal = landmarks.find(l => l.id === 'right_elbow') || { x: 245, y: 220 };
+    const lWristVal = landmarks.find(l => l.id === 'left_wrist') || { x: 145, y: 310 };
+    const rWristVal = landmarks.find(l => l.id === 'right_wrist') || { x: 255, y: 310 };
+    const lHipVal = landmarks.find(l => l.id === 'left_hip') || { x: 175, y: 300 };
+    const rHipVal = landmarks.find(l => l.id === 'right_hip') || { x: 225, y: 300 };
+    const lKneeVal = landmarks.find(l => l.id === 'left_knee') || { x: 175, y: 460 };
+    const rKneeVal = landmarks.find(l => l.id === 'right_knee') || { x: 225, y: 460 };
+    const lAnkleVal = landmarks.find(l => l.id === 'left_ankle') || { x: 175, y: 610 };
+    const rAnkleVal = landmarks.find(l => l.id === 'right_ankle') || { x: 225, y: 610 };
+
+    // For side view specific landmarks
+    const sShoulder = landmarks.find(l => l.id === 'shoulder');
+    const sElbow = landmarks.find(l => l.id === 'elbow');
+    const sWrist = landmarks.find(l => l.id === 'wrist');
+    const sHip = landmarks.find(l => l.id === 'hip');
+    const sKnee = landmarks.find(l => l.id === 'knee');
+    const sAnkle = landmarks.find(l => l.id === 'ankle');
+
+    const bodyHeight = rAnkleVal.y - nasionF.y;
+    const shoulderWidth = Math.abs(rShoulderVal.x - lShoulderVal.x) || 70;
+    const hipWidth = Math.abs(rHipVal.x - lHipVal.x) || 50;
+
+    const lShoulder3D = {
+      x: isSide && sShoulder ? sShoulder.x - 200 : lShoulderVal.x - 200,
+      y: isSide && sShoulder ? sShoulder.y : lShoulderVal.y,
+      z: isSide ? -shoulderWidth / 2 : 0
+    };
+    const rShoulder3D = {
+      x: isSide && sShoulder ? sShoulder.x - 200 : rShoulderVal.x - 200,
+      y: isSide && sShoulder ? sShoulder.y : rShoulderVal.y,
+      z: isSide ? shoulderWidth / 2 : 0
+    };
+    const lElbow3D = {
+      x: isSide && sElbow ? sElbow.x - 200 : lElbowVal.x - 200,
+      y: isSide && sElbow ? sElbow.y : lElbowVal.y,
+      z: isSide ? -15 : 0
+    };
+    const rElbow3D = {
+      x: isSide && sElbow ? sElbow.x - 200 : rElbowVal.x - 200,
+      y: isSide && sElbow ? sElbow.y : rElbowVal.y,
+      z: isSide ? 15 : 0
+    };
+    const lWrist3D = {
+      x: isSide && sWrist ? sWrist.x - 200 : lWristVal.x - 200,
+      y: isSide && sWrist ? sWrist.y : lWristVal.y,
+      z: isSide ? -15 : 0
+    };
+    const rWrist3D = {
+      x: isSide && sWrist ? sWrist.x - 200 : rWristVal.x - 200,
+      y: isSide && sWrist ? sWrist.y : rWristVal.y,
+      z: isSide ? 15 : 0
+    };
+    const lHip3D = {
+      x: isSide && sHip ? sHip.x - 200 : lHipVal.x - 200,
+      y: isSide && sHip ? sHip.y : lHipVal.y,
+      z: isSide ? -hipWidth / 2 : 0
+    };
+    const rHip3D = {
+      x: isSide && sHip ? sHip.x - 200 : rHipVal.x - 200,
+      y: isSide && sHip ? sHip.y : rHipVal.y,
+      z: isSide ? hipWidth / 2 : 0
+    };
+    const lKnee3D = {
+      x: isSide && sKnee ? sKnee.x - 200 : lKneeVal.x - 200,
+      y: isSide && sKnee ? sKnee.y : lKneeVal.y,
+      z: isSide ? -12 : 0
+    };
+    const rKnee3D = {
+      x: isSide && sKnee ? sKnee.x - 200 : rKneeVal.x - 200,
+      y: isSide && sKnee ? sKnee.y : rKneeVal.y,
+      z: isSide ? 12 : 0
+    };
+    const lAnkle3D = {
+      x: isSide && sAnkle ? sAnkle.x - 200 : lAnkleVal.x - 200,
+      y: isSide && sAnkle ? sAnkle.y : lAnkleVal.y,
+      z: isSide ? -12 : 0
+    };
+    const rAnkle3D = {
+      x: isSide && sAnkle ? sAnkle.x - 200 : rAnkleVal.x - 200,
+      y: isSide && sAnkle ? sAnkle.y : rAnkleVal.y,
+      z: isSide ? 12 : 0
+    };
+
+    // Hands and feet directions & endpoints
+    const lh_dx = lWrist3D.x - lElbow3D.x;
+    const lh_dy = lWrist3D.y - lElbow3D.y;
+    const lh_dz = lWrist3D.z - lElbow3D.z;
+    const lh_len = Math.sqrt(lh_dx * lh_dx + lh_dy * lh_dy + lh_dz * lh_dz) || 1;
+    const lHand3D = {
+      x: lWrist3D.x + (lh_dx / lh_len) * 18,
+      y: lWrist3D.y + (lh_dy / lh_len) * 18,
+      z: lWrist3D.z + (lh_dz / lh_len) * 18
+    };
+
+    const rh_dx = rWrist3D.x - rElbow3D.x;
+    const rh_dy = rWrist3D.y - rElbow3D.y;
+    const rh_dz = rWrist3D.z - rElbow3D.z;
+    const rh_len = Math.sqrt(rh_dx * rh_dx + rh_dy * rh_dy + rh_dz * rh_dz) || 1;
+    const rHand3D = {
+      x: rWrist3D.x + (rh_dx / rh_len) * 18,
+      y: rWrist3D.y + (rh_dy / rh_len) * 18,
+      z: rWrist3D.z + (rh_dz / rh_len) * 18
+    };
+
+    const lFoot3D = {
+      x: lAnkle3D.x,
+      y: lAnkle3D.y + 6,
+      z: lAnkle3D.z + 18
+    };
+    const rFoot3D = {
+      x: rAnkle3D.x,
+      y: rAnkle3D.y + 6,
+      z: rAnkle3D.z + 18
+    };
 
     // 1. Target volume logic (W in kg / (density = 1.01 g/cm^3 = 0.00101 kg/cm^3))
     const HUMAN_BODY_DENSITY = 0.00101; 
@@ -709,10 +871,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     // Heights of each slice in pixels
     const heights = {
       neck: nasionF.y + bodyHeight * 0.08,
-      shoulder: lShoulder.y,
+      shoulder: lShoulderVal.y,
       chest: nasionF.y + bodyHeight * 0.20,
       waist: nasionF.y + bodyHeight * 0.30,
-      hips: lHip.y,
+      hips: lHipVal.y,
       thighs: nasionF.y + bodyHeight * 0.55
     };
 
@@ -873,19 +1035,139 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
     }
 
+    // 8. Generate full-body limb cylinders
+    const limbsData: { id: string; points: { x: number; y: number }[][]; dx: number; dy: number }[] = [];
+    const limbWeightFactor = Math.max(0.75, Math.min(1.5, Math.sqrt(weight / 55.0)));
+
+    const addLimbSegment = (
+      id: string,
+      pStart: { x: number; y: number; z: number },
+      pEnd: { x: number; y: number; z: number },
+      rStart: number,
+      rEnd: number,
+      numRings: number,
+      numPoints: number
+    ) => {
+      const limbRings: { x: number; y: number }[][] = [];
+
+      const dx = pEnd.x - pStart.x;
+      const dy = pEnd.y - pStart.y;
+      const dz = pEnd.z - pStart.z;
+      const len = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const uz = dz / len;
+
+      let tx = 1, ty = 0, tz = 0;
+      if (Math.abs(ux) > 0.9) {
+        tx = 0;
+        ty = 1;
+      }
+      let vx = uy * tz - uz * ty;
+      let vy = uz * tx - ux * tz;
+      let vz = ux * ty - uy * tx;
+      const vLen = Math.sqrt(vx * vx + vy * vy + vz * vz) || 1;
+      vx /= vLen;
+      vy /= vLen;
+      vz /= vLen;
+
+      const wx = uy * vz - uz * vy;
+      const wy = uz * vx - ux * vz;
+      const wz = ux * vy - uy * vx;
+
+      for (let s = 0; s <= numRings; s++) {
+        const t = s / numRings;
+        const cx = pStart.x + dx * t;
+        const cy = pStart.y + dy * t;
+        const cz = pStart.z + dz * t;
+        const r = rStart + (rEnd - rStart) * t;
+
+        const ringPoints: { x: number; y: number }[] = [];
+        for (let i = 0; i < numPoints; i++) {
+          const phi = (i * 2 * Math.PI) / numPoints;
+          const cosP = Math.cos(phi);
+          const sinP = Math.sin(phi);
+
+          const x3d = cx + r * (cosP * vx + sinP * wx);
+          const y3d = cy + r * (cosP * vy + sinP * wy);
+          const z3d = cz + r * (cosP * vz + sinP * wz);
+
+          const pt2d = project(x3d, y3d, z3d);
+          ringPoints.push(pt2d);
+        }
+        limbRings.push(ringPoints);
+
+        for (let i = 0; i < numPoints; i++) {
+          const next = (i + 1) % numPoints;
+          meshLines.push({
+            x1: ringPoints[i].x,
+            y1: ringPoints[i].y,
+            x2: ringPoints[next].x,
+            y2: ringPoints[next].y,
+            type: 'ring'
+          });
+        }
+      }
+
+      for (let s = 0; s < numRings; s++) {
+        const ringA = limbRings[s];
+        const ringB = limbRings[s + 1];
+        for (let i = 0; i < numPoints; i++) {
+          meshLines.push({
+            x1: ringA[i].x,
+            y1: ringA[i].y,
+            x2: ringB[i].x,
+            y2: ringB[i].y,
+            type: 'vertical'
+          });
+        }
+      }
+
+      const start2d = project(pStart.x, pStart.y, pStart.z);
+      const end2d = project(pEnd.x, pEnd.y, pEnd.z);
+      const dx2d = end2d.x - start2d.x;
+      const dy2d = end2d.y - start2d.y;
+
+      limbsData.push({
+        id,
+        points: limbRings,
+        dx: dx2d || 1,
+        dy: dy2d || 0
+      });
+    };
+
+    // Draw upper/lower arms and hands always
+    addLimbSegment('l_upper_arm', lShoulder3D, lElbow3D, shoulderWidth * 0.065 * limbWeightFactor, shoulderWidth * 0.052 * limbWeightFactor, 4, 8);
+    addLimbSegment('l_lower_arm', lElbow3D, lWrist3D, shoulderWidth * 0.052 * limbWeightFactor, shoulderWidth * 0.038 * limbWeightFactor, 4, 8);
+    addLimbSegment('l_hand', lWrist3D, lHand3D, shoulderWidth * 0.038 * limbWeightFactor, 1.8, 2, 8);
+
+    addLimbSegment('r_upper_arm', rShoulder3D, rElbow3D, shoulderWidth * 0.065 * limbWeightFactor, shoulderWidth * 0.052 * limbWeightFactor, 4, 8);
+    addLimbSegment('r_lower_arm', rElbow3D, rWrist3D, shoulderWidth * 0.052 * limbWeightFactor, shoulderWidth * 0.038 * limbWeightFactor, 4, 8);
+    addLimbSegment('r_hand', rWrist3D, rHand3D, shoulderWidth * 0.038 * limbWeightFactor, 1.8, 2, 8);
+
+    // Draw thighs, calves, and feet
+    addLimbSegment('l_thigh', lHip3D, lKnee3D, hipWidth * 0.19 * limbWeightFactor, hipWidth * 0.14 * limbWeightFactor, 5, 8);
+    addLimbSegment('l_calf', lKnee3D, lAnkle3D, hipWidth * 0.14 * limbWeightFactor, hipWidth * 0.09 * limbWeightFactor, 5, 8);
+    addLimbSegment('l_foot', lAnkle3D, lFoot3D, hipWidth * 0.09 * limbWeightFactor, 3.5, 2, 8);
+
+    addLimbSegment('r_thigh', rHip3D, rKnee3D, hipWidth * 0.19 * limbWeightFactor, hipWidth * 0.14 * limbWeightFactor, 5, 8);
+    addLimbSegment('r_calf', rKnee3D, rAnkle3D, hipWidth * 0.14 * limbWeightFactor, hipWidth * 0.09 * limbWeightFactor, 5, 8);
+    addLimbSegment('r_foot', rAnkle3D, rFoot3D, hipWidth * 0.09 * limbWeightFactor, 3.5, 2, 8);
+
     return {
       meshLines,
       ringsPoints2D,
       headCenterY,
-      headRadius
+      headRadius,
+      limbsData
     };
-  }, [rotationAngle, landmarks, gender, weight, scaleFactor]);
+  }, [rotationAngle, landmarks, gender, weight, scaleFactor, view]);
 
   const projected3DMesh = projected3DData.meshLines;
 
   // Mannequin SVG Path Render for background reference
   const renderSilhouette = () => {
-    const { ringsPoints2D, headCenterY, headRadius } = projected3DData;
+    const { ringsPoints2D, headCenterY, headRadius, limbsData } = projected3DData;
 
     if (hasMediaBackground && meshStyle !== 'solid') {
       return null;
@@ -954,7 +1236,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     // Thighs Left
     pathParts.push(`C ${pHips.left.x + 2} ${pHips.left.y + 18}, ${pThighs.left.x - 4} ${pThighs.left.y - 8}, ${pThighs.left.x} ${pThighs.left.y}`);
 
-    if (scanRange === 'full') {
+    const isLegVisible = scanRange === 'full' || inputSource === 'mannequin';
+
+    if (isLegVisible) {
       // Left leg outer -> bottom -> inner
       pathParts.push(`L ${lKnee.x - 12} ${lKnee.y}`);
       pathParts.push(`L ${lAnkle.x - 8} ${lAnkle.y}`);
@@ -993,11 +1277,32 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
     const bodyPathD = pathParts.join(' ');
 
+    const limbPaths: React.ReactNode[] = [];
+    if (limbsData) {
+      limbsData.forEach((limb) => {
+        const isLegLimb = ['l_thigh', 'l_calf', 'l_foot', 'r_thigh', 'r_calf', 'r_foot'].includes(limb.id);
+        if (isLegLimb && !isLegVisible) {
+          return;
+        }
+
+        const pathD = getLimbSilhouettePath(limb.points, limb.dx, limb.dy);
+        limbPaths.push(
+          <path
+            key={`silhouette-${limb.id}`}
+            d={pathD}
+            fill={fillUrl}
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+          />
+        );
+      });
+    }
+
     return (
       <>
         <defs>
           {/* Metallic 3D Mannequin Shading Gradient */}
-          <radialGradient id="body3dGrad" cx="50%" cy="30%" r="70%" fx="50%" fy="20%">
+          <radialGradient id="body3dGrad" cx="200" cy="280" r="320" fx="200" fy="150" gradientUnits="userSpaceOnUse">
             <stop offset="0%" stopColor="#f8fafc" />
             <stop offset="30%" stopColor="#e2e8f0" />
             <stop offset="65%" stopColor="#94a3b8" />
@@ -1010,12 +1315,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </linearGradient>
 
           {/* Scientific thermal heatmap gradient */}
-          <linearGradient id="bodyHeatGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#38bdf8" />  {/* Blue (neck) */}
-            <stop offset="25%" stopColor="#22c55e" /> {/* Green (chest) */}
-            <stop offset="50%" stopColor="#eab308" /> {/* Yellow (waist) */}
-            <stop offset="75%" stopColor="#f97316" /> {/* Orange (hips) */}
-            <stop offset="100%" stopColor="#ef4444" /> {/* Red (thighs) */}
+          <linearGradient id="bodyHeatGrad" x1="0" y1="50" x2="0" y2="620" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#38bdf8" />  {/* Blue (head/neck) */}
+            <stop offset="20%" stopColor="#22c55e" /> {/* Green (chest) */}
+            <stop offset="45%" stopColor="#eab308" /> {/* Yellow (waist) */}
+            <stop offset="70%" stopColor="#f97316" /> {/* Orange (hips/thighs) */}
+            <stop offset="100%" stopColor="#ef4444" /> {/* Red (calves/feet) */}
           </linearGradient>
           
           {/* Subtle grid pattern for scientific feel */}
@@ -1044,6 +1349,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             stroke={strokeColor}
             strokeWidth={strokeWidth}
           />
+          {/* Limb silhouettes */}
+          {limbPaths}
           
           {/* Anatomical Shading for 3D realism (pecs/breasts, abs, waist shadow) */}
           {meshStyle === 'solid' && (
@@ -1453,7 +1760,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               };
               const offset = getTextOffset(point.id);
               const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
-              if (isLowerJoint && scanRange === 'half') {
+              if (isLowerJoint && scanRange === 'half' && inputSource !== 'mannequin') {
                 return null;
               }
 

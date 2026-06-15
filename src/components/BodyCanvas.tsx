@@ -54,6 +54,25 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const poseInstanceRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  // Ref to store the latest values of props/states to avoid stale closures in MediaPipe callbacks
+  const trackingParamsRef = useRef({
+    view,
+    landmarks,
+    onLandmarkChange,
+    inputSource,
+    scanRange
+  });
+
+  useEffect(() => {
+    trackingParamsRef.current = {
+      view,
+      landmarks,
+      onLandmarkChange,
+      inputSource,
+      scanRange
+    };
+  });
+
   // Helper to dynamically load MediaPipe scripts from CDN
   const loadMediaPipeScripts = (): Promise<void> => {
     return new Promise((resolve) => {
@@ -94,6 +113,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const updateLandmarksFromMediaPipe = (results: any) => {
     if (!results.poseLandmarks) return;
     const mp = results.poseLandmarks;
+    const { view, landmarks, onLandmarkChange, inputSource, scanRange } = trackingParamsRef.current;
 
     if (view === 'front') {
       const newLandmarks = landmarks.map(l => {

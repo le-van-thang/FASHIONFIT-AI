@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface BodyCanvasProps {
@@ -390,7 +390,98 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [isRotating, setIsRotating] = useState<boolean>(false);
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
   const [isHudOpen, setIsHudOpen] = useState<boolean>(true);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const [showInlineGuide, setShowInlineGuide] = useState<boolean>(false);
+  const [scanProgress, setScanProgress] = useState<number>(0);
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success'>('idle');
   const dragStartRef = useRef<{ x: number; angle: number }>({ x: 0, angle: 0 });
+
+  // Audio Feedback Synthesizer using Web Audio API
+  const playAudioBeep = (type: 'success' | 'double' = 'success') => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      
+      if (type === 'success') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } else {
+        // Double beep for complete
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(800, ctx.currentTime);
+        gain1.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start();
+        osc1.stop(ctx.currentTime + 0.1);
+        
+        setTimeout(() => {
+          try {
+            const ctx2 = new AudioContextClass();
+            const osc2 = ctx2.createOscillator();
+            const gain2 = ctx2.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(1200, ctx2.currentTime);
+            gain2.gain.setValueAtTime(0.08, ctx2.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + 0.25);
+            osc2.connect(gain2);
+            gain2.connect(ctx2.destination);
+            osc2.start();
+            osc2.stop(ctx2.currentTime + 0.25);
+          } catch (err) {}
+        }, 120);
+      }
+    } catch (e) {
+      console.warn("AudioContext playback blocked", e);
+    }
+  };
+
+  // Scanning progress & automated freezing logic
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (isScanning) {
+      setScanStatus('scanning');
+      interval = setInterval(() => {
+        setScanProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval!);
+            setIsScanning(false);
+            setScanStatus('success');
+            playAudioBeep('double');
+            return 100;
+          }
+          return prev + 5; // takes 4 seconds (20 * 200ms)
+        });
+      }, 200);
+    } else {
+      if (scanStatus === 'scanning') {
+        setScanStatus('idle');
+        setScanProgress(0);
+      }
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isScanning]);
+
+  // Reset scan state on view change
+  useEffect(() => {
+    setScanProgress(0);
+    setScanStatus('idle');
+  }, [view]);
 
   // SVG dimensions
   const width = 400;
@@ -835,7 +926,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     (inputSource === 'video' && uploadedVideo);
 
   return (
-    <div className="canvas-wrapper">
+    <div className={`canvas-wrapper ${isMaximized ? 'maximized' : ''}`}>
       <div className="canvas-header">
         <div className="source-select-tabs">
           <button
@@ -896,6 +987,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
       <div className="canvas-container">
         <div className="media-viewport">
+          {hasMediaBackground && (
+            <button
+              type="button"
+              className="canvas-maximize-btn"
+              onClick={() => setIsMaximized(!isMaximized)}
+              title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
+            >
+              {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              <span>{isMaximized ? "Thu nhỏ" : "Phóng to"}</span>
+            </button>
+          )}
           {isModelLoading && (
             <div className="model-loading-overlay">
               <RefreshCw size={24} className="spin-anim" />
@@ -1039,28 +1141,96 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
           {/* Floating AI Scanning Controls Overlay */}
           {inputSource === 'webcam' && !isModelLoading && (
-            <>
-              <div className="webcam-guide-toast">
-                {scanRange === 'half' ? (
-                  <span>Di chuyển đứng gần sao cho <strong>Đỉnh đầu</strong> và <strong>Hông</strong> khớp với vạch giới hạn</span>
-                ) : (
-                  <span>Di chuyển đứng lùi xa sao cho <strong>Đỉnh đầu</strong> và <strong>Gót chân</strong> khớp với vạch giới hạn</span>
-                )}
+            <div className="ai-controls-overlay">
+              <button
+                type="button"
+                className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
+                onClick={() => {
+                  if (scanStatus === 'success') {
+                    setScanProgress(0);
+                    setScanStatus('idle');
+                  }
+                  setIsScanning(!isScanning);
+                }}
+              >
+                {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
+                <span>{isScanning ? 'Tạm Dừng Quét AI' : (scanStatus === 'success' ? 'Quét Lại (Rescan)' : 'Bắt Đầu Quét AI')}</span>
+              </button>
+              <span className={`ai-scanning-badge ${isScanning ? 'active' : ''}`}>
+                {isScanning ? '⚡ AI đang quét khớp xương...' : '⏸️ Đã ghim số đo'}
+              </span>
+            </div>
+          )}
+
+          {/* Guided Scanning Progress HUD overlay */}
+          {scanStatus === 'scanning' && (
+            <div className="camera-scanning-hud">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <div className="scanning-pulse-circle"></div>
+                <strong>AI đang khóa khớp xương & phân tích: {scanProgress}%</strong>
               </div>
-              <div className="ai-controls-overlay">
+              <div className="scanning-progress-bar-bg">
+                <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%` }}></div>
+              </div>
+            </div>
+          )}
+
+          {/* Success Guided Scanning overlay */}
+          {scanStatus === 'success' && (
+            <div className="camera-success-overlay">
+              <div className="success-icon">✓</div>
+              <h3>Quét {view === 'front' ? 'Mặt Trước' : 'Mặt Nghiêng'} Thành Công!</h3>
+              <p>
+                {view === 'front' 
+                  ? "Đã ghi nhận số đo mặt trước. Vui lòng quay nghiêng người và bấm nút dưới để quét độ sâu." 
+                  : "Đã hoàn thành toàn bộ đo đạc nhân trắc học cơ thể."
+                }
+              </p>
+              <div className="success-actions">
+                {view === 'front' ? (
+                  <button
+                    type="button"
+                    className="view-change-cta-btn"
+                    onClick={() => {
+                      onViewChange('side');
+                    }}
+                  >
+                    👉 Chuyển Sang Mặt Nghiêng
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="view-change-cta-btn finish"
+                    onClick={() => {
+                      setIsMaximized(false);
+                      setTimeout(() => {
+                        const el = document.querySelector('.result-panel-card');
+                        if (el) {
+                          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          el.classList.add('pulse-highlight');
+                          setTimeout(() => {
+                            el.classList.remove('pulse-highlight');
+                          }, 3000);
+                        }
+                      }, 120);
+                    }}
+                  >
+                    🎉 Xem Báo Cáo Chi Tiết
+                  </button>
+                )}
                 <button
                   type="button"
-                  className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
-                  onClick={() => setIsScanning(!isScanning)}
+                  className="rescan-btn"
+                  onClick={() => {
+                    setScanProgress(0);
+                    setScanStatus('idle');
+                    setIsScanning(true);
+                  }}
                 >
-                  {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
-                  <span>{isScanning ? 'Tạm Dừng Quét AI' : 'Bắt Đầu Quét AI'}</span>
+                  Quét Lại (Rescan)
                 </button>
-                <span className={`ai-scanning-badge ${isScanning ? 'active' : ''}`}>
-                  {isScanning ? '⚡ AI đang quét khớp xương...' : '⏸️ Đã ghim số đo'}
-                </span>
               </div>
-            </>
+            </div>
           )}
 
           {/* Giant HUD Overlay for distant viewing */}
@@ -1105,47 +1275,159 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           )}
         </div>
 
-        <div className="canvas-footer">
-          {inputSource === 'webcam' && (
-            <div className="webcam-tilt-guide-card">
-              <button
-                type="button"
-                className="tilt-guide-header"
-                onClick={() => setShowTiltTips(!showTiltTips)}
-              >
-                <span>💡 Mẹo đặt Camera Laptop & Đứng Đo Chuẩn</span>
-                <span className="tilt-guide-arrow">{showTiltTips ? '▲' : '▼'}</span>
-              </button>
-              {showTiltTips && (
-                <div className="tilt-guide-content">
-                  <div className="tilt-step">
-                    <strong>1. Độ nghiêng màn hình:</strong> Gập màn hình laptop ở góc khoảng 95°-100° (nghiêng nhẹ ra sau), đặt máy trên bàn cao 70cm - 90cm.
-                  </div>
-                  <div className="tilt-step">
-                    <strong>2. Khoảng cách đứng:</strong>
-                    <ul>
-                      <li><em>Chế độ Toàn thân:</em> Đứng lùi xa 2.2m - 2.5m, đảm bảo thấy rõ cả đầu và gót chân.</li>
-                      <li><em>Chế độ Nửa người:</em> Đứng gần 1.0m - 1.2m (hoặc ngồi thẳng), chỉ cần thấy rõ từ đầu đến hông.</li>
-                    </ul>
-                  </div>
-                  <div className="tilt-step">
-                    <strong>3. Điện thoại di động:</strong> Nếu phòng hẹp hoặc webcam quá mờ, bấm <strong>"Dùng Điện Thoại"</strong> ở góc trái, quét QR để mở camera điện thoại góc rộng tiện lợi hơn rất nhiều!
-                  </div>
+        {isMaximized ? (
+          <div className="maximized-sidebar">
+            <div className="maximized-dashboard">
+              <div className="dashboard-section-header">
+                <h3>📊 Kết Quả Đo Nhân Trắc Học (AI)</h3>
+              </div>
+              <div className="maximized-metrics-grid">
+                <div className="max-metric-card">
+                  <span className="lbl">Chiều cao</span>
+                  <span className="val">{measurements?.height.toFixed(1)} <small>cm</small></span>
                 </div>
-              )}
+                {view === 'front' ? (
+                  <>
+                    <div className="max-metric-card">
+                      <span className="lbl">Vòng ngực</span>
+                      <span className="val">{measurements?.chestCircumference.toFixed(1)} <small>cm</small></span>
+                    </div>
+                    <div className="max-metric-card">
+                      <span className="lbl">Vòng eo</span>
+                      <span className="val">{measurements?.waistCircumference.toFixed(1)} <small>cm</small></span>
+                    </div>
+                    <div className="max-metric-card">
+                      <span className="lbl">Vòng mông</span>
+                      <span className="val">{measurements?.hipCircumference.toFixed(1)} <small>cm</small></span>
+                    </div>
+                    <div className="max-metric-card">
+                      <span className="lbl">Rộng vai</span>
+                      <span className="val">{measurements?.shoulderWidth.toFixed(1)} <small>cm</small></span>
+                    </div>
+                    <div className="max-metric-card">
+                      <span className="lbl">Dài tay</span>
+                      <span className="val">{measurements?.armLength.toFixed(1)} <small>cm</small></span>
+                    </div>
+                    <div className="max-metric-card">
+                      <span className="lbl">Dài chân</span>
+                      <span className="val">{measurements?.legLength.toFixed(1)} <small>cm</small></span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="max-metric-card">
+                      <span className="lbl">Độ sâu Ngực</span>
+                      <span className="val">{(measurements?.chestDepth || 0).toFixed(1)} <small>cm</small></span>
+                    </div>
+                    <div className="max-metric-card">
+                      <span className="lbl">Độ sâu Eo</span>
+                      <span className="val">{(measurements?.waistDepth || 0).toFixed(1)} <small>cm</small></span>
+                    </div>
+                    <div className="max-metric-card">
+                      <span className="lbl">Độ sâu Mông</span>
+                      <span className="val">{(measurements?.hipDepth || 0).toFixed(1)} <small>cm</small></span>
+                    </div>
+                  </>
+                )}
+                <div className="max-metric-card highlight">
+                  <span className="lbl">Gợi ý Size</span>
+                  <span className="val size">{recommendation?.size}</span>
+                </div>
+              </div>
             </div>
-          )}
 
-          {warning && (
-            <div className="anatomical-warning-inline">
-              <span>⚠️ {warning}</span>
+            {inputSource === 'webcam' && (
+              <div className="max-accordion-card">
+                <button
+                  type="button"
+                  className="accordion-header"
+                  onClick={() => setShowInlineGuide(!showInlineGuide)}
+                >
+                  <span>📖 Hướng Dẫn Căn Chỉnh Camera</span>
+                  <span>{showInlineGuide ? '▲' : '▼'}</span>
+                </button>
+                {showInlineGuide && (
+                  <div className="accordion-content">
+                    {scanRange === 'half' ? (
+                      <p>Di chuyển đứng gần sao cho <strong>Đỉnh đầu</strong> và <strong>Hông</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
+                    ) : (
+                      <p>Di chuyển đứng lùi xa sao cho <strong>Đỉnh đầu</strong> và <strong>Gót chân</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
+                    )}
+                    <p style={{ marginTop: '0.5rem', fontSize: '0.68rem', color: '#94a3b8' }}>
+                      💡 <strong>Mẹo:</strong> AI sẽ tự động ghim và lưu số đo khi bạn đứng yên ổn định trong 4 giây.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {warning && (
+              <div className="anatomical-warning-inline">
+                <span>⚠️ {warning}</span>
+              </div>
+            )}
+            <div className="canvas-helper-text" style={{ color: '#94a3b8', border: 'none', background: 'transparent' }}>
+              <RefreshCw size={12} className="spin-hover" />
+              <span>Kéo thả các chấm đỏ để căn chỉnh mốc giải phẫu.</span>
             </div>
-          )}
-          <div className="canvas-helper-text">
-            <RefreshCw size={12} className="spin-hover" />
-            <span>Kéo thả các chấm đỏ để căn chỉnh chính xác mốc giải phẫu. Vuốt/kéo trên khung để xoay Mannequin 3D.</span>
           </div>
-        </div>
+        ) : (
+          <div className="canvas-footer">
+            {inputSource === 'webcam' && (
+              <div className="webcam-instruction-card">
+                <div className="instruction-icon">🎯</div>
+                <div className="instruction-body">
+                  <strong>Hướng dẫn căn chỉnh camera:</strong>
+                  {scanRange === 'half' ? (
+                    <p>Di chuyển đứng gần sao cho <strong>Đỉnh đầu</strong> và <strong>Hông</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
+                  ) : (
+                    <p>Di chuyển đứng lùi xa sao cho <strong>Đỉnh đầu</strong> và <strong>Gót chân</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {inputSource === 'webcam' && (
+              <div className="webcam-tilt-guide-card">
+                <button
+                  type="button"
+                  className="tilt-guide-header"
+                  onClick={() => setShowTiltTips(!showTiltTips)}
+                >
+                  <span>💡 Mẹo đặt Camera Laptop & Đứng Đo Chuẩn</span>
+                  <span className="tilt-guide-arrow">{showTiltTips ? '▲' : '▼'}</span>
+                </button>
+                {showTiltTips && (
+                  <div className="tilt-guide-content">
+                    <div className="tilt-step">
+                      <strong>1. Độ nghiêng màn hình:</strong> Gập màn hình laptop ở góc khoảng 95°-100° (nghiêng nhẹ ra sau), đặt máy trên bàn cao 70cm - 90cm.
+                    </div>
+                    <div className="tilt-step">
+                      <strong>2. Khoảng cách đứng:</strong>
+                      <ul>
+                        <li><em>Chế độ Toàn thân:</em> Đứng lùi xa 2.2m - 2.5m, đảm bảo thấy rõ cả đầu và gót chân.</li>
+                        <li><em>Chế độ Nửa người:</em> Đứng gần 1.0m - 1.2m (hoặc ngồi thẳng), chỉ cần thấy rõ từ đầu đến hông.</li>
+                      </ul>
+                    </div>
+                    <div className="tilt-step">
+                      <strong>3. Điện thoại di động:</strong> Nếu phòng hẹp hoặc webcam quá mờ, bấm <strong>"Dùng Điện Thoại"</strong> ở góc trái, quét QR để mở camera điện thoại góc rộng tiện lợi hơn rất nhiều!
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {warning && (
+              <div className="anatomical-warning-inline">
+                <span>⚠️ {warning}</span>
+              </div>
+            )}
+            <div className="canvas-helper-text">
+              <RefreshCw size={12} className="spin-hover" />
+              <span>Kéo thả các chấm đỏ để căn chỉnh chính xác mốc giải phẫu. Vuốt/kéo trên khung để xoay Mannequin 3D.</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <input

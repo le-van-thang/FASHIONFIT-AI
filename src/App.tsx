@@ -41,6 +41,7 @@ const initialSideLandmarks: Landmark[] = [
 function App() {
   const [input, setInput] = useState<UserInput>(() => {
     const saved = localStorage.getItem('fashionfit_input');
+    const savedSource = localStorage.getItem('fashionfit_input_source') || 'mannequin';
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -51,7 +52,7 @@ function App() {
             calibrationType: ['a4', 'card', 'ipd', 'height'].includes(parsed.calibrationType) ? parsed.calibrationType : 'height',
             customHeight: typeof parsed.customHeight === 'number' ? parsed.customHeight : undefined,
             sizeSystem: parsed.sizeSystem === 'international' ? 'international' : 'vietnam',
-            scanRange: ['full', 'half'].includes(parsed.scanRange) ? parsed.scanRange : 'full'
+            scanRange: savedSource === 'webcam' ? 'half' : (['full', 'half'].includes(parsed.scanRange) ? parsed.scanRange : 'full')
           };
         }
       } catch (e) {
@@ -63,7 +64,7 @@ function App() {
       weight: 55,
       calibrationType: 'height',
       sizeSystem: 'vietnam',
-      scanRange: 'full'
+      scanRange: savedSource === 'webcam' ? 'half' : 'full'
     };
   });
 
@@ -146,6 +147,13 @@ function App() {
       ? (saved as any) 
       : 'mannequin';
   });
+
+  const handleInputSourceChange = (source: 'mannequin' | 'image' | 'webcam' | 'video') => {
+    setInputSource(source);
+    if (source === 'webcam') {
+      setInput(prev => ({ ...prev, scanRange: 'half' }));
+    }
+  };
 
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 
@@ -568,7 +576,7 @@ function App() {
             measurements={measurements}
             recommendation={recommendation}
             inputSource={inputSource}
-            onInputSourceChange={setInputSource}
+            onInputSourceChange={handleInputSourceChange}
             scanRange={input.scanRange}
           />
         </div>

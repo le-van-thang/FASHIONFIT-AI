@@ -70,7 +70,7 @@ export async function saveMeasurementSession(
 
 // ─── Fetch recent sessions ────────────────────────────────────
 export async function fetchRecentSessions(
-  limit = 15
+  limit = 50
 ): Promise<{ data: MeasurementSession[]; error: string | null }> {
   const { data, error } = await supabase
     .from('measurement_sessions')

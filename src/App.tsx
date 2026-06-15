@@ -153,6 +153,8 @@ function App() {
     setInputSource(source);
     if (source === 'webcam') {
       setInput(prev => ({ ...prev, scanRange: 'half' }));
+    } else if (source === 'mannequin') {
+      setInput(prev => ({ ...prev, scanRange: 'full' }));
     }
   };
 
@@ -320,14 +322,12 @@ function App() {
   const scale = useMemo(() => {
     if (input.scanRange === 'half' && inputSource !== 'mannequin') {
       const heightVal = input.customHeight || 165;
-      const nasionPt = (view === 'front' ? processedFrontLandmarks : processedSideLandmarks).find(l => l.id === 'nasion')!;
-      const hipPt = view === 'front'
-        ? (() => {
-            const lHip = processedFrontLandmarks.find(l => l.id === 'left_hip')!;
-            const rHip = processedFrontLandmarks.find(l => l.id === 'right_hip')!;
-            return { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 };
-          })()
-        : processedSideLandmarks.find(l => l.id === 'hip')!;
+      const nasionPt = processedFrontLandmarks.find(l => l.id === 'nasion')!;
+      const hipPt = (() => {
+        const lHip = processedFrontLandmarks.find(l => l.id === 'left_hip')!;
+        const rHip = processedFrontLandmarks.find(l => l.id === 'right_hip')!;
+        return { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 };
+      })();
 
       const nasionToHipPixels = Math.max(80, hipPt.y - nasionPt.y);
       return Math.max(0.05, Math.min(1.0, (heightVal * AVERAGE_NASION_TO_HIP_RATIO) / nasionToHipPixels));
@@ -335,20 +335,18 @@ function App() {
 
     if (input.calibrationType === 'height' || inputSource === 'mannequin') {
       const heightVal = input.customHeight || 165;
-      const nasionPt = (view === 'front' ? processedFrontLandmarks : processedSideLandmarks).find(l => l.id === 'nasion')!;
-      const anklePt = view === 'front'
-        ? (() => {
-            const lAnkle = processedFrontLandmarks.find(l => l.id === 'left_ankle')!;
-            const rAnkle = processedFrontLandmarks.find(l => l.id === 'right_ankle')!;
-            return { x: (lAnkle.x + rAnkle.x) / 2, y: (lAnkle.y + rAnkle.y) / 2 };
-          })()
-        : processedSideLandmarks.find(l => l.id === 'ankle')!;
+      const nasionPt = processedFrontLandmarks.find(l => l.id === 'nasion')!;
+      const anklePt = (() => {
+        const lAnkle = processedFrontLandmarks.find(l => l.id === 'left_ankle')!;
+        const rAnkle = processedFrontLandmarks.find(l => l.id === 'right_ankle')!;
+        return { x: (lAnkle.x + rAnkle.x) / 2, y: (lAnkle.y + rAnkle.y) / 2 };
+      })();
 
       const heightPixels = Math.max(100, anklePt.y - nasionPt.y);
       return Math.max(0.05, Math.min(1.0, (heightVal - 9.5) / heightPixels));
     }
     return calculateScaleFactor(referencePixels, input.calibrationType);
-  }, [referencePixels, input.calibrationType, input.customHeight, input.scanRange, processedFrontLandmarks, processedSideLandmarks, view, inputSource]);
+  }, [referencePixels, input.calibrationType, input.customHeight, input.scanRange, processedFrontLandmarks, inputSource]);
 
   // Human Anthropometric Computations
   const measurements = useMemo<BodyMeasurements>(() => {
@@ -445,7 +443,7 @@ function App() {
 
   // Sizing recommendations
   const recommendation = useMemo<SizeRecommendation>(() => {
-    const sizeData = getRecommendedSize(input.gender, measurements, input.sizeSystem);
+    const sizeData = getRecommendedSize(input.gender, measurements, input.sizeSystem, input.weight);
     
     // Fit detail analysis based on standard deviations
     const evaluateFit = (current: number, base: number) => {
@@ -808,6 +806,18 @@ function App() {
                         width={200}
                         height={320}
                         scanRange={sessionA.inseam_cm > 0 ? 'full' : 'half'}
+                        measurements={{
+                          height: sessionA.height_cm,
+                          shoulderWidth: sessionA.shoulder_width_cm,
+                          armLength: sessionA.arm_length_cm,
+                          legLength: sessionA.inseam_cm,
+                          chestCircumference: sessionA.bust_cm,
+                          waistCircumference: sessionA.waist_cm,
+                          hipCircumference: sessionA.hip_cm,
+                          chestDepth: sessionA.bust_depth_cm,
+                          waistDepth: sessionA.waist_depth_cm,
+                          hipDepth: sessionA.hip_depth_cm
+                        }}
                       />
                     </div>
                   </div>
@@ -828,6 +838,18 @@ function App() {
                         width={200}
                         height={320}
                         scanRange={sessionB.inseam_cm > 0 ? 'full' : 'half'}
+                        measurements={{
+                          height: sessionB.height_cm,
+                          shoulderWidth: sessionB.shoulder_width_cm,
+                          armLength: sessionB.arm_length_cm,
+                          legLength: sessionB.inseam_cm,
+                          chestCircumference: sessionB.bust_cm,
+                          waistCircumference: sessionB.waist_cm,
+                          hipCircumference: sessionB.hip_cm,
+                          chestDepth: sessionB.bust_depth_cm,
+                          waistDepth: sessionB.waist_depth_cm,
+                          hipDepth: sessionB.hip_depth_cm
+                        }}
                       />
                     </div>
                   </div>

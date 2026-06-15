@@ -188,10 +188,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
             🩺 Chỉ Số Thành Phần Cơ Thể (Ước Tính AI)
           </h3>
           <div className="fit-grid" style={{ marginTop: '0.75rem' }}>
-            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
               <span className="fit-label" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Tỷ Lệ Mỡ (Body Fat)</span>
               <span className="measure-value" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{bodyFat}%</span>
-              <div style={{ height: '4px', width: '100%', backgroundColor: 'rgba(37, 99, 235, 0.15)', borderRadius: '2px', overflow: 'hidden', marginTop: '0.25rem' }}>
+              <div style={{ height: '4px', width: '100%', backgroundColor: 'rgba(6, 182, 212, 0.15)', borderRadius: '2px', overflow: 'hidden', marginTop: '0.25rem' }}>
                 <div 
                   style={{ 
                     height: '100%', 
@@ -206,13 +206,13 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               </span>
             </div>
 
-            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
               <span className="fit-label" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Khối Lượng Cơ</span>
               <span className="measure-value" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{muscleMass} <small style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>kg</small></span>
               <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>Chiếm {((muscleMass / weight) * 100).toFixed(1)}% cơ thể</span>
             </div>
 
-            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+            <div className="fit-item" style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.65rem', backgroundColor: 'var(--color-primary-light)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
               <span className="fit-label" style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Khối Lượng Mỡ</span>
               <span className="measure-value" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)' }}>{fatMass} <small style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>kg</small></span>
               <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>Chiếm {bodyFat}% cơ thể</span>

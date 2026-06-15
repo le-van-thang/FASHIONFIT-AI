@@ -123,15 +123,88 @@ export function estimateCircumferences(
   };
 }
 
+function getHeightSizeIndex(gender: Gender, heightCm: number, system: 'vietnam' | 'international'): number {
+  if (system === 'vietnam') {
+    if (gender === 'male') {
+      if (heightCm < 160) return 0; // XS
+      if (heightCm < 165) return 1; // S
+      if (heightCm < 170) return 2; // M
+      if (heightCm < 174) return 3; // L
+      if (heightCm < 177) return 4; // XL
+      return 5; // XXL
+    } else {
+      if (heightCm < 148) return 0;
+      if (heightCm < 153) return 1;
+      if (heightCm < 155) return 2;
+      if (heightCm < 158) return 3;
+      if (heightCm < 162) return 4;
+      return 5;
+    }
+  } else {
+    if (gender === 'male') {
+      if (heightCm < 165) return 0;
+      if (heightCm < 172) return 1;
+      if (heightCm < 178) return 2;
+      if (heightCm < 184) return 3;
+      if (heightCm < 190) return 4;
+      return 5;
+    } else {
+      if (heightCm < 155) return 0;
+      if (heightCm < 162) return 1;
+      if (heightCm < 168) return 2;
+      if (heightCm < 174) return 3;
+      if (heightCm < 180) return 4;
+      return 5;
+    }
+  }
+}
+
+function getWeightSizeIndex(gender: Gender, weightKg: number, system: 'vietnam' | 'international'): number {
+  if (system === 'vietnam') {
+    if (gender === 'male') {
+      if (weightKg < 55) return 0; // XS
+      if (weightKg < 60) return 1; // S
+      if (weightKg < 66) return 2; // M
+      if (weightKg < 71) return 3; // L
+      if (weightKg < 77) return 4; // XL
+      return 5; // XXL
+    } else {
+      if (weightKg < 38) return 0;
+      if (weightKg < 43) return 1;
+      if (weightKg < 46) return 2;
+      if (weightKg < 53) return 3;
+      if (weightKg < 57) return 4;
+      return 5;
+    }
+  } else {
+    if (gender === 'male') {
+      if (weightKg < 58) return 0;
+      if (weightKg < 67) return 1;
+      if (weightKg < 77) return 2;
+      if (weightKg < 87) return 3;
+      if (weightKg < 97) return 4;
+      return 5;
+    } else {
+      if (weightKg < 46) return 0;
+      if (weightKg < 54) return 1;
+      if (weightKg < 63) return 2;
+      if (weightKg < 73) return 3;
+      if (weightKg < 83) return 4;
+      return 5;
+    }
+  }
+}
+
 /**
- * Standard sizes chart helper based on ISO 8559 reference guides
+ * Standard sizes chart helper based on ISO 8559 reference guides and height-weight tables
  */
 export function getRecommendedSize(
   gender: Gender,
   measurements: BodyMeasurements,
-  sizeSystem: 'vietnam' | 'international' = 'vietnam'
+  sizeSystem: 'vietnam' | 'international' = 'vietnam',
+  weightKg?: number
 ): { size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'; matchPercentage: number } {
-  const { chestCircumference, waistCircumference, hipCircumference } = measurements;
+  const { chestCircumference, waistCircumference, hipCircumference, height } = measurements;
 
   const sizeCharts = {
     vietnam: {
@@ -174,11 +247,11 @@ export function getRecommendedSize(
 
   const chart = sizeCharts[sizeSystem][gender];
   
-  // Find closest size using simple Euclidean distance of the three parameters
-  let bestSize = chart[2]; // Default to M
+  // 1. Circumference-based size match using Euclidean distance
+  let circSizeIndex = 2; // Default to M
   let minDiff = Infinity;
 
-  chart.forEach((s) => {
+  chart.forEach((s, idx) => {
     const dChest = Math.pow(chestCircumference - s.limits[0], 2);
     const dWaist = Math.pow(waistCircumference - s.limits[1], 2);
     const dHips = Math.pow(hipCircumference - s.limits[2], 2);
@@ -186,12 +259,33 @@ export function getRecommendedSize(
 
     if (totalDiff < minDiff) {
       minDiff = totalDiff;
-      bestSize = s;
+      circSizeIndex = idx;
     }
   });
 
-  // Calculate a match percentage based on standard deviation
-  const score = Math.max(50, Math.min(99, Math.round(100 - minDiff * 1.5)));
+  // 2. Height-based size index
+  const heightSizeIndex = getHeightSizeIndex(gender, height, sizeSystem);
+
+  // 3. Weight-based size index (fallback to average weight if not provided)
+  const finalWeight = weightKg || (gender === 'female' ? (height - 105) * 0.95 : (height - 100) * 0.9);
+  const weightSizeIndex = getWeightSizeIndex(gender, finalWeight, sizeSystem);
+
+  // 4. Combine constraints safely:
+  // - Width is bound by larger of circumferences or weight to avoid tightness: Math.max(circSizeIndex, weightSizeIndex)
+  // - Height length bounds it: we don't go below (heightSizeIndex - 1) to avoid too short crop tops
+  let finalIndex = Math.max(circSizeIndex, weightSizeIndex);
+  if (heightSizeIndex > 0) {
+    finalIndex = Math.max(finalIndex, heightSizeIndex - 1);
+  }
+
+  const bestSize = chart[finalIndex];
+
+  // 5. Recompute the match percentage based on the final recommended size limits
+  const dChest = Math.pow(chestCircumference - bestSize.limits[0], 2);
+  const dWaist = Math.pow(waistCircumference - bestSize.limits[1], 2);
+  const dHips = Math.pow(hipCircumference - bestSize.limits[2], 2);
+  const finalDiff = Math.sqrt(dChest + dWaist + dHips);
+  const score = Math.max(50, Math.min(99, Math.round(100 - finalDiff * 1.5)));
 
   return {
     size: bestSize.name,

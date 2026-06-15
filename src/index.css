@@ -459,11 +459,12 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 400 / 650;
-  background-color: var(--bg-card);
+  background: #090d16; /* deep cyber black */
   border-radius: var(--radius-md);
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(6, 182, 212, 0.25);
   box-sizing: border-box;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.12);
 }
 
 .source-select-tabs, .view-toggle-tabs {
@@ -546,33 +547,38 @@ body {
 }
 
 .skeletal-line {
-  stroke: var(--color-primary);
-  stroke-width: 2.5;
+  stroke: #06b6d4;
+  stroke-width: 1.5;
   stroke-linecap: round;
-  stroke-dasharray: 4, 4;
+  stroke-dasharray: 3, 3;
+  filter: drop-shadow(0 0 3px rgba(6, 182, 212, 0.8));
 }
 
 .landmark-dot {
-  fill: #ef4444;
-  stroke: #ffffff;
-  stroke-width: 2;
+  fill: #ffffff;
+  stroke: #06b6d4;
+  stroke-width: 2.5;
+  r: 5px;
   cursor: grab;
-  transition: r 0.1s ease, fill 0.1s ease;
+  filter: drop-shadow(0 0 4px #06b6d4);
+  transition: all 0.15s ease;
 }
 
 .landmark-dot:hover, .landmark-dot.dragging {
-  fill: #b91c1c;
-  r: 8px;
+  fill: #22d3ee;
+  stroke: #ffffff;
+  r: 7.5px;
+  filter: drop-shadow(0 0 8px #22d3ee);
   cursor: grabbing;
 }
 
 .landmark-text {
+  font-family: var(--font-sans);
   font-size: 8px;
   font-weight: 600;
-  fill: #334155;
-  text-anchor: middle;
+  fill: #cbd5e1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 3px rgba(0, 0, 0, 0.95);
   pointer-events: none;
-  background-color: white;
 }
 
 .canvas-helper-text {
@@ -2984,6 +2990,121 @@ body {
   color: #38bdf8;
   border-color: rgba(56, 189, 248, 0.3);
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.25);
+}
+
+/* Direct 3D HUD Measurements Labels */
+.hud-label-group {
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+.hud-label-group:hover {
+  opacity: 1;
+}
+.hud-pointer-line {
+  fill: none;
+  stroke-width: 1px;
+  stroke-dasharray: 2, 2;
+  opacity: 0.85;
+}
+.hud-pointer-line.left {
+  stroke: #06b6d4; /* cyan */
+}
+.hud-pointer-line.right {
+  stroke: #fbbf24; /* amber */
+}
+.hud-pointer-dot {
+  stroke-width: 1.5;
+  r: 2.5px;
+}
+.hud-pointer-dot.left {
+  fill: #06b6d4;
+  stroke: #ffffff;
+}
+.hud-pointer-dot.right {
+  fill: #fbbf24;
+  stroke: #ffffff;
+}
+.hud-label-text {
+  font-family: 'Inter', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+}
+.hud-label-text.left {
+  fill: #22d3ee; /* light cyan */
+}
+.hud-label-text.right {
+  fill: #f59e0b; /* amber */
+}
+.hud-label-value {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 800;
+}
+.hud-label-value.left {
+  fill: #06b6d4;
+}
+.hud-label-value.right {
+  fill: #fbbf24;
+}
+
+/* Adjust .mesh-line base styling to make it brighter and more premium */
+.mesh-line {
+  fill: none;
+  stroke: rgba(99, 102, 241, 0.16) !important; /* brighter blue-indigo grid */
+  stroke-width: 0.6px !important;
+  pointer-events: none;
+}
+.mesh-line.ring {
+  stroke: rgba(99, 102, 241, 0.45) !important;
+  stroke-width: 0.9px !important;
+}
+
+/* Improve neon wireframe contrast and glow */
+.mesh-group.neon .mesh-line {
+  stroke: rgba(6, 182, 212, 0.85) !important;
+  filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.9));
+}
+.mesh-group.neon .mesh-line.ring {
+  stroke: rgba(6, 182, 212, 1) !important;
+  stroke-width: 1.6px !important;
+  filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.95));
+}
+
+/* Make heatmap lines stand out nicely */
+.mesh-group.heatmap .mesh-line {
+  opacity: 0.9;
+  stroke-width: 0.7px !important;
+}
+.mesh-group.heatmap .mesh-line.ring {
+  opacity: 1;
+  stroke-width: 1.3px !important;
+}
+
+/* Laser sweep keyframe animation */
+@keyframes laserSweep {
+  0% {
+    transform: translateY(60px);
+    opacity: 0.15;
+  }
+  15% {
+    opacity: 0.85;
+  }
+  50% {
+    transform: translateY(600px);
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(60px);
+    opacity: 0.15;
+  }
+}
+
+.laser-beam {
+  animation: laserSweep 4s infinite ease-in-out;
+  pointer-events: none;
 }
 
 

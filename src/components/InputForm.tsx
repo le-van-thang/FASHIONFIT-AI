@@ -618,12 +618,12 @@ export const InputForm: React.FC<InputFormProps> = ({
                 <X size={18} />
               </button>
             </div>
-
+ 
             <div className="calib-modal-body" style={{ gap: '1.25rem' }}>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>
                 💡 <strong>Khuyên dùng:</strong> Camera sau của điện thoại di động có góc chụp rất rộng và độ phân giải cao, giúp dễ dàng chụp được toàn thân từ khoảng cách gần (~1.5m) thay vì webcam laptop chật hẹp.
               </p>
-
+ 
               {/* IP Check / Instruction */}
               {/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(window.location.hostname) ? (
                 // Already accessing via IP address
@@ -654,7 +654,7 @@ export const InputForm: React.FC<InputFormProps> = ({
                       <li>Tìm dòng <strong>IPv4 Address</strong> (ví dụ: <code>192.168.1.15</code>).</li>
                     </ol>
                   </div>
-
+ 
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label" style={{ fontSize: '0.78rem' }}>
                       <span>Nhập địa chỉ IP máy tính của bạn:</span>
@@ -670,7 +670,7 @@ export const InputForm: React.FC<InputFormProps> = ({
                       />
                     </div>
                   </div>
-
+ 
                   {computerIp ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', textAlign: 'center', marginTop: '0.5rem' }}>
                       <span style={{ fontSize: '0.75rem', color: 'var(--color-primary)', fontWeight: 600 }}>
@@ -695,7 +695,7 @@ export const InputForm: React.FC<InputFormProps> = ({
                   )}
                 </div>
               )}
-
+ 
               <div className="guide-tip-box" style={{ background: '#f8fafc', border: '1px solid var(--border-color)', color: 'var(--text-muted)', padding: '8px 12px' }}>
                 💡 <strong>Mẹo đồng bộ:</strong> Sau khi chụp ảnh và đo đạc trên điện thoại, số đo sẽ tự động được lưu vào **Lịch Sử Đo**. Bạn chỉ cần mở Lịch Sử trên máy tính và bấm chọn để tải lại mô hình 3D trên màn hình lớn!
               </div>

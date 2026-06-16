@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
 import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff } from 'lucide-react';
+import { Mannequin3DView } from './Mannequin3DView';
 
 
 const getLimbSilhouettePath = (
@@ -1958,272 +1959,287 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          <svg
-            ref={containerRef}
-            viewBox={`0 0 ${width} ${height}`}
-            className="landmark-svg"
-            onMouseDown={handleCanvasMouseDown}
-            onTouchStart={handleCanvasTouchStart}
-            style={{ 
-              cursor: isRotating ? 'grabbing' : 'grab',
-              zIndex: 10,
-              background: 'transparent'
-            }}
-          >
-            {/* We render background silhouette only when no media background exists */}
-            {!hasMediaBackground && renderSilhouette()}
+          {inputSource === 'mannequin' ? (
+            <Mannequin3DView
+              gender={gender}
+              weight={weight}
+              scaleFactor={scaleFactor}
+              landmarks={landmarks}
+              rotationAngle={rotationAngle}
+              meshStyle={meshStyle}
+              width={width}
+              height={height}
+              scanRange={scanRange}
+              measurements={measurements}
+            />
+          ) : (
+            <svg
+              ref={containerRef}
+              viewBox={`0 0 ${width} ${height}`}
+              className="landmark-svg"
+              onMouseDown={handleCanvasMouseDown}
+              onTouchStart={handleCanvasTouchStart}
+              style={{ 
+                cursor: isRotating ? 'grabbing' : 'grab',
+                zIndex: 10,
+                background: 'transparent'
+              }}
+            >
+              {/* We render background silhouette only when no media background exists */}
+              {!hasMediaBackground && renderSilhouette()}
 
-            {/* Render webcam guide silhouette to help user align their body */}
-            {hasMediaBackground && inputSource === 'webcam' && (
-              <g className="webcam-guide-group">
-                {gender === 'male' ? (
-                  <path
-                    d="M 200 45 C 212 45, 216 70, 216 82 C 216 90, 204 98, 200 98 C 196 98, 184 90, 184 82 C 184 70, 188 45, 200 45 Z
-                       M 200 98 C 205 98, 215 106, 228 116 C 255 136, 266 148, 270 185 C 274 220, 268 255, 262 290 C 258 310, 253 320, 248 335 C 242 355, 242 390, 242 450 C 242 510, 245 560, 240 595 C 238 610, 232 615, 222 615 C 212 615, 208 605, 206 575 C 204 545, 202 480, 200 470 C 198 480, 196 545, 194 575 C 192 605, 188 615, 178 615 C 168 615, 162 610, 160 595 C 155 560, 158 510, 158 450 C 158 390, 158 355, 152 335 C 147 320, 142 310, 138 290 C 132 255, 126 220, 130 185 C 134 148, 145 136, 172 116 C 185 106, 195 98, 200 98 Z"
-                    className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
-                  />
-                ) : (
-                  <path
-                    d="M 200 48 C 210 48, 214 70, 214 82 C 214 90, 204 96, 200 96 C 196 96, 186 90, 186 82 C 186 70, 190 48, 200 48 Z
-                       M 200 96 C 204 96, 211 104, 222 114 C 245 132, 258 145, 262 178 C 266 210, 256 242, 248 275 C 242 295, 248 312, 250 335 C 252 358, 242 395, 240 450 C 238 505, 241 555, 236 585 C 233 600, 227 605, 220 605 C 212 605, 209 595, 207 565 C 205 535, 202 480, 200 470 C 198 470, 195 535, 193 565 C 191 595, 188 605, 180 605 C 173 605, 167 600, 164 585 C 159 555, 162 505, 160 450 C 158 395, 148 358, 150 335 C 152 312, 158 295, 152 275 C 144 242, 134 210, 138 178 C 142 132, 155 132, 178 114 C 189 104, 196 96, 200 96 Z"
-                    className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
-                  />
-                )}
-                {/* Dotted lines pointing to head and ankles/hips */}
-                <line x1="0" y1="45" x2="400" y2="45" className="webcam-guide-line limit" />
-                <line x1="0" y1={scanRange === 'half' ? 350 : 615} x2="400" y2={scanRange === 'half' ? 350 : 615} className="webcam-guide-line limit" />
-                <text x="200" y="35" className="webcam-guide-text">Đỉnh đầu (Align Head)</text>
-                <text x="200" y={scanRange === 'half' ? 370 : 635} className="webcam-guide-text">{scanRange === 'half' ? 'Hông (Align Hips)' : 'Gót chân (Align Heels)'}</text>
-              </g>
-            )}
-
-            {/* Render 3D Wireframe Mesh if in mannequin mode OR if webcam scanning is active */}
-            {(!hasMediaBackground || meshStyle !== 'solid' || (isScanning && (inputSource === 'webcam' || inputSource === 'video'))) && (
-              <g className={`mesh-group ${meshStyle} ${hasMediaBackground ? 'ar-overlay' : ''}`}>
-                {projected3DMesh.map((line, idx) => {
-                  let strokeColor = undefined;
-                  if (meshStyle === 'heatmap') {
-                    const y = (line.y1 + line.y2) / 2;
-                    if (y < 160) {
-                      strokeColor = '#38bdf8'; // Blue (neck)
-                    } else if (y < 230) {
-                      strokeColor = '#f43f5e'; // Pink/Red (chest/bust depth area)
-                    } else if (y < 330) {
-                      strokeColor = '#fb923c'; // Orange (waist/belly fat area)
-                    } else if (y < 460) {
-                      strokeColor = '#fbbf24'; // Yellow (hips/glute depth area)
-                    } else {
-                      strokeColor = '#4ade80'; // Green (thighs/legs)
-                    }
-                  }
-
-                  // Apply Z-depth shading
-                  const zAvg = (line.z1 + line.z2) / 2;
-                  const maxZ = 60; // approximate max depth
-                  const normalizedZ = Math.max(-1, Math.min(1, zAvg / maxZ));
-                  const zFactor = (normalizedZ + 1) / 2; // 0 to 1
-                  
-                  // Base opacity based on line type - in solid mode make mesh subtle
-                  const baseOpacity = line.type === 'ring' 
-                    ? (meshStyle === 'solid' ? 0.12 : 0.85)
-                    : (meshStyle === 'solid' ? 0.06 : 0.45);
-                  const lineOpacity = baseOpacity * (0.28 + 0.72 * zFactor);
-
-                  const customStyle: React.CSSProperties = {
-                    opacity: lineOpacity,
-                    stroke: meshStyle === 'solid' ? 'rgba(34, 211, 238, 0.35)' : undefined
-                  };
-                  if (strokeColor) {
-                    customStyle.stroke = strokeColor;
-                    customStyle.strokeWidth = line.type === 'ring' ? '1.3px' : '0.7px';
-                  }
-
-                  return (
-                    <line
-                      key={`mesh-${idx}`}
-                      x1={line.x1}
-                      y1={line.y1}
-                      x2={line.x2}
-                      y2={line.y2}
-                      className={`mesh-line ${line.type}`}
-                      style={customStyle}
+              {/* Render webcam guide silhouette to help user align their body */}
+              {hasMediaBackground && inputSource === 'webcam' && (
+                <g className="webcam-guide-group">
+                  {gender === 'male' ? (
+                    <path
+                      d="M 200 45 C 212 45, 216 70, 216 82 C 216 90, 204 98, 200 98 C 196 98, 184 90, 184 82 C 184 70, 188 45, 200 45 Z
+                         M 200 98 C 205 98, 215 106, 228 116 C 255 136, 266 148, 270 185 C 274 220, 268 255, 262 290 C 258 310, 253 320, 248 335 C 242 355, 242 390, 242 450 C 242 510, 245 560, 240 595 C 238 610, 232 615, 222 615 C 212 615, 208 605, 206 575 C 204 545, 202 480, 200 470 C 198 480, 196 545, 194 575 C 192 605, 188 615, 178 615 C 168 615, 162 610, 160 595 C 155 560, 158 510, 158 450 C 158 390, 158 355, 152 335 C 147 320, 142 310, 138 290 C 132 255, 126 220, 130 185 C 134 148, 145 136, 172 116 C 185 106, 195 98, 200 98 Z"
+                      className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
                     />
-                  );
-                })}
-              </g>
-            )}
+                  ) : (
+                    <path
+                      d="M 200 48 C 210 48, 214 70, 214 82 C 214 90, 204 96, 200 96 C 196 96, 186 90, 186 82 C 186 70, 190 48, 200 48 Z
+                         M 200 96 C 204 96, 211 104, 222 114 C 245 132, 258 145, 262 178 C 266 210, 256 242, 248 275 C 242 295, 248 312, 250 335 C 252 358, 242 395, 240 450 C 238 505, 241 555, 236 585 C 233 600, 227 605, 220 605 C 212 605, 209 595, 207 565 C 205 535, 202 480, 200 470 C 198 470, 195 535, 193 565 C 191 595, 188 605, 180 605 C 173 605, 167 600, 164 585 C 159 555, 162 505, 160 450 C 158 395, 148 358, 150 335 C 152 312, 158 295, 152 275 C 144 242, 134 210, 138 178 C 142 132, 155 132, 178 114 C 189 104, 196 96, 200 96 Z"
+                      className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
+                    />
+                  )}
+                  {/* Dotted lines pointing to head and ankles/hips */}
+                  <line x1="0" y1="45" x2="400" y2="45" className="webcam-guide-line limit" />
+                  <line x1="0" y1={scanRange === 'half' ? 350 : 615} x2="400" y2={scanRange === 'half' ? 350 : 615} className="webcam-guide-line limit" />
+                  <text x="200" y="35" className="webcam-guide-text">Đỉnh đầu (Align Head)</text>
+                  <text x="200" y={scanRange === 'half' ? 370 : 635} className="webcam-guide-text">{scanRange === 'half' ? 'Hông (Align Hips)' : 'Gót chân (Align Heels)'}</text>
+                </g>
+              )}
 
-            {/* Direct 3D HUD Measurements Labels (only in Mannequin mode) */}
-            {measurements && !hasMediaBackground && projected3DData.hudPoints && (() => {
-              const leftLabels = [
-                { label: 'CỔ', value: (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) + " cm", pt: projected3DData.hudPoints.neck },
-                { label: 'NGỰC', value: measurements.chestCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.chest },
-                { label: 'EO DƯỚI', value: (measurements.waistCircumference * 1.05).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistLower },
-                { label: 'ĐÙI PHẢI', value: (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) + " cm", pt: projected3DData.hudPoints.thighLeft },
-                { label: 'BẮP CHÂN PHẢI', value: (measurements.hipCircumference * 0.38).toFixed(1) + " cm", pt: projected3DData.hudPoints.calfLeft },
-              ];
+              {/* Render 3D Wireframe Mesh if in mannequin mode OR if webcam scanning is active */}
+              {(!hasMediaBackground || meshStyle !== 'solid' || (isScanning && (inputSource === 'webcam' || inputSource === 'video'))) && (
+                <g className={`mesh-group ${meshStyle} ${hasMediaBackground ? 'ar-overlay' : ''}`}>
+                  {projected3DMesh.map((line, idx) => {
+                    let strokeColor = undefined;
+                    if (meshStyle === 'heatmap') {
+                      const y = (line.y1 + line.y2) / 2;
+                      if (y < 160) {
+                        strokeColor = '#38bdf8'; // Blue (neck)
+                      } else if (y < 230) {
+                        strokeColor = '#f43f5e'; // Pink/Red (chest/bust depth area)
+                      } else if (y < 330) {
+                        strokeColor = '#fb923c'; // Orange (waist/belly fat area)
+                      } else if (y < 460) {
+                        strokeColor = '#fbbf24'; // Yellow (hips/glute depth area)
+                      } else {
+                        strokeColor = '#4ade80'; // Green (thighs/legs)
+                      }
+                    }
 
-              const rightLabels = [
-                { label: 'RỘNG VAI', value: measurements.shoulderWidth.toFixed(1) + " cm", pt: projected3DData.hudPoints.shoulder },
-                { label: 'EO TRÊN', value: (measurements.waistCircumference * 0.96).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistUpper },
-                { label: 'MÔNG', value: measurements.hipCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.hips },
-                { label: 'DÀI TAY', value: measurements.armLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.armRight },
-                { label: 'DÀI CHÂN', value: measurements.legLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.legRight },
-              ];
+                    // Apply Z-depth shading
+                    const zAvg = (line.z1 + line.z2) / 2;
+                    const maxZ = 60; // approximate max depth
+                    const normalizedZ = Math.max(-1, Math.min(1, zAvg / maxZ));
+                    const zFactor = (normalizedZ + 1) / 2; // 0 to 1
+                    
+                    // Base opacity based on line type - in solid mode make mesh subtle
+                    const baseOpacity = line.type === 'ring' 
+                      ? (meshStyle === 'solid' ? 0.12 : 0.85)
+                      : (meshStyle === 'solid' ? 0.06 : 0.45);
+                    const lineOpacity = baseOpacity * (0.28 + 0.72 * zFactor);
 
-              const leftY = relaxLabelY(leftLabels.map((item, idx) => ({ y: item.pt.y, originalIdx: idx })), 36, 40, 610);
-              const rightY = relaxLabelY(rightLabels.map((item, idx) => ({ y: item.pt.y, originalIdx: idx })), 36, 40, 610);
-              
-              return (
-                <g className="hud-labels-group" style={{ pointerEvents: 'none' }}>
-                  {/* Left Labels */}
-                  {leftLabels.map((item, idx) => {
-                    const displayY = leftY[idx];
+                    const customStyle: React.CSSProperties = {
+                      opacity: lineOpacity,
+                      stroke: meshStyle === 'solid' ? 'rgba(34, 211, 238, 0.35)' : undefined
+                    };
+                    if (strokeColor) {
+                      customStyle.stroke = strokeColor;
+                      customStyle.strokeWidth = line.type === 'ring' ? '1.3px' : '0.7px';
+                    }
+
                     return (
-                      <g key={`hud-l-comp-${idx}`} className="hud-label-group">
-                        <line
-                          x1={85}
-                          y1={displayY}
-                          x2={item.pt.x}
-                          y2={item.pt.y}
-                          className="hud-pointer-line left"
-                        />
-                        <circle
-                          cx={item.pt.x}
-                          cy={item.pt.y}
-                          className="hud-pointer-dot left"
-                        />
-                        <rect
-                          x={3}
-                          y={displayY - 12}
-                          width={82}
-                          height={24}
-                          rx={6}
-                          ry={6}
-                          fill="rgba(15, 23, 42, 0.85)"
-                          stroke="rgba(6, 182, 212, 0.25)"
-                          strokeWidth="1"
-                        />
-                        <text
-                          x={80}
-                          y={displayY - 2}
-                          textAnchor="end"
-                          className="hud-label-text left"
-                          style={{ fill: '#22d3ee', fontSize: '8px', fontWeight: 700 }}
-                        >
-                          {item.label}
-                        </text>
-                        <text
-                          x={80}
-                          y={displayY + 8}
-                          textAnchor="end"
-                          className="hud-label-value left"
-                          style={{ fill: '#06b6d4', fontSize: '10px', fontWeight: 800 }}
-                        >
-                          {item.value}
-                        </text>
-                      </g>
-                    );
-                  })}
-
-                  {/* Right Labels */}
-                  {rightLabels.map((item, idx) => {
-                    const displayY = rightY[idx];
-                    return (
-                      <g key={`hud-r-comp-${idx}`} className="hud-label-group">
-                        <line
-                          x1={315}
-                          y1={displayY}
-                          x2={item.pt.x}
-                          y2={item.pt.y}
-                          className="hud-pointer-line right"
-                        />
-                        <circle
-                          cx={item.pt.x}
-                          cy={item.pt.y}
-                          className="hud-pointer-dot right"
-                        />
-                        <rect
-                          x={315}
-                          y={displayY - 12}
-                          width={82}
-                          height={24}
-                          rx={6}
-                          ry={6}
-                          fill="rgba(15, 23, 42, 0.85)"
-                          stroke="rgba(251, 191, 36, 0.25)"
-                          strokeWidth="1"
-                        />
-                        <text
-                          x={320}
-                          y={displayY - 2}
-                          textAnchor="start"
-                          className="hud-label-text right"
-                          style={{ fill: '#f59e0b', fontSize: '8px', fontWeight: 700 }}
-                        >
-                          {item.label}
-                        </text>
-                        <text
-                          x={320}
-                          y={displayY + 8}
-                          textAnchor="start"
-                          className="hud-label-value right"
-                          style={{ fill: '#fbbf24', fontSize: '10px', fontWeight: 800 }}
-                        >
-                          {item.value}
-                        </text>
-                      </g>
+                      <line
+                        key={`mesh-${idx}`}
+                        x1={line.x1}
+                        y1={line.y1}
+                        x2={line.x2}
+                        y2={line.y2}
+                        className={`mesh-line ${line.type}`}
+                        style={customStyle}
+                      />
                     );
                   })}
                 </g>
-              );
-            })()}
+              )}
 
-            {/* Render connecting bone lines in 2D calibration editing mode */}
-            {getBones()}
+              {/* Direct 3D HUD Measurements Labels (only in Mannequin mode) */}
+              {measurements && !hasMediaBackground && projected3DData.hudPoints && (() => {
+                const leftLabels = [
+                  { label: 'CỔ', value: (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) + " cm", pt: projected3DData.hudPoints.neck },
+                  { label: 'NGỰC', value: measurements.chestCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.chest },
+                  { label: 'EO DƯỚI', value: (measurements.waistCircumference * 1.05).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistLower },
+                  { label: 'ĐÙI PHẢI', value: (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) + " cm", pt: projected3DData.hudPoints.thighLeft },
+                  { label: 'BẮP CHÂN PHẢI', value: (measurements.hipCircumference * 0.38).toFixed(1) + " cm", pt: projected3DData.hudPoints.calfLeft },
+                ];
 
-            {/* Render interactive landmarks */}
-            {landmarks.map((point) => {
-              // Smart layout text offsets to prevent overlapping labels
-              const getTextOffset = (id: string) => {
-                if (id.includes('left')) return { dx: -12, dy: 4, anchor: 'end' as const };
-                if (id.includes('right')) return { dx: 12, dy: 4, anchor: 'start' as const };
-                if (id === 'nasion') return { dx: 0, dy: -12, anchor: 'middle' as const };
-                if (id === 'chest_depth') return { dx: 12, dy: 4, anchor: 'start' as const };
-                if (id === 'buttock_depth') return { dx: -12, dy: 4, anchor: 'end' as const };
-                return { dx: 12, dy: 4, anchor: 'start' as const };
-              };
-              const offset = getTextOffset(point.id);
-              const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
-              if (isLowerJoint && scanRange === 'half' && inputSource !== 'mannequin') {
-                return null;
-              }
+                const rightLabels = [
+                  { label: 'RỘNG VAI', value: measurements.shoulderWidth.toFixed(1) + " cm", pt: projected3DData.hudPoints.shoulder },
+                  { label: 'EO TRÊN', value: (measurements.waistCircumference * 0.96).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistUpper },
+                  { label: 'MÔNG', value: measurements.hipCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.hips },
+                  { label: 'DÀI TAY', value: measurements.armLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.armRight },
+                  { label: 'DÀI CHÂN', value: measurements.legLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.legRight },
+                ];
 
-              return (
-                <g key={point.id} className="landmark-group">
-                  <circle
-                    cx={point.x}
-                    cy={point.y}
-                    r={activePointId === point.id ? 8 : 6}
-                    onMouseDown={() => handleMouseDown(point.id)}
-                    onTouchStart={(e) => {
-                      e.stopPropagation();
-                      handleMouseDown(point.id);
-                    }}
-                    className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
-                  />
-                  <text
-                    x={point.x + offset.dx}
-                    y={point.y + offset.dy}
-                    textAnchor={offset.anchor}
-                    className="landmark-text"
-                  >
-                    {point.label}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+                const leftY = relaxLabelY(leftLabels.map((item, idx) => ({ y: item.pt.y, originalIdx: idx })), 36, 40, 610);
+                const rightY = relaxLabelY(rightLabels.map((item, idx) => ({ y: item.pt.y, originalIdx: idx })), 36, 40, 610);
+                
+                return (
+                  <g className="hud-labels-group" style={{ pointerEvents: 'none' }}>
+                    {/* Left Labels */}
+                    {leftLabels.map((item, idx) => {
+                      const displayY = leftY[idx];
+                      return (
+                        <g key={`hud-l-comp-${idx}`} className="hud-label-group">
+                          <line
+                            x1={85}
+                            y1={displayY}
+                            x2={item.pt.x}
+                            y2={item.pt.y}
+                            className="hud-pointer-line left"
+                          />
+                          <circle
+                            cx={item.pt.x}
+                            cy={item.pt.y}
+                            className="hud-pointer-dot left"
+                          />
+                          <rect
+                            x={3}
+                            y={displayY - 12}
+                            width={82}
+                            height={24}
+                            rx={6}
+                            ry={6}
+                            fill="rgba(15, 23, 42, 0.85)"
+                            stroke="rgba(6, 182, 212, 0.25)"
+                            strokeWidth="1"
+                          />
+                          <text
+                            x={80}
+                            y={displayY - 2}
+                            textAnchor="end"
+                            className="hud-label-text left"
+                            style={{ fill: '#22d3ee', fontSize: '8px', fontWeight: 700 }}
+                          >
+                            {item.label}
+                          </text>
+                          <text
+                            x={80}
+                            y={displayY + 8}
+                            textAnchor="end"
+                            className="hud-label-value left"
+                            style={{ fill: '#06b6d4', fontSize: '10px', fontWeight: 800 }}
+                          >
+                            {item.value}
+                          </text>
+                        </g>
+                      );
+                    })}
+
+                    {/* Right Labels */}
+                    {rightLabels.map((item, idx) => {
+                      const displayY = rightY[idx];
+                      return (
+                        <g key={`hud-r-comp-${idx}`} className="hud-label-group">
+                          <line
+                            x1={315}
+                            y1={displayY}
+                            x2={item.pt.x}
+                            y2={item.pt.y}
+                            className="hud-pointer-line right"
+                          />
+                          <circle
+                            cx={item.pt.x}
+                            cy={item.pt.y}
+                            className="hud-pointer-dot right"
+                          />
+                          <rect
+                            x={315}
+                            y={displayY - 12}
+                            width={82}
+                            height={24}
+                            rx={6}
+                            ry={6}
+                            fill="rgba(15, 23, 42, 0.85)"
+                            stroke="rgba(251, 191, 36, 0.25)"
+                            strokeWidth="1"
+                          />
+                          <text
+                            x={320}
+                            y={displayY - 2}
+                            textAnchor="start"
+                            className="hud-label-text right"
+                            style={{ fill: '#f59e0b', fontSize: '8px', fontWeight: 700 }}
+                          >
+                            {item.label}
+                          </text>
+                          <text
+                            x={320}
+                            y={displayY + 8}
+                            textAnchor="start"
+                            className="hud-label-value right"
+                            style={{ fill: '#fbbf24', fontSize: '10px', fontWeight: 800 }}
+                          >
+                            {item.value}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })()}
+
+              {/* Render connecting bone lines in 2D calibration editing mode */}
+              {getBones()}
+
+              {/* Render interactive landmarks */}
+              {landmarks.map((point) => {
+                // Smart layout text offsets to prevent overlapping labels
+                const getTextOffset = (id: string) => {
+                  if (id.includes('left')) return { dx: -12, dy: 4, anchor: 'end' as const };
+                  if (id.includes('right')) return { dx: 12, dy: 4, anchor: 'start' as const };
+                  if (id === 'nasion') return { dx: 0, dy: -12, anchor: 'middle' as const };
+                  if (id === 'chest_depth') return { dx: 12, dy: 4, anchor: 'start' as const };
+                  if (id === 'buttock_depth') return { dx: -12, dy: 4, anchor: 'end' as const };
+                  return { dx: 12, dy: 4, anchor: 'start' as const };
+                };
+                const offset = getTextOffset(point.id);
+                const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
+                if (isLowerJoint && scanRange === 'half') {
+                  return null;
+                }
+
+                return (
+                  <g key={point.id} className="landmark-group">
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={activePointId === point.id ? 8 : 6}
+                      onMouseDown={() => handleMouseDown(point.id)}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        handleMouseDown(point.id);
+                      }}
+                      className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
+                    />
+                    <text
+                      x={point.x + offset.dx}
+                      y={point.y + offset.dy}
+                      textAnchor={offset.anchor}
+                      className="landmark-text"
+                    >
+                      {point.label}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          )}
 
           {/* Floating AI Scanning Controls Overlay */}
           {inputSource === 'webcam' && isWebcamActive && !isModelLoading && (

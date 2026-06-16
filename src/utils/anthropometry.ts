@@ -129,35 +129,35 @@ export function estimateCircumferences(
 function getHeightSizeIndex(gender: Gender, heightCm: number, system: 'vietnam' | 'international'): number {
   if (system === 'vietnam') {
     if (gender === 'male') {
-      if (heightCm < 160) return 0; // XS
-      if (heightCm < 164.5) return 1; // S
-      if (heightCm < 169.5) return 2; // M
-      if (heightCm < 173.5) return 3; // L
-      if (heightCm < 176.5) return 4; // XL
+      if (heightCm < 165) return 0; // XS
+      if (heightCm < 168) return 1; // S
+      if (heightCm < 171) return 2; // M
+      if (heightCm < 174) return 3; // L
+      if (heightCm < 177) return 4; // XL
       return 5; // XXL
     } else {
-      if (heightCm < 148) return 0; // XS
-      if (heightCm < 152.25) return 1; // S
-      if (heightCm < 154.75) return 2; // M
-      if (heightCm < 157.25) return 3; // L
-      if (heightCm < 160.75) return 4; // XL
+      if (heightCm < 150) return 0; // XS
+      if (heightCm < 156) return 1; // S
+      if (heightCm < 161) return 2; // M
+      if (heightCm < 165) return 3; // L
+      if (heightCm < 171) return 4; // XL
       return 5; // XXL
     }
   } else {
     if (gender === 'male') {
-      if (heightCm < 165) return 0; // XS
-      if (heightCm < 172.0) return 1; // S
-      if (heightCm < 178.0) return 2; // M
-      if (heightCm < 184.0) return 3; // L
-      if (heightCm < 190.0) return 4; // XL
-      return 5; // XXL
+      if (heightCm < 165) return 0; 
+      if (heightCm < 172.0) return 1; 
+      if (heightCm < 178.0) return 2; 
+      if (heightCm < 184.0) return 3; 
+      if (heightCm < 190.0) return 4; 
+      return 5; 
     } else {
-      if (heightCm < 155) return 0; // XS
-      if (heightCm < 162.0) return 1; // S
-      if (heightCm < 168.0) return 2; // M
-      if (heightCm < 174.0) return 3; // L
-      if (heightCm < 180.0) return 4; // XL
-      return 5; // XXL
+      if (heightCm < 155) return 0; 
+      if (heightCm < 162.0) return 1; 
+      if (heightCm < 168.0) return 2; 
+      if (heightCm < 174.0) return 3; 
+      if (heightCm < 180.0) return 4; 
+      return 5; 
     }
   }
 }
@@ -166,34 +166,34 @@ function getWeightSizeIndex(gender: Gender, weightKg: number, system: 'vietnam' 
   if (system === 'vietnam') {
     if (gender === 'male') {
       if (weightKg < 55) return 0; // XS
-      if (weightKg < 60.0) return 1; // S
-      if (weightKg < 65.5) return 2; // M
-      if (weightKg < 70.5) return 3; // L
-      if (weightKg < 76.5) return 4; // XL
+      if (weightKg < 60) return 1; // S
+      if (weightKg < 65) return 2; // M
+      if (weightKg < 71) return 3; // L
+      if (weightKg < 77) return 4; // XL
       return 5; // XXL
     } else {
-      if (weightKg < 38) return 0; // XS
-      if (weightKg < 42.5) return 1; // S
-      if (weightKg < 47.0) return 2; // M
-      if (weightKg < 52.25) return 3; // L
-      if (weightKg < 58.25) return 4; // XL
+      if (weightKg < 43) return 0; // XS
+      if (weightKg < 46.5) return 1; // S
+      if (weightKg < 53) return 2; // M
+      if (weightKg < 57) return 3; // L
+      if (weightKg < 62) return 4; // XL
       return 5; // XXL
     }
   } else {
     if (gender === 'male') {
-      if (weightKg < 58) return 0; // XS
-      if (weightKg < 67.0) return 1; // S
-      if (weightKg < 77.0) return 2; // M
-      if (weightKg < 87.0) return 3; // L
-      if (weightKg < 97.0) return 4; // XL
-      return 5; // XXL
+      if (weightKg < 58) return 0; 
+      if (weightKg < 67.0) return 1; 
+      if (weightKg < 77.0) return 2; 
+      if (weightKg < 87.0) return 3; 
+      if (weightKg < 97.0) return 4; 
+      return 5; 
     } else {
-      if (weightKg < 46) return 0; // XS
-      if (weightKg < 54.0) return 1; // S
-      if (weightKg < 63.0) return 2; // M
-      if (weightKg < 73.0) return 3; // L
-      if (weightKg < 83.0) return 4; // XL
-      return 5; // XXL
+      if (weightKg < 46) return 0; 
+      if (weightKg < 54.0) return 1; 
+      if (weightKg < 63.0) return 2; 
+      if (weightKg < 73.0) return 3; 
+      if (weightKg < 83.0) return 4; 
+      return 5; 
     }
   }
 }
@@ -290,12 +290,11 @@ export function getRecommendedSize(
   const weightSizeIndex = getWeightSizeIndex(gender, finalWeight, sizeSystem);
 
   // 4. Combine constraints safely:
-  // - Calculate a balanced size index by averaging height index, weight index, and circumference index.
-  let finalIndex = Math.round((heightSizeIndex + weightSizeIndex + circSizeIndex) / 3);
+  // Sử dụng trung bình cộng có trọng số: Vòng đo và Cân nặng (80%), Chiều cao (20%)
+  let finalIndex = Math.round((heightSizeIndex * 0.2) + (weightSizeIndex * 0.4) + (circSizeIndex * 0.4));
   
-  // - Length constraints: clothing size shouldn't be too short or too long for their height.
-  // Constrain finalIndex to be within [heightSizeIndex - 1, heightSizeIndex + 2]
-  const minIndex = Math.max(0, heightSizeIndex - 1);
+  // Ràng buộc nhẹ: Không để size chênh lệch quá 2 bậc so với chiều cao
+  const minIndex = Math.max(0, heightSizeIndex - 2); 
   const maxIndex = Math.min(chart.length - 1, heightSizeIndex + 2);
   finalIndex = Math.max(minIndex, Math.min(finalIndex, maxIndex));
 

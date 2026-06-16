@@ -12,18 +12,18 @@ import type { MeasurementSession } from './lib/supabase';
 // Default initial keypoints for front view
 const initialFrontLandmarks: Landmark[] = [
   { id: 'nasion', name: 'Gốc mũi', x: 200, y: 75, label: 'Gốc Mũi' },
-  { id: 'left_shoulder', name: 'Vai trái', x: 165, y: 125, label: 'Vai Trái' },
-  { id: 'right_shoulder', name: 'Vai phải', x: 235, y: 125, label: 'Vai Phải' },
-  { id: 'left_elbow', name: 'Khuỷu tay trái', x: 155, y: 220, label: 'Khuỷu Trái' },
-  { id: 'left_wrist', name: 'Cổ tay trái', x: 145, y: 310, label: 'Cổ Trái' },
-  { id: 'right_elbow', name: 'Khuỷu tay phải', x: 245, y: 220, label: 'Khuỷu Phải' },
-  { id: 'right_wrist', name: 'Cổ tay phải', x: 255, y: 310, label: 'Cổ Phải' },
-  { id: 'left_hip', name: 'Hông trái', x: 175, y: 300, label: 'Hông Trái' },
-  { id: 'right_hip', name: 'Hông phải', x: 225, y: 300, label: 'Hông Phải' },
-  { id: 'left_knee', name: 'Đầu gối trái', x: 175, y: 460, label: 'Gối Trái' },
-  { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 610, label: 'Cổ Chân Trái' },
-  { id: 'right_knee', name: 'Đầu gối phải', x: 225, y: 460, label: 'Gối Phải' },
-  { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 610, label: 'Cổ Chân Phải' }
+  { id: 'left_shoulder', name: 'Vai trái', x: 130, y: 125, label: 'Vai Trái' },
+  { id: 'right_shoulder', name: 'Vai phải', x: 270, y: 125, label: 'Vai Phải' },
+  { id: 'left_elbow', name: 'Khuỷu tay trái', x: 115, y: 220, label: 'Khuỷu Trái' },
+  { id: 'left_wrist', name: 'Cổ tay trái', x: 105, y: 310, label: 'Cổ Trái' },
+  { id: 'right_elbow', name: 'Khuỷu tay phải', x: 285, y: 220, label: 'Khuỷu Phải' },
+  { id: 'right_wrist', name: 'Cổ tay phải', x: 295, y: 310, label: 'Cổ Phải' },
+  { id: 'left_hip', name: 'Hông trái', x: 160, y: 300, label: 'Hông Trái' },
+  { id: 'right_hip', name: 'Hông phải', x: 240, y: 300, label: 'Hông Phải' },
+  { id: 'left_knee', name: 'Đầu gối trái', x: 165, y: 460, label: 'Gối Trái' },
+  { id: 'left_ankle', name: 'Cổ chân trái', x: 170, y: 610, label: 'Cổ Chân Trái' },
+  { id: 'right_knee', name: 'Đầu gối phải', x: 235, y: 460, label: 'Gối Phải' },
+  { id: 'right_ankle', name: 'Cổ chân phải', x: 230, y: 610, label: 'Cổ Chân Phải' }
 ];
 
 // Default initial keypoints for side view

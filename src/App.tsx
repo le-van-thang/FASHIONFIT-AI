@@ -4,7 +4,7 @@ import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
-import { estimateCircumferences, getRecommendedSize, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
+import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
 import { Activity, History, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
@@ -445,7 +445,7 @@ function App() {
   const recommendation = useMemo<SizeRecommendation>(() => {
     const sizeData = getRecommendedSize(input.gender, measurements, input.sizeSystem, input.weight);
     
-    // Fit detail analysis based on standard deviations
+    // Fit detail analysis based on standard deviations relative to the recommended size limits
     const evaluateFit = (current: number, base: number) => {
       const diff = current - base;
       if (diff > 4) return 'loose' as const;
@@ -453,14 +453,8 @@ function App() {
       return 'fit' as const;
     };
 
-    // Reference base chest/waist/hip mapping (Size M for selected system)
-    const baseLimits = input.sizeSystem === 'vietnam'
-      ? (input.gender === 'male' 
-          ? { chest: 92, waist: 74, hips: 94 }
-          : { chest: 86, waist: 70, hips: 92 })
-      : (input.gender === 'male'
-          ? { chest: 96, waist: 84, hips: 100 }
-          : { chest: 88, waist: 70, hips: 94 });
+    // Dynamic base limits for the specific recommended size
+    const baseLimits = getSizeLimits(input.gender, sizeData.size, input.sizeSystem);
 
     return {
       size: sizeData.size,
@@ -471,7 +465,7 @@ function App() {
         hips: evaluateFit(measurements.hipCircumference, baseLimits.hips)
       }
     };
-  }, [input.gender, measurements]);
+  }, [input.gender, input.sizeSystem, input.weight, measurements]);
 
   // Check for anatomical logic warnings to prevent user from dragging points out of logical bounds
   const anatomicalWarning = useMemo(() => {

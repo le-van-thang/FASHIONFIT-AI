@@ -63,10 +63,13 @@ export function estimateCircumferences(
   const chestVolumeRatio = 0.30; // 30% of body mass is in the thorax
   const abdomenVolumeRatio = 0.28; // 28% in abdomen/pelvis
 
+  // Cap the minimum height for volume segment calculations to prevent runway circumference values for extremely short inputs (dwarfs)
+  const effHeightCm = Math.max(130, heightCm);
+
   // Torso height segments as fractions of total height
-  const chestSegmentHeight = heightCm * 0.16; // Chest height is roughly 16% of total height
-  const waistSegmentHeight = heightCm * 0.10; // Waist segment is roughly 10%
-  const hipsSegmentHeight = heightCm * 0.12;  // Hip segment is roughly 12%
+  const chestSegmentHeight = effHeightCm * 0.16; // Chest height is roughly 16% of total height
+  const waistSegmentHeight = effHeightCm * 0.10; // Waist segment is roughly 10%
+  const hipsSegmentHeight = effHeightCm * 0.12;  // Hip segment is roughly 12%
 
   // Derive average cross-sectional areas (Volume / Segment Height)
   const chestArea = (totalVolumeCm3 * chestVolumeRatio) / chestSegmentHeight;
@@ -127,34 +130,34 @@ function getHeightSizeIndex(gender: Gender, heightCm: number, system: 'vietnam' 
   if (system === 'vietnam') {
     if (gender === 'male') {
       if (heightCm < 160) return 0; // XS
-      if (heightCm < 165) return 1; // S
-      if (heightCm < 170) return 2; // M
-      if (heightCm < 174) return 3; // L
-      if (heightCm < 177) return 4; // XL
+      if (heightCm < 164.5) return 1; // S
+      if (heightCm < 169.5) return 2; // M
+      if (heightCm < 173.5) return 3; // L
+      if (heightCm < 176.5) return 4; // XL
       return 5; // XXL
     } else {
-      if (heightCm < 148) return 0;
-      if (heightCm < 153) return 1;
-      if (heightCm < 155) return 2;
-      if (heightCm < 158) return 3;
-      if (heightCm < 162) return 4;
-      return 5;
+      if (heightCm < 148) return 0; // XS
+      if (heightCm < 152.25) return 1; // S
+      if (heightCm < 154.75) return 2; // M
+      if (heightCm < 157.25) return 3; // L
+      if (heightCm < 160.75) return 4; // XL
+      return 5; // XXL
     }
   } else {
     if (gender === 'male') {
-      if (heightCm < 165) return 0;
-      if (heightCm < 172) return 1;
-      if (heightCm < 178) return 2;
-      if (heightCm < 184) return 3;
-      if (heightCm < 190) return 4;
-      return 5;
+      if (heightCm < 165) return 0; // XS
+      if (heightCm < 172.0) return 1; // S
+      if (heightCm < 178.0) return 2; // M
+      if (heightCm < 184.0) return 3; // L
+      if (heightCm < 190.0) return 4; // XL
+      return 5; // XXL
     } else {
-      if (heightCm < 155) return 0;
-      if (heightCm < 162) return 1;
-      if (heightCm < 168) return 2;
-      if (heightCm < 174) return 3;
-      if (heightCm < 180) return 4;
-      return 5;
+      if (heightCm < 155) return 0; // XS
+      if (heightCm < 162.0) return 1; // S
+      if (heightCm < 168.0) return 2; // M
+      if (heightCm < 174.0) return 3; // L
+      if (heightCm < 180.0) return 4; // XL
+      return 5; // XXL
     }
   }
 }
@@ -163,36 +166,92 @@ function getWeightSizeIndex(gender: Gender, weightKg: number, system: 'vietnam' 
   if (system === 'vietnam') {
     if (gender === 'male') {
       if (weightKg < 55) return 0; // XS
-      if (weightKg < 60) return 1; // S
-      if (weightKg < 66) return 2; // M
-      if (weightKg < 71) return 3; // L
-      if (weightKg < 77) return 4; // XL
+      if (weightKg < 60.0) return 1; // S
+      if (weightKg < 65.5) return 2; // M
+      if (weightKg < 70.5) return 3; // L
+      if (weightKg < 76.5) return 4; // XL
       return 5; // XXL
     } else {
-      if (weightKg < 38) return 0;
-      if (weightKg < 43) return 1;
-      if (weightKg < 46) return 2;
-      if (weightKg < 53) return 3;
-      if (weightKg < 57) return 4;
-      return 5;
+      if (weightKg < 38) return 0; // XS
+      if (weightKg < 42.5) return 1; // S
+      if (weightKg < 47.0) return 2; // M
+      if (weightKg < 52.25) return 3; // L
+      if (weightKg < 58.25) return 4; // XL
+      return 5; // XXL
     }
   } else {
     if (gender === 'male') {
-      if (weightKg < 58) return 0;
-      if (weightKg < 67) return 1;
-      if (weightKg < 77) return 2;
-      if (weightKg < 87) return 3;
-      if (weightKg < 97) return 4;
-      return 5;
+      if (weightKg < 58) return 0; // XS
+      if (weightKg < 67.0) return 1; // S
+      if (weightKg < 77.0) return 2; // M
+      if (weightKg < 87.0) return 3; // L
+      if (weightKg < 97.0) return 4; // XL
+      return 5; // XXL
     } else {
-      if (weightKg < 46) return 0;
-      if (weightKg < 54) return 1;
-      if (weightKg < 63) return 2;
-      if (weightKg < 73) return 3;
-      if (weightKg < 83) return 4;
-      return 5;
+      if (weightKg < 46) return 0; // XS
+      if (weightKg < 54.0) return 1; // S
+      if (weightKg < 63.0) return 2; // M
+      if (weightKg < 73.0) return 3; // L
+      if (weightKg < 83.0) return 4; // XL
+      return 5; // XXL
     }
   }
+}
+
+export const sizeCharts = {
+  vietnam: {
+    male: [
+      { name: 'XS' as const, limits: [82, 66, 86] },
+      { name: 'S' as const, limits: [88, 70, 90] },
+      { name: 'M' as const, limits: [92, 74, 94] },
+      { name: 'L' as const, limits: [96, 78, 98] },
+      { name: 'XL' as const, limits: [100, 82, 102] },
+      { name: 'XXL' as const, limits: [104, 86, 106] }
+    ],
+    female: [
+      { name: 'XS' as const, limits: [78, 62, 84] },
+      { name: 'S' as const, limits: [82, 66, 88] },
+      { name: 'M' as const, limits: [86, 70, 92] },
+      { name: 'L' as const, limits: [90, 74, 96] },
+      { name: 'XL' as const, limits: [94, 78, 100] },
+      { name: 'XXL' as const, limits: [98, 82, 104] }
+    ]
+  },
+  international: {
+    male: [
+      { name: 'XS' as const, limits: [80, 70, 84] },
+      { name: 'S' as const, limits: [88, 76, 92] },
+      { name: 'M' as const, limits: [96, 84, 100] },
+      { name: 'L' as const, limits: [104, 92, 108] },
+      { name: 'XL' as const, limits: [112, 100, 116] },
+      { name: 'XXL' as const, limits: [120, 108, 124] }
+    ],
+    female: [
+      { name: 'XS' as const, limits: [76, 60, 82] },
+      { name: 'S' as const, limits: [82, 64, 88] },
+      { name: 'M' as const, limits: [88, 70, 94] },
+      { name: 'L' as const, limits: [94, 76, 100] },
+      { name: 'XL' as const, limits: [100, 82, 106] },
+      { name: 'XXL' as const, limits: [108, 90, 114] }
+    ]
+  }
+};
+
+/**
+ * Gets chest, waist, and hips limits for a specific size name
+ */
+export function getSizeLimits(
+  gender: Gender,
+  sizeName: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL',
+  sizeSystem: 'vietnam' | 'international' = 'vietnam'
+): { chest: number; waist: number; hips: number } {
+  const chart = sizeCharts[sizeSystem][gender];
+  const sizeObj = chart.find(s => s.name === sizeName) || chart[2];
+  return {
+    chest: sizeObj.limits[0],
+    waist: sizeObj.limits[1],
+    hips: sizeObj.limits[2]
+  };
 }
 
 /**
@@ -205,46 +264,6 @@ export function getRecommendedSize(
   weightKg?: number
 ): { size: 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'; matchPercentage: number } {
   const { chestCircumference, waistCircumference, hipCircumference, height } = measurements;
-
-  const sizeCharts = {
-    vietnam: {
-      male: [
-        { name: 'XS' as const, limits: [82, 66, 86] },
-        { name: 'S' as const, limits: [88, 70, 90] },
-        { name: 'M' as const, limits: [92, 74, 94] },
-        { name: 'L' as const, limits: [96, 78, 98] },
-        { name: 'XL' as const, limits: [100, 82, 102] },
-        { name: 'XXL' as const, limits: [104, 86, 106] }
-      ],
-      female: [
-        { name: 'XS' as const, limits: [78, 62, 84] },
-        { name: 'S' as const, limits: [82, 66, 88] },
-        { name: 'M' as const, limits: [86, 70, 92] },
-        { name: 'L' as const, limits: [90, 74, 96] },
-        { name: 'XL' as const, limits: [94, 78, 100] },
-        { name: 'XXL' as const, limits: [98, 82, 104] }
-      ]
-    },
-    international: {
-      male: [
-        { name: 'XS' as const, limits: [80, 70, 84] },
-        { name: 'S' as const, limits: [88, 76, 92] },
-        { name: 'M' as const, limits: [96, 84, 100] },
-        { name: 'L' as const, limits: [104, 92, 108] },
-        { name: 'XL' as const, limits: [112, 100, 116] },
-        { name: 'XXL' as const, limits: [120, 108, 124] }
-      ],
-      female: [
-        { name: 'XS' as const, limits: [76, 60, 82] },
-        { name: 'S' as const, limits: [82, 64, 88] },
-        { name: 'M' as const, limits: [88, 70, 94] },
-        { name: 'L' as const, limits: [94, 76, 100] },
-        { name: 'XL' as const, limits: [100, 82, 106] },
-        { name: 'XXL' as const, limits: [108, 90, 114] }
-      ]
-    }
-  };
-
   const chart = sizeCharts[sizeSystem][gender];
   
   // 1. Circumference-based size match using Euclidean distance
@@ -271,12 +290,14 @@ export function getRecommendedSize(
   const weightSizeIndex = getWeightSizeIndex(gender, finalWeight, sizeSystem);
 
   // 4. Combine constraints safely:
-  // - Width is bound by larger of circumferences or weight to avoid tightness: Math.max(circSizeIndex, weightSizeIndex)
-  // - Height length bounds it: we don't go below (heightSizeIndex - 1) to avoid too short crop tops
-  let finalIndex = Math.max(circSizeIndex, weightSizeIndex);
-  if (heightSizeIndex > 0) {
-    finalIndex = Math.max(finalIndex, heightSizeIndex - 1);
-  }
+  // - Calculate a balanced size index by averaging height index, weight index, and circumference index.
+  let finalIndex = Math.round((heightSizeIndex + weightSizeIndex + circSizeIndex) / 3);
+  
+  // - Length constraints: clothing size shouldn't be too short or too long for their height.
+  // Constrain finalIndex to be within [heightSizeIndex - 1, heightSizeIndex + 2]
+  const minIndex = Math.max(0, heightSizeIndex - 1);
+  const maxIndex = Math.min(chart.length - 1, heightSizeIndex + 2);
+  finalIndex = Math.max(minIndex, Math.min(finalIndex, maxIndex));
 
   const bestSize = chart[finalIndex];
 

@@ -8,7 +8,7 @@ import type { Landmark, Gender, BodyMeasurements } from '../types';
 // Custom Shader Material for Heatmap Mode (ColorMetric Shader)
 const HeatmapShaderMaterial = {
   uniforms: {
-    colorBottom: { value: new THREE.Color('#00bfff') }, // Cyan Zozofit
+    colorBottom: { value: new THREE.Color('#0055ff') }, // Ocean Blue
     colorTop: { value: new THREE.Color('#ffb703') },    // Yellow/Orange
     minY: { value: -1.0 },
     maxY: { value: 1.0 }
@@ -31,7 +31,7 @@ const HeatmapShaderMaterial = {
       // Normalize Y position between minY and maxY
       float h = clamp((vPosition.y - minY) / (maxY - minY), 0.0, 1.0);
       
-      // Smooth interpolation between bottom (Cyan) and top (Yellow/Orange)
+      // Smooth interpolation between bottom (Blue) and top (Yellow/Orange)
       float mixFactor = smoothstep(0.0, 1.0, h);
       vec3 finalColor = mix(colorBottom, colorTop, mixFactor);
       
@@ -46,11 +46,10 @@ interface ModelProps {
   viewMode: 'solid' | 'neon' | 'heatmap';
   gender: Gender;
   weight: number;
-  scaleFactor: number;
   measurements?: BodyMeasurements;
 }
 
-const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFactor, measurements }) => {
+const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements }) => {
   const { scene } = useGLTF(path);
   
   // Calculate bounding box of the scene to find vertical bounds dynamically
@@ -65,9 +64,9 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
   const neonMaterial = useMemo(() => {
     return new THREE.MeshBasicMaterial({
       wireframe: true,
-      color: new THREE.Color('#00bfff'), // Màu xanh dương cyan chuẩn của Zozofit
+      color: new THREE.Color('#0055ff'), // Màu xanh nước biển chuẩn của Zozofit
       transparent: true,
-      opacity: 0.85, // Increase opacity for a bright neon look
+      opacity: 0.85, // Bright neon wireframe
       depthWrite: false,
       side: THREE.DoubleSide
     });
@@ -75,7 +74,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
 
   const solidMaterial = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#0f2c45'), // Slightly brighter solid blue
+      color: new THREE.Color('#05162e'), // Deep ocean dark blue
       roughness: 0.4,
       metalness: 0.8,
       transparent: true,
@@ -87,7 +86,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
   const heatmapMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
-        colorBottom: { value: new THREE.Color('#00bfff') }, // Cyan #00bfff
+        colorBottom: { value: new THREE.Color('#0055ff') }, // Ocean Blue
         colorTop: { value: new THREE.Color('#ffb703') },    // Yellow/Orange
         minY: { value: bounds.min },
         maxY: { value: bounds.max }
@@ -100,7 +99,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
     });
   }, [bounds]);
 
-  // Apply materials dynamically depending on viewMode (from prop meshStyle)
+  // Apply materials dynamically depending on viewMode
   useEffect(() => {
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -123,12 +122,17 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
     }
   });
 
-  // Scale model height by scaleFactor, and width/depth by weight
+  // Scale model height by height factor (cm), and width/depth by weight
   const scale = useMemo(() => {
     const baseWeight = gender === 'female' ? 52 : 65;
     const weightFactor = Math.max(0.75, Math.min(1.45, weight / baseWeight));
-    return [weightFactor * 0.95, scaleFactor * 0.95, weightFactor * 0.95] as [number, number, number];
-  }, [gender, weight, scaleFactor]);
+    
+    // Scale height based on physical height in cm (relative to baseline 165cm)
+    const heightVal = measurements?.height || 165;
+    const heightScale = heightVal / 165;
+    
+    return [weightFactor * 0.95, heightScale * 0.95, weightFactor * 0.95] as [number, number, number];
+  }, [gender, weight, measurements]);
 
   // Derived measurement values
   const chestVal = measurements?.chestCircumference ? measurements.chestCircumference.toFixed(1) : '90.0';
@@ -136,12 +140,16 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
   const hipsVal = measurements?.hipCircumference ? measurements.hipCircumference.toFixed(1) : '95.0';
   const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
 
+  // Reset scene rotation to default (the models are already Y-up standing upright)
+  useEffect(() => {
+    if (scene) {
+      scene.rotation.set(0, 0, 0);
+    }
+  }, [scene]);
+
   return (
     <group ref={meshRef} scale={scale}>
-      {/* Stand the model straight up by converting Blender Z-up to Three.js Y-up, and rotate to face the camera */}
-      <group rotation={[-Math.PI / 2, 0, Math.PI]}>
-        <primitive object={scene} />
-      </group>
+      <primitive object={scene} rotation={[0, 0, 0]} />
 
       {/* Futuristic HTML HUD overlays positioned relative to approximate body coordinates */}
       {measurements && (
@@ -160,32 +168,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 191, 255, 0.6)',
+                background: 'rgba(0, 85, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#00bfff',
+                  background: '#0055ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   left: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #00bfff'
+                  boxShadow: '0 0 6px #0055ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 191, 255, 0.4)',
+                border: '1px solid rgba(0, 85, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#00bfff',
+                color: '#0055ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 191, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
               }}>
                 NGỰC: <span style={{ color: '#fff' }}>{chestVal} cm</span>
               </div>
@@ -207,32 +215,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 191, 255, 0.6)',
+                background: 'rgba(0, 85, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#00bfff',
+                  background: '#0055ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   right: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #00bfff'
+                  boxShadow: '0 0 6px #0055ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 191, 255, 0.4)',
+                border: '1px solid rgba(0, 85, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#00bfff',
+                color: '#0055ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 191, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
               }}>
                 EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
               </div>
@@ -253,32 +261,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 191, 255, 0.6)',
+                background: 'rgba(0, 85, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#00bfff',
+                  background: '#0055ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   left: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #00bfff'
+                  boxShadow: '0 0 6px #0055ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 191, 255, 0.4)',
+                border: '1px solid rgba(0, 85, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#00bfff',
+                color: '#0055ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 191, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
               }}>
                 MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
               </div>
@@ -300,32 +308,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 191, 255, 0.6)',
+                background: 'rgba(0, 85, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#00bfff',
+                  background: '#0055ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   right: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #00bfff'
+                  boxShadow: '0 0 6px #0055ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 191, 255, 0.4)',
+                border: '1px solid rgba(0, 85, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#00bfff',
+                color: '#0055ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 191, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
               }}>
                 DÀI CHÂN: <span style={{ color: '#fff' }}>{legVal} cm</span>
               </div>
@@ -351,7 +359,7 @@ const HologramScannerBeam: React.FC = () => {
     <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
       <planeGeometry args={[3, 3]} />
       <meshBasicMaterial 
-        color="#00bfff" 
+        color="#0055ff" 
         transparent 
         opacity={0.15} 
         side={THREE.DoubleSide}
@@ -368,7 +376,6 @@ class ModelErrorBoundary extends React.Component<
     viewMode: 'solid' | 'neon' | 'heatmap';
     gender: Gender;
     weight: number;
-    scaleFactor: number;
     measurements?: BodyMeasurements;
     children: React.ReactNode;
   },
@@ -400,7 +407,6 @@ class ModelErrorBoundary extends React.Component<
           viewMode={this.props.viewMode} 
           gender="female"
           weight={this.props.weight}
-          scaleFactor={this.props.scaleFactor}
           measurements={this.props.measurements} 
         />
       );
@@ -425,7 +431,6 @@ interface Mannequin3DViewProps {
 export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   gender,
   weight,
-  scaleFactor,
   meshStyle = 'solid',
   width,
   height,
@@ -443,7 +448,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         backgroundColor: '#090d16',
         borderRadius: 'var(--radius-md)',
         overflow: 'hidden',
-        border: '1px solid rgba(6, 182, 212, 0.15)'
+        border: '1px solid rgba(0, 85, 255, 0.15)'
       }}
     >
       {/* 3D WebGL Canvas */}
@@ -455,7 +460,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={45} />
         
         {/* Futuristic Grid and Lighting */}
-        <gridHelper args={[10, 20, '#00bfff', '#1e293b']} position={[0, -1.2, 0]} />
+        <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.2, 0]} />
         <ambientLight intensity={0.4} />
         <directionalLight position={[10, 10, 5]} intensity={0.8} />
         <directionalLight position={[-10, -10, -5]} intensity={0.3} />
@@ -467,7 +472,6 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
               viewMode={meshStyle}
               gender={gender}
               weight={weight}
-              scaleFactor={scaleFactor}
               measurements={measurements}
             >
               <Model 
@@ -475,7 +479,6 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
                 viewMode={meshStyle} 
                 gender={gender} 
                 weight={weight} 
-                scaleFactor={scaleFactor}
                 measurements={measurements}
               />
             </ModelErrorBoundary>

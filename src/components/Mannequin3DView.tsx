@@ -67,7 +67,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
       wireframe: true,
       color: new THREE.Color('#00bfff'), // Màu xanh dương cyan chuẩn của Zozofit
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.85, // Increase opacity for a bright neon look
       depthWrite: false,
       side: THREE.DoubleSide
     });
@@ -75,11 +75,11 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
 
   const solidMaterial = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#091a2e'),
+      color: new THREE.Color('#0f2c45'), // Slightly brighter solid blue
       roughness: 0.4,
       metalness: 0.8,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.9,
       side: THREE.DoubleSide
     });
   }, []);
@@ -138,7 +138,10 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, scaleFact
 
   return (
     <group ref={meshRef} scale={scale}>
-      <primitive object={scene} />
+      {/* Stand the model straight up by converting Blender Z-up to Three.js Y-up, and rotate to face the camera */}
+      <group rotation={[-Math.PI / 2, 0, Math.PI]}>
+        <primitive object={scene} />
+      </group>
 
       {/* Futuristic HTML HUD overlays positioned relative to approximate body coordinates */}
       {measurements && (

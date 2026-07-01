@@ -47,39 +47,55 @@ interface ModelProps {
   gender: Gender;
   weight: number;
   measurements?: BodyMeasurements;
+  rotationAngle?: number;
 }
 
-const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements }) => {
+const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0 }) => {
   const { scene } = useGLTF(path);
   
-  // Calculate bounding box of the scene to find vertical bounds dynamically
-  const bounds = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(scene);
-    const min = box.min.y;
-    const max = box.max.y;
-    return { min, max };
+  // Clone the scene to render the neon wireframe grid overlay on top of the solid body
+  const wireframeScene = useMemo(() => {
+    return scene.clone();
   }, [scene]);
 
-  // Create materials
-  const neonMaterial = useMemo(() => {
+  // Calculate bounding box of the scene to find vertical bounds and center offset dynamically
+  const { bounds, centerOffset } = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    
+    // Offset to center the model geometry precisely at origin [0, 0, 0]
+    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
+    
+    console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
+    return {
+      bounds: { min: box.min.y, max: box.max.y },
+      centerOffset: offset
+    };
+  }, [scene, path]);
+
+  // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
+  const solidMaterial = useMemo(() => {
     return new THREE.MeshBasicMaterial({
-      wireframe: true,
-      color: new THREE.Color('#0055ff'), // Màu xanh nước biển chuẩn của Zozofit
+      color: new THREE.Color('#021430'), // Deep translucent ocean navy blue
       transparent: true,
-      opacity: 0.85, // Bright neon wireframe
-      depthWrite: false,
-      side: THREE.DoubleSide
+      opacity: 0.75,
+      side: THREE.DoubleSide,
+      depthWrite: true
     });
   }, []);
 
-  const solidMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#05162e'), // Deep ocean dark blue
-      roughness: 0.4,
-      metalness: 0.8,
+  const neonMaterial = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      wireframe: true,
+      color: new THREE.Color('#00f5ff'), // Bright glowing electric cyan neon grid
       transparent: true,
-      opacity: 0.9,
-      side: THREE.DoubleSide
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+      depthWrite: false
     });
   }, []);
 
@@ -99,26 +115,37 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     });
   }, [bounds]);
 
-  // Apply materials dynamically depending on viewMode
+  // Apply materials dynamically to both base body and wireframe scene
   useEffect(() => {
+    // 1. Traverse base body scene
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        if (viewMode === 'neon') {
-          child.material = neonMaterial;
-        } else if (viewMode === 'solid') {
-          child.material = solidMaterial;
-        } else {
+        if (viewMode === 'heatmap') {
           child.material = heatmapMaterial;
+        } else {
+          child.material = solidMaterial;
         }
       }
     });
-  }, [scene, viewMode, neonMaterial, solidMaterial, heatmapMaterial]);
 
-  // Slight breathing rotation animation to mimic hologram scanner
+    // 2. Traverse wireframe overlay scene
+    wireframeScene.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        if (viewMode === 'heatmap') {
+          child.material = heatmapMaterial;
+        } else {
+          child.material = neonMaterial;
+        }
+      }
+    });
+  }, [scene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
+
+  // Apply Y-rotation (supporting front/side view angle and breathing rotation effect)
   const meshRef = useRef<THREE.Group>(null);
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y = Math.sin(state.clock.getElapsedTime() * 0.3) * 0.15;
+      const baseRotationY = (rotationAngle * Math.PI) / 180;
+      meshRef.current.rotation.y = baseRotationY + Math.sin(state.clock.getElapsedTime() * 0.3) * 0.12;
     }
   });
 
@@ -140,16 +167,21 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const hipsVal = measurements?.hipCircumference ? measurements.hipCircumference.toFixed(1) : '95.0';
   const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
 
-  // Reset scene rotation to default (the models are already Y-up standing upright)
+  // Apply default rotation to primitive scene contents
   useEffect(() => {
-    if (scene) {
-      scene.rotation.set(0, 0, 0);
-    }
-  }, [scene]);
+    if (scene) scene.rotation.set(0, 0, 0);
+    if (wireframeScene) wireframeScene.rotation.set(0, 0, 0);
+  }, [scene, wireframeScene]);
 
   return (
     <group ref={meshRef} scale={scale}>
-      <primitive object={scene} rotation={[0, 0, 0]} />
+      {/* Base solid translucent body centered using centerOffset */}
+      <primitive object={scene} position={[centerOffset.x, centerOffset.y, centerOffset.z]} />
+
+      {/* Grid overlay wireframe centered using centerOffset (hidden in heatmap mode) */}
+      {viewMode !== 'heatmap' && (
+        <primitive object={wireframeScene} position={[centerOffset.x, centerOffset.y, centerOffset.z]} />
+      )}
 
       {/* Futuristic HTML HUD overlays positioned relative to approximate body coordinates */}
       {measurements && (
@@ -168,32 +200,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 85, 255, 0.6)',
+                background: 'rgba(0, 245, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#0055ff',
+                  background: '#00f5ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   left: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #0055ff'
+                  boxShadow: '0 0 6px #00f5ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 85, 255, 0.4)',
+                border: '1px solid rgba(0, 245, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#0055ff',
+                color: '#00f5ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 245, 255, 0.25)'
               }}>
                 NGỰC: <span style={{ color: '#fff' }}>{chestVal} cm</span>
               </div>
@@ -215,32 +247,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 85, 255, 0.6)',
+                background: 'rgba(0, 245, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#0055ff',
+                  background: '#00f5ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   right: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #0055ff'
+                  boxShadow: '0 0 6px #00f5ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 85, 255, 0.4)',
+                border: '1px solid rgba(0, 245, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#0055ff',
+                color: '#00f5ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 245, 255, 0.25)'
               }}>
                 EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
               </div>
@@ -261,32 +293,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 85, 255, 0.6)',
+                background: 'rgba(0, 245, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#0055ff',
+                  background: '#00f5ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   left: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #0055ff'
+                  boxShadow: '0 0 6px #00f5ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 85, 255, 0.4)',
+                border: '1px solid rgba(0, 245, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#0055ff',
+                color: '#00f5ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 245, 255, 0.25)'
               }}>
                 MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
               </div>
@@ -308,32 +340,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               <div style={{
                 width: '50px',
                 height: '1px',
-                background: 'rgba(0, 85, 255, 0.6)',
+                background: 'rgba(0, 245, 255, 0.6)',
                 position: 'relative',
                 flexShrink: 0
               }}>
                 <div style={{
                   width: '4px',
                   height: '4px',
-                  background: '#0055ff',
+                  background: '#00f5ff',
                   borderRadius: '50%',
                   position: 'absolute',
                   right: 0,
                   top: '-2px',
-                  boxShadow: '0 0 6px #0055ff'
+                  boxShadow: '0 0 6px #00f5ff'
                 }} />
               </div>
               {/* Measurement Info Card */}
               <div style={{
                 background: 'rgba(9, 13, 22, 0.85)',
-                border: '1px solid rgba(0, 85, 255, 0.4)',
+                border: '1px solid rgba(0, 245, 255, 0.4)',
                 borderRadius: '4px',
                 padding: '4px 8px',
                 whiteSpace: 'nowrap',
-                color: '#0055ff',
+                color: '#00f5ff',
                 fontSize: '10px',
                 fontWeight: 700,
-                boxShadow: '0 0 12px rgba(0, 85, 255, 0.25)'
+                boxShadow: '0 0 12px rgba(0, 245, 255, 0.25)'
               }}>
                 DÀI CHÂN: <span style={{ color: '#fff' }}>{legVal} cm</span>
               </div>
@@ -351,7 +383,7 @@ const HologramScannerBeam: React.FC = () => {
   
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 1.5) * 1.5;
+      meshRef.current.position.y = Math.sin(state.clock.getElapsedTime() * 1.5) * 1.3;
     }
   });
 
@@ -359,9 +391,9 @@ const HologramScannerBeam: React.FC = () => {
     <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
       <planeGeometry args={[3, 3]} />
       <meshBasicMaterial 
-        color="#0055ff" 
+        color="#00ffff" 
         transparent 
-        opacity={0.15} 
+        opacity={0.12} 
         side={THREE.DoubleSide}
         depthWrite={false}
       />
@@ -377,6 +409,7 @@ class ModelErrorBoundary extends React.Component<
     gender: Gender;
     weight: number;
     measurements?: BodyMeasurements;
+    rotationAngle?: number;
     children: React.ReactNode;
   },
   { hasError: boolean }
@@ -408,6 +441,7 @@ class ModelErrorBoundary extends React.Component<
           gender="female"
           weight={this.props.weight}
           measurements={this.props.measurements} 
+          rotationAngle={this.props.rotationAngle}
         />
       );
     }
@@ -434,7 +468,9 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   meshStyle = 'solid',
   width,
   height,
-  measurements
+  measurements,
+  rotationAngle = 0,
+  scanRange = 'full'
 }) => {
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
@@ -457,15 +493,17 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         gl={{ antialias: true, alpha: false }}
       >
         <color attach="background" args={['#090d16']} />
-        <PerspectiveCamera makeDefault position={[0, 0, 4]} fov={45} />
+        
+        {/* Adjusted Camera distance and FOV for a perfectly framed standing view */}
+        <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
         
         {/* Futuristic Grid and Lighting */}
-        <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.2, 0]} />
+        <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.05, 0]} />
         <ambientLight intensity={0.4} />
         <directionalLight position={[10, 10, 5]} intensity={0.8} />
         <directionalLight position={[-10, -10, -5]} intensity={0.3} />
 
-        <Center>
+        <group>
           <React.Suspense fallback={null}>
             <ModelErrorBoundary
               fallbackPath={fallbackPath}
@@ -473,6 +511,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
               gender={gender}
               weight={weight}
               measurements={measurements}
+              rotationAngle={rotationAngle}
             >
               <Model 
                 path={modelPath} 
@@ -480,17 +519,19 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
                 gender={gender} 
                 weight={weight} 
                 measurements={measurements}
+                rotationAngle={rotationAngle}
               />
             </ModelErrorBoundary>
           </React.Suspense>
           <HologramScannerBeam />
-        </Center>
+        </group>
 
         {/* Orbit Controls to rotate and inspect mannequin */}
         <OrbitControls 
+          target={[0, 0, 0]}
           enablePan={false}
-          minDistance={1.8}
-          maxDistance={5.0}
+          minDistance={2.5}
+          maxDistance={8.0}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 2 + 0.1}
           autoRotate={false}

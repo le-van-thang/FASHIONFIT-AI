@@ -167,6 +167,12 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const hipsVal = measurements?.hipCircumference ? measurements.hipCircumference.toFixed(1) : '95.0';
   const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
 
+  // Gender-specific optimized anatomical anchor coordinates (relative to centered pelvis origin)
+  const chestPos = useMemo(() => [gender === 'female' ? 0.14 : 0.16, gender === 'female' ? 0.35 : 0.40, 0] as [number, number, number], [gender]);
+  const waistPos = useMemo(() => [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.15 : 0.18, 0] as [number, number, number], [gender]);
+  const hipsPos  = useMemo(() => [gender === 'female' ? 0.17 : 0.18, gender === 'female' ? -0.02 : 0.0, 0] as [number, number, number], [gender]);
+  const legPos   = useMemo(() => [gender === 'female' ? -0.11 : -0.12, gender === 'female' ? -0.08 : -0.10, 0] as [number, number, number], [gender]);
+
   // Apply default rotation to primitive scene contents
   useEffect(() => {
     if (scene) scene.rotation.set(0, 0, 0);
@@ -188,7 +194,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         {measurements && (
           <>
             {/* Ngực (Chest) - Right side */}
-            <Html position={[0.15, 0.25, 0]} style={{ pointerEvents: 'none' }}>
+            <Html position={chestPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -232,7 +238,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Eo (Waist) - Left side */}
-            <Html position={[-0.13, 0.05, 0]} style={{ pointerEvents: 'none' }}>
+            <Html position={waistPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -277,7 +283,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Mông (Hips) - Right side */}
-            <Html position={[0.16, -0.15, 0]} style={{ pointerEvents: 'none' }}>
+            <Html position={hipsPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -321,7 +327,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Dài chân (Leg Length) - Left side */}
-            <Html position={[-0.12, -0.45, 0]} style={{ pointerEvents: 'none' }}>
+            <Html position={legPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',

@@ -125,6 +125,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   
   // 3D rotation angle in degrees
   const [rotationAngle, setRotationAngle] = useState<number>(0);
+  const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
 
   useEffect(() => {
     if (view === 'side') {
@@ -1733,34 +1734,63 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               Mặt nghiêng
             </button>
           </div>
-          {/* Reset landmark dots button */}
-          {onResetLandmarks && (
+          {/* Reset button (Reset camera for 3D model, Reset landmarks for 2D inputs) */}
+          {inputSource === 'mannequin' ? (
             <button
               type="button"
-              onClick={onResetLandmarks}
-              title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+              onClick={() => setCameraResetCounter(c => c + 1)}
+              title="Đặt lại góc xoay và độ thu phóng camera về mặc định"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.25rem',
-                background: 'rgba(239, 68, 68, 0.08)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(6, 182, 212, 0.08)',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
                 borderRadius: 'var(--radius-sm)',
                 padding: '0.3rem 0.55rem',
                 fontSize: '0.68rem',
                 fontWeight: 600,
-                color: '#ef4444',
+                color: '#06b6d4',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 whiteSpace: 'nowrap',
                 flexShrink: 0
               }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
             >
               <RefreshCw size={11} />
-              Reset chấm
+              Reset camera
             </button>
+          ) : (
+            onResetLandmarks && (
+              <button
+                type="button"
+                onClick={onResetLandmarks}
+                title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+              >
+                <RefreshCw size={11} />
+                Reset chấm
+              </button>
+            )
           )}
         </div>
       </div>
@@ -1896,6 +1926,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               height={height}
               scanRange={scanRange}
               measurements={measurements}
+              cameraResetCounter={cameraResetCounter}
             />
           ) : (
             <svg

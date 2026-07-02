@@ -481,6 +481,7 @@ interface Mannequin3DViewProps {
   height?: number;
   scanRange?: 'full' | 'half';
   measurements?: BodyMeasurements;
+  cameraResetCounter?: number;
 }
 
 export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
@@ -491,7 +492,8 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   height,
   measurements,
   rotationAngle = 0,
-  scanRange = 'full'
+  scanRange = 'full',
+  cameraResetCounter = 0
 }) => {
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
@@ -499,6 +501,17 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   // Refs for camera focus target interpolation (default slightly lower at Y = -0.15 to shift model up)
   const controlsRef = useRef<any>(null);
   const targetPoint = useRef(new THREE.Vector3(0, -0.15, 0));
+
+  // Reset camera view when counter changes
+  useEffect(() => {
+    if (cameraResetCounter > 0) {
+      if (controlsRef.current) {
+        controlsRef.current.reset();
+        controlsRef.current.target.set(0, -0.15, 0);
+      }
+      targetPoint.current.set(0, -0.15, 0);
+    }
+  }, [cameraResetCounter]);
 
   const handleClickModel = (point: THREE.Vector3) => {
     targetPoint.current.copy(point);

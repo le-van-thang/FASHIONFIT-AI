@@ -68,8 +68,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to center the model geometry vertically, but keep horizontal origin aligned with GLB spine/origin
-    const offset = new THREE.Vector3(0, -center.y, 0);
+    // Offset to center the model geometry precisely at origin [0, 0, 0] on all axes
+    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
     
     console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
     return {
@@ -496,9 +496,9 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
-  // Refs for camera focus target interpolation
+  // Refs for camera focus target interpolation (default slightly lower at Y = -0.15 to shift model up)
   const controlsRef = useRef<any>(null);
-  const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
+  const targetPoint = useRef(new THREE.Vector3(0, -0.15, 0));
 
   const handleClickModel = (point: THREE.Vector3) => {
     targetPoint.current.copy(point);
@@ -527,7 +527,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onPointerMissed={() => {
-          targetPoint.current.set(0, 0, 0);
+          targetPoint.current.set(0, -0.15, 0);
         }}
       >
         <color attach="background" args={['#090d16']} />
@@ -571,7 +571,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {/* Orbit Controls */}
         <OrbitControls 
           ref={controlsRef}
-          target={[0, 0, 0]}
+          target={[0, -0.15, 0]}
           enablePan={false}
           minDistance={2.5}
           maxDistance={8.0}

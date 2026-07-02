@@ -513,8 +513,8 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   return (
     <div 
       style={{ 
-        width: width ? `${width}px` : '100%', 
-        height: height ? `${height}px` : '100%', 
+        width: '100%', 
+        height: '100%', 
         position: 'relative', 
         backgroundColor: '#090d16',
         borderRadius: 'var(--radius-md)',

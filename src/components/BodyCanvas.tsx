@@ -1768,82 +1768,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
       <div className="canvas-container">
         <div className="media-viewport">
-          {(inputSource !== 'webcam' || isWebcamActive) && (
-            <div 
-              className="mesh-style-controls" 
-              style={{ 
-                position: 'absolute', 
-                bottom: '15px', 
-                left: '50%', 
-                transform: 'translateX(-50%)', 
-                zIndex: 30, 
-                display: 'flex', 
-                gap: '0.35rem', 
-                background: 'rgba(15, 23, 42, 0.8)', 
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                padding: '0.3rem', 
-                borderRadius: '30px', 
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.36)'
-              }}
-            >
-              <button
-                type="button"
-                className={`style-btn ${meshStyle === 'solid' ? 'active' : ''}`}
-                onClick={() => setMeshStyle('solid')}
-                style={{ 
-                  background: meshStyle === 'solid' ? '#3b82f6' : 'transparent', 
-                  color: '#fff', 
-                  border: 'none', 
-                  padding: '0.35rem 0.8rem', 
-                  borderRadius: '20px', 
-                  fontSize: '0.68rem', 
-                  cursor: 'pointer', 
-                  fontWeight: 600,
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Khối đặc
-              </button>
-              <button
-                type="button"
-                className={`style-btn ${meshStyle === 'neon' ? 'active' : ''}`}
-                onClick={() => setMeshStyle('neon')}
-                style={{ 
-                  background: meshStyle === 'neon' ? '#3b82f6' : 'transparent', 
-                  color: '#fff', 
-                  border: 'none', 
-                  padding: '0.35rem 0.8rem', 
-                  borderRadius: '20px', 
-                  fontSize: '0.68rem', 
-                  cursor: 'pointer', 
-                  fontWeight: 600,
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Neon
-              </button>
-              <button
-                type="button"
-                className={`style-btn ${meshStyle === 'heatmap' ? 'active' : ''}`}
-                onClick={() => setMeshStyle('heatmap')}
-                style={{ 
-                  background: meshStyle === 'heatmap' ? '#3b82f6' : 'transparent', 
-                  color: '#fff', 
-                  border: 'none', 
-                  padding: '0.35rem 0.8rem', 
-                  borderRadius: '20px', 
-                  fontSize: '0.68rem', 
-                  cursor: 'pointer', 
-                  fontWeight: 600,
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Nhiệt (AI)
-              </button>
-            </div>
-          )}
+
           {hasMediaBackground && (
             <button
               type="button"
@@ -2337,6 +2262,81 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
           {/* Sizing HUD overlay removed to avoid clutter */}
         </div>
+
+        {/* Style Controls Rendered Cleanly BELOW the Viewport Box */}
+        {(inputSource !== 'webcam' || isWebcamActive) && (
+          <div 
+            className="mesh-style-controls" 
+            style={{ 
+              marginTop: '12px', 
+              zIndex: 30, 
+              display: 'flex', 
+              gap: '0.35rem', 
+              background: 'rgba(15, 23, 42, 0.85)', 
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              padding: '0.3rem', 
+              borderRadius: '30px', 
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.36)'
+            }}
+          >
+            <button
+              type="button"
+              className={`style-btn ${meshStyle === 'solid' ? 'active' : ''}`}
+              onClick={() => setMeshStyle('solid')}
+              style={{ 
+                background: meshStyle === 'solid' ? '#3b82f6' : 'transparent', 
+                color: '#fff', 
+                border: 'none', 
+                padding: '0.35rem 0.8rem', 
+                borderRadius: '20px', 
+                fontSize: '0.68rem', 
+                cursor: 'pointer', 
+                fontWeight: 600,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Khối đặc
+            </button>
+            <button
+              type="button"
+              className={`style-btn ${meshStyle === 'neon' ? 'active' : ''}`}
+              onClick={() => setMeshStyle('neon')}
+              style={{ 
+                background: meshStyle === 'neon' ? '#3b82f6' : 'transparent', 
+                color: '#fff', 
+                border: 'none', 
+                padding: '0.35rem 0.8rem', 
+                borderRadius: '20px', 
+                fontSize: '0.68rem', 
+                cursor: 'pointer', 
+                fontWeight: 600,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Neon
+            </button>
+            <button
+              type="button"
+              className={`style-btn ${meshStyle === 'heatmap' ? 'active' : ''}`}
+              onClick={() => setMeshStyle('heatmap')}
+              style={{ 
+                background: meshStyle === 'heatmap' ? '#3b82f6' : 'transparent', 
+                color: '#fff', 
+                border: 'none', 
+                padding: '0.35rem 0.8rem', 
+                borderRadius: '20px', 
+                fontSize: '0.68rem', 
+                cursor: 'pointer', 
+                fontWeight: 600,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Nhiệt (AI)
+            </button>
+          </div>
+        )}
 
         {isMaximized ? (
           <div className="maximized-sidebar">

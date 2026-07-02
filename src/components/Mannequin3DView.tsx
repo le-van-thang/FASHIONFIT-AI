@@ -48,9 +48,10 @@ interface ModelProps {
   weight: number;
   measurements?: BodyMeasurements;
   rotationAngle?: number;
+  onClickModel?: (point: THREE.Vector3) => void;
 }
 
-const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0 }) => {
+const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel }) => {
   const { scene } = useGLTF(path);
   
   // Clone the scene to render the neon wireframe grid overlay on top of the solid body
@@ -67,8 +68,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to center the model geometry precisely at origin [0, 0, 0]
-    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
+    // Offset to center the model geometry vertically, but keep horizontal origin aligned with GLB spine/origin
+    const offset = new THREE.Vector3(0, -center.y, 0);
     
     console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
     return {
@@ -183,7 +184,15 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     <group ref={meshRef} scale={scale}>
       <group position={[centerOffset.x, centerOffset.y, centerOffset.z]}>
         {/* Base solid translucent body */}
-        <primitive object={scene} />
+        <primitive 
+          object={scene} 
+          onClick={(e) => {
+            e.stopPropagation();
+            if (e.point && onClickModel) {
+              onClickModel(e.point);
+            }
+          }}
+        />
 
         {/* Grid overlay wireframe centered (hidden in heatmap mode) */}
         {viewMode !== 'heatmap' && (
@@ -193,12 +202,13 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         {/* Dynamic HTML HUD overlays positioned relative to approximate body coordinates */}
         {measurements && (
           <>
-            {/* Ngực (Chest) - Right side */}
+            {/* Ngực (Chest) - Right side anchor, card points INWARD (left) */}
             <Html position={chestPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                transform: 'translateY(-50%)',
+                flexDirection: 'row-reverse',
+                transform: 'translate(-100%, -50%)',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
                 {/* Pointing Line */}
@@ -215,7 +225,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                     background: '#00f5ff',
                     borderRadius: '50%',
                     position: 'absolute',
-                    left: 0,
+                    right: 0,
                     top: '-2.5px',
                     boxShadow: '0 0 6px #00f5ff'
                   }} />
@@ -237,53 +247,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* Eo (Waist) - Left side */}
+            {/* Eo (Waist) - Left side anchor, card points INWARD (right) */}
             <Html position={waistPos} style={{ pointerEvents: 'none' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                flexDirection: 'row-reverse',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                {/* Pointing Line */}
-                <div style={{
-                  width: '18px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                {/* Measurement Info Card */}
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '3px 6px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Mông (Hips) - Right side */}
-            <Html position={hipsPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -321,13 +286,13 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                   fontWeight: 700,
                   boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
                 }}>
-                  MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
+                  EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
                 </div>
               </div>
             </Html>
 
-            {/* Dài chân (Leg Length) - Left side */}
-            <Html position={legPos} style={{ pointerEvents: 'none' }}>
+            {/* Mông (Hips) - Right side anchor, card points INWARD (left) */}
+            <Html position={hipsPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -350,6 +315,50 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                     borderRadius: '50%',
                     position: 'absolute',
                     right: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                {/* Measurement Info Card */}
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '3px 6px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Dài chân (Leg Length) - Left side anchor, card points INWARD (right) */}
+            <Html position={legPos} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                transform: 'translateY(-50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                {/* Pointing Line */}
+                <div style={{
+                  width: '18px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: 0,
                     top: '-2.5px',
                     boxShadow: '0 0 6px #00f5ff'
                   }} />
@@ -402,30 +411,22 @@ const HologramScannerBeam: React.FC = () => {
 };
 
 // Model Loader Error Boundary for graceful fallback to female base model
-class ModelErrorBoundary extends React.Component<
-  {
-    fallbackPath: string;
-    viewMode: 'solid' | 'neon' | 'heatmap';
-    gender: Gender;
-    weight: number;
-    measurements?: BodyMeasurements;
-    rotationAngle?: number;
-    children: React.ReactNode;
-  },
-  { hasError: boolean }
-> {
-  state = { hasError: false };
+class ModelErrorBoundary extends React.Component<any, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
 
   static getDerivedStateFromError() {
     return { hasError: true };
   }
 
-  componentDidCatch(error: any) {
-    console.warn("Model load failed, falling back to female_base_mesh", error);
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('[ModelErrorBoundary] error:', error, errorInfo);
   }
 
   componentDidUpdate(prevProps: any) {
-    if (prevProps.fallbackPath !== this.props.fallbackPath || prevProps.gender !== this.props.gender) {
+    if (prevProps.path !== this.props.path) {
       if (this.state.hasError) {
         this.setState({ hasError: false });
       }
@@ -442,12 +443,32 @@ class ModelErrorBoundary extends React.Component<
           weight={this.props.weight}
           measurements={this.props.measurements} 
           rotationAngle={this.props.rotationAngle}
+          onClickModel={this.props.onClickModel}
         />
       );
     }
-    return this.props.children;
+    return React.Children.map(this.props.children, child => {
+      if (React.isValidElement(child)) {
+        return React.cloneElement(child, { onClickModel: this.props.onClickModel } as any);
+      }
+      return child;
+    });
   }
 }
+
+// Camera controller helper for smooth click-to-focus target animation
+const CameraController: React.FC<{
+  targetPoint: React.RefObject<THREE.Vector3>;
+  controlsRef: React.RefObject<any>;
+}> = ({ targetPoint, controlsRef }) => {
+  useFrame(() => {
+    if (controlsRef.current && targetPoint.current) {
+      controlsRef.current.target.lerp(targetPoint.current, 0.12);
+      controlsRef.current.update();
+    }
+  });
+  return null;
+};
 
 interface Mannequin3DViewProps {
   gender: Gender;
@@ -475,6 +496,14 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
+  // Refs for camera focus target interpolation
+  const controlsRef = useRef<any>(null);
+  const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
+
+  const handleClickModel = (point: THREE.Vector3) => {
+    targetPoint.current.copy(point);
+  };
+
   // Derived measurement values for HTML overlay
   const chestVal = measurements?.chestCircumference ? measurements.chestCircumference.toFixed(1) : null;
   const waistVal = measurements?.waistCircumference ? measurements.waistCircumference.toFixed(1) : null;
@@ -497,12 +526,17 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
       <Canvas
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
+        onPointerMissed={() => {
+          targetPoint.current.set(0, 0, 0);
+        }}
       >
         <color attach="background" args={['#090d16']} />
         
         {/* Camera */}
         <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
         
+        <CameraController targetPoint={targetPoint} controlsRef={controlsRef} />
+
         {/* Futuristic Grid and Lighting */}
         <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.05, 0]} />
         <ambientLight intensity={0.4} />
@@ -518,6 +552,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
               weight={weight}
               measurements={measurements}
               rotationAngle={rotationAngle}
+              onClickModel={handleClickModel}
             >
               <Model 
                 path={modelPath} 
@@ -526,6 +561,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
                 weight={weight} 
                 measurements={measurements}
                 rotationAngle={rotationAngle}
+                onClickModel={handleClickModel}
               />
             </ModelErrorBoundary>
           </React.Suspense>
@@ -534,6 +570,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
 
         {/* Orbit Controls */}
         <OrbitControls 
+          ref={controlsRef}
           target={[0, 0, 0]}
           enablePan={false}
           minDistance={2.5}

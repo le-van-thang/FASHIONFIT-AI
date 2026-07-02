@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Center, useGLTF, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, Center, useGLTF, PerspectiveCamera, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { Landmark, Gender, BodyMeasurements } from '../types';
@@ -183,6 +183,189 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         {viewMode !== 'heatmap' && (
           <primitive object={wireframeScene} />
         )}
+
+        {/* Dynamic HTML HUD overlays positioned relative to approximate body coordinates */}
+        {measurements && (
+          <>
+            {/* Ngực (Chest) - Right side */}
+            <Html position={[0.15, 0.25, 0]} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                transform: 'translateY(-50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                {/* Pointing Line */}
+                <div style={{
+                  width: '18px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                {/* Measurement Info Card */}
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '3px 6px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  NGỰC: <span style={{ color: '#fff' }}>{chestVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Eo (Waist) - Left side */}
+            <Html position={[-0.13, 0.05, 0]} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                flexDirection: 'row-reverse',
+                transform: 'translate(-100%, -50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                {/* Pointing Line */}
+                <div style={{
+                  width: '18px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    right: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                {/* Measurement Info Card */}
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '3px 6px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Mông (Hips) - Right side */}
+            <Html position={[0.16, -0.15, 0]} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                transform: 'translateY(-50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                {/* Pointing Line */}
+                <div style={{
+                  width: '18px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                {/* Measurement Info Card */}
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '3px 6px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Dài chân (Leg Length) - Left side */}
+            <Html position={[-0.12, -0.45, 0]} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                flexDirection: 'row-reverse',
+                transform: 'translate(-100%, -50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                {/* Pointing Line */}
+                <div style={{
+                  width: '18px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    right: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                {/* Measurement Info Card */}
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '3px 6px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  DÀI CHÂN: <span style={{ color: '#fff' }}>{legVal} cm</span>
+                </div>
+              </div>
+            </Html>
+          </>
+        )}
       </group>
     </group>
   );
@@ -292,34 +475,6 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const hipsVal  = measurements?.hipCircumference   ? measurements.hipCircumference.toFixed(1)   : null;
   const legVal   = measurements?.legLength           ? measurements.legLength.toFixed(1)           : null;
 
-  // Shared style for label cards
-  const labelCard: React.CSSProperties = {
-    background: 'rgba(9, 13, 22, 0.88)',
-    border: '1px solid rgba(0, 245, 255, 0.45)',
-    borderRadius: '4px',
-    padding: '3px 7px',
-    whiteSpace: 'nowrap',
-    color: '#00f5ff',
-    fontSize: '10px',
-    fontWeight: 700,
-    fontFamily: 'system-ui, sans-serif',
-    boxShadow: '0 0 10px rgba(0,245,255,0.2)',
-    pointerEvents: 'none',
-    userSelect: 'none',
-  };
-  const dot: React.CSSProperties = {
-    width: 6, height: 6,
-    borderRadius: '50%',
-    background: '#00f5ff',
-    boxShadow: '0 0 6px #00f5ff',
-    flexShrink: 0,
-  };
-  const hLine: React.CSSProperties = {
-    width: 28, height: 1,
-    background: 'rgba(0,245,255,0.55)',
-    flexShrink: 0,
-  };
-
   return (
     <div 
       style={{ 
@@ -328,7 +483,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         position: 'relative', 
         backgroundColor: '#090d16',
         borderRadius: 'var(--radius-md)',
-        overflow: 'hidden',
+        overflow: 'visible',
         border: '1px solid rgba(0, 85, 255, 0.15)'
       }}
     >
@@ -387,47 +542,6 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
           <Bloom intensity={0.5} luminanceThreshold={0.2} luminanceSmoothing={0.9} />
         </EffectComposer>
       </Canvas>
-
-      {/* ── Pure HTML measurement overlays (never affected by 3D camera) ── */}
-      {measurements && (
-        <>
-          {/* NGỰC — right side, ~35% from top */}
-          {chestVal && (
-            <div style={{ position:'absolute', top:'33%', right:0, transform:'translateY(-50%)', display:'flex', alignItems:'center', pointerEvents:'none' }}>
-              <div style={labelCard}>NGỰC: <span style={{color:'#fff'}}>{chestVal} cm</span></div>
-              <div style={hLine} />
-              <div style={dot} />
-            </div>
-          )}
-
-          {/* EO — left side, ~50% from top */}
-          {waistVal && (
-            <div style={{ position:'absolute', top:'50%', left:0, transform:'translateY(-50%)', display:'flex', alignItems:'center', flexDirection:'row-reverse', pointerEvents:'none' }}>
-              <div style={labelCard}>EO: <span style={{color:'#fff'}}>{waistVal} cm</span></div>
-              <div style={hLine} />
-              <div style={dot} />
-            </div>
-          )}
-
-          {/* MÔNG — right side, ~62% from top */}
-          {hipsVal && (
-            <div style={{ position:'absolute', top:'62%', right:0, transform:'translateY(-50%)', display:'flex', alignItems:'center', pointerEvents:'none' }}>
-              <div style={labelCard}>MÔNG: <span style={{color:'#fff'}}>{hipsVal} cm</span></div>
-              <div style={hLine} />
-              <div style={dot} />
-            </div>
-          )}
-
-          {/* DÀI CHÂN — left side, ~78% from top */}
-          {legVal && (
-            <div style={{ position:'absolute', top:'78%', left:0, transform:'translateY(-50%)', display:'flex', alignItems:'center', flexDirection:'row-reverse', pointerEvents:'none' }}>
-              <div style={labelCard}>DÀI CHÂN: <span style={{color:'#fff'}}>{legVal} cm</span></div>
-              <div style={hLine} />
-              <div style={dot} />
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 };

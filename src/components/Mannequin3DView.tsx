@@ -167,11 +167,11 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const hipsVal = measurements?.hipCircumference ? measurements.hipCircumference.toFixed(1) : '95.0';
   const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
 
-  // Gender-specific optimized anatomical anchor coordinates (relative to centered pelvis origin)
-  const chestPos = useMemo(() => [gender === 'female' ? 0.14 : 0.16, gender === 'female' ? 0.35 : 0.40, 0] as [number, number, number], [gender]);
-  const waistPos = useMemo(() => [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.15 : 0.18, 0] as [number, number, number], [gender]);
-  const hipsPos  = useMemo(() => [gender === 'female' ? 0.17 : 0.18, gender === 'female' ? -0.02 : 0.0, 0] as [number, number, number], [gender]);
-  const legPos   = useMemo(() => [gender === 'female' ? -0.11 : -0.12, gender === 'female' ? -0.08 : -0.10, 0] as [number, number, number], [gender]);
+  // Gender-specific optimized anatomical anchor coordinates (relative to feet Y = 0 origin inside the group)
+  const chestPos = useMemo(() => [gender === 'female' ? 0.14 : 0.16, gender === 'female' ? 1.20 : 1.40, 0] as [number, number, number], [gender]);
+  const waistPos = useMemo(() => [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.98 : 1.15, 0] as [number, number, number], [gender]);
+  const hipsPos  = useMemo(() => [gender === 'female' ? 0.17 : 0.18, gender === 'female' ? 0.80 : 0.95, 0] as [number, number, number], [gender]);
+  const legPos   = useMemo(() => [gender === 'female' ? -0.11 : -0.12, gender === 'female' ? 0.72 : 0.85, 0] as [number, number, number], [gender]);
 
   // Apply default rotation to primitive scene contents
   useEffect(() => {

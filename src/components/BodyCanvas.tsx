@@ -1947,7 +1947,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          {inputSource === 'mannequin' ? (
+          {(inputSource === 'mannequin' || 
+            (inputSource === 'image' && !uploadedImage) || 
+            (inputSource === 'video' && !uploadedVideo)) && (
             <Mannequin3DView
               gender={gender}
               weight={weight}
@@ -1961,7 +1963,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               measurements={measurements}
               cameraResetCounter={cameraResetCounter}
             />
-          ) : (
+          )}
+
+          {inputSource !== 'mannequin' && (
             <svg
               ref={containerRef}
               viewBox={`0 0 ${width} ${height}`}
@@ -1974,8 +1978,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 background: 'transparent'
               }}
             >
-              {/* We render background silhouette only when no media background exists */}
-              {!hasMediaBackground && renderSilhouette()}
+              {/* We render background silhouette only when no media background exists and not using 3D mannequin */}
+              {!hasMediaBackground && inputSource !== 'image' && inputSource !== 'video' && renderSilhouette()}
 
               {/* Render webcam guide silhouette to help user align their body */}
               {hasMediaBackground && inputSource === 'webcam' && (

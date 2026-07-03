@@ -163,16 +163,26 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   }, [gender, weight, measurements]);
 
   // Derived measurement values
+  const neckVal = measurements?.chestCircumference ? (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) : '36.0';
+  const shoulderVal = measurements?.shoulderWidth ? measurements.shoulderWidth.toFixed(1) : '44.0';
   const chestVal = measurements?.chestCircumference ? measurements.chestCircumference.toFixed(1) : '90.0';
   const waistVal = measurements?.waistCircumference ? measurements.waistCircumference.toFixed(1) : '70.0';
   const hipsVal = measurements?.hipCircumference ? measurements.hipCircumference.toFixed(1) : '95.0';
+  const armVal = measurements?.armLength ? measurements.armLength.toFixed(1) : '60.0';
   const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
+  const thighVal = measurements?.hipCircumference ? (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) : '55.0';
+  const calfVal = measurements?.hipCircumference ? (measurements.hipCircumference * 0.38).toFixed(1) : '36.0';
 
   // Gender-specific optimized anatomical anchor coordinates (relative to feet Y = 0 origin inside the group)
-  const chestPos = useMemo(() => [gender === 'female' ? 0.14 : 0.16, gender === 'female' ? 1.20 : 1.40, 0] as [number, number, number], [gender]);
-  const waistPos = useMemo(() => [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.98 : 1.15, 0] as [number, number, number], [gender]);
-  const hipsPos  = useMemo(() => [gender === 'female' ? 0.17 : 0.18, gender === 'female' ? 0.80 : 0.95, 0] as [number, number, number], [gender]);
-  const legPos   = useMemo(() => [gender === 'female' ? -0.11 : -0.12, gender === 'female' ? 0.72 : 0.85, 0] as [number, number, number], [gender]);
+  const neckPos     = useMemo(() => [gender === 'female' ? -0.07 : -0.08, gender === 'female' ? 1.38 : 1.60, 0] as [number, number, number], [gender]);
+  const shoulderPos = useMemo(() => [gender === 'female' ? 0.18 : 0.22, gender === 'female' ? 1.30 : 1.50, 0] as [number, number, number], [gender]);
+  const chestPos    = useMemo(() => [gender === 'female' ? 0.14 : 0.16, gender === 'female' ? 1.20 : 1.40, 0] as [number, number, number], [gender]);
+  const waistPos    = useMemo(() => [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.98 : 1.15, 0] as [number, number, number], [gender]);
+  const hipsPos     = useMemo(() => [gender === 'female' ? 0.17 : 0.18, gender === 'female' ? 0.80 : 0.95, 0] as [number, number, number], [gender]);
+  const armPos      = useMemo(() => [gender === 'female' ? 0.24 : 0.28, gender === 'female' ? 1.10 : 1.28, 0] as [number, number, number], [gender]);
+  const legPos      = useMemo(() => [gender === 'female' ? 0.11 : 0.12, gender === 'female' ? 0.72 : 0.85, 0] as [number, number, number], [gender]);
+  const thighPos    = useMemo(() => [gender === 'female' ? -0.13 : -0.15, gender === 'female' ? 0.62 : 0.75, 0] as [number, number, number], [gender]);
+  const calfPos     = useMemo(() => [gender === 'female' ? -0.11 : -0.13, gender === 'female' ? 0.38 : 0.46, 0] as [number, number, number], [gender]);
 
   // Apply default rotation to primitive scene contents
   useEffect(() => {
@@ -202,8 +212,50 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         {/* Dynamic HTML HUD overlays positioned relative to approximate body coordinates */}
         {measurements && (
           <>
-            {/* Ngực (Chest) - Right side anchor, card points INWARD (left) */}
-            <Html position={chestPos} style={{ pointerEvents: 'none' }}>
+            {/* Cổ (Neck) - Left side anchor, card points INWARD (right), width: 16px */}
+            <Html position={neckPos} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                transform: 'translateY(-50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <div style={{
+                  width: '16px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '2px 5px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  CỔ: <span style={{ color: '#fff' }}>{neckVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Rộng vai (Shoulder Width) - Right side anchor, card points INWARD (left), width: 16px */}
+            <Html position={shoulderPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -211,9 +263,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 transform: 'translate(-100%, -50%)',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                {/* Pointing Line */}
                 <div style={{
-                  width: '18px',
+                  width: '16px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -230,12 +281,54 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                     boxShadow: '0 0 6px #00f5ff'
                   }} />
                 </div>
-                {/* Measurement Info Card */}
                 <div style={{
                   background: 'rgba(9, 13, 22, 0.88)',
                   border: '1px solid rgba(0, 245, 255, 0.45)',
                   borderRadius: '4px',
-                  padding: '3px 6px',
+                  padding: '2px 5px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  VAI: <span style={{ color: '#fff' }}>{shoulderVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Ngực (Chest) - Right side anchor, card points INWARD (left), width: 28px */}
+            <Html position={chestPos} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                flexDirection: 'row-reverse',
+                transform: 'translate(-100%, -50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <div style={{
+                  width: '28px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    right: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '2px 5px',
                   whiteSpace: 'nowrap',
                   color: '#00f5ff',
                   fontSize: '9px',
@@ -247,52 +340,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* Eo (Waist) - Left side anchor, card points INWARD (right) */}
-            <Html position={waistPos} style={{ pointerEvents: 'none' }}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translateY(-50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                {/* Pointing Line */}
-                <div style={{
-                  width: '18px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                {/* Measurement Info Card */}
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '3px 6px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Mông (Hips) - Right side anchor, card points INWARD (left) */}
-            <Html position={hipsPos} style={{ pointerEvents: 'none' }}>
+            {/* Dài tay (Arm Length) - Right side anchor, card points INWARD (left), width: 18px */}
+            <Html position={armPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -300,7 +349,6 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 transform: 'translate(-100%, -50%)',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                {/* Pointing Line */}
                 <div style={{
                   width: '18px',
                   height: '1px',
@@ -319,34 +367,32 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                     boxShadow: '0 0 6px #00f5ff'
                   }} />
                 </div>
-                {/* Measurement Info Card */}
                 <div style={{
                   background: 'rgba(9, 13, 22, 0.88)',
                   border: '1px solid rgba(0, 245, 255, 0.45)',
                   borderRadius: '4px',
-                  padding: '3px 6px',
+                  padding: '2px 5px',
                   whiteSpace: 'nowrap',
                   color: '#00f5ff',
                   fontSize: '9px',
                   fontWeight: 700,
                   boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
                 }}>
-                  MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
+                  DÀI TAY: <span style={{ color: '#fff' }}>{armVal} cm</span>
                 </div>
               </div>
             </Html>
 
-            {/* Dài chân (Leg Length) - Left side anchor, card points INWARD (right) */}
-            <Html position={legPos} style={{ pointerEvents: 'none' }}>
+            {/* Eo (Waist) - Left side anchor, card points INWARD (right), width: 24px */}
+            <Html position={waistPos} style={{ pointerEvents: 'none' }}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 transform: 'translateY(-50%)',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                {/* Pointing Line */}
                 <div style={{
-                  width: '18px',
+                  width: '24px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -363,12 +409,181 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                     boxShadow: '0 0 6px #00f5ff'
                   }} />
                 </div>
-                {/* Measurement Info Card */}
                 <div style={{
                   background: 'rgba(9, 13, 22, 0.88)',
                   border: '1px solid rgba(0, 245, 255, 0.45)',
                   borderRadius: '4px',
-                  padding: '3px 6px',
+                  padding: '2px 5px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Mông (Hips) - Right side anchor, card points INWARD (left), width: 28px */}
+            <Html position={hipsPos} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                flexDirection: 'row-reverse',
+                transform: 'translate(-100%, -50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <div style={{
+                  width: '28px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    right: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '2px 5px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Đùi phải (Right Thigh) - Left side anchor, card points INWARD (right), width: 16px */}
+            <Html position={thighPos} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                transform: 'translateY(-50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <div style={{
+                  width: '16px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '2px 5px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  ĐÙI PHẢI: <span style={{ color: '#fff' }}>{thighVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Bắp chân phải (Right Calf) - Left side anchor, card points INWARD (right), width: 24px */}
+            <Html position={calfPos} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                transform: 'translateY(-50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <div style={{
+                  width: '24px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    left: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '2px 5px',
+                  whiteSpace: 'nowrap',
+                  color: '#00f5ff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                }}>
+                  BẮP CHÂN: <span style={{ color: '#fff' }}>{calfVal} cm</span>
+                </div>
+              </div>
+            </Html>
+
+            {/* Dài chân (Leg Length) - Right side anchor, card points INWARD (left), width: 16px */}
+            <Html position={legPos} style={{ pointerEvents: 'none' }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                flexDirection: 'row-reverse',
+                transform: 'translate(-100%, -50%)',
+                fontFamily: 'system-ui, -apple-system, sans-serif'
+              }}>
+                <div style={{
+                  width: '16px',
+                  height: '1px',
+                  background: 'rgba(0, 245, 255, 0.65)',
+                  position: 'relative',
+                  flexShrink: 0
+                }}>
+                  <div style={{
+                    width: '4px',
+                    height: '4px',
+                    background: '#00f5ff',
+                    borderRadius: '50%',
+                    position: 'absolute',
+                    right: 0,
+                    top: '-2.5px',
+                    boxShadow: '0 0 6px #00f5ff'
+                  }} />
+                </div>
+                <div style={{
+                  background: 'rgba(9, 13, 22, 0.88)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '4px',
+                  padding: '2px 5px',
                   whiteSpace: 'nowrap',
                   color: '#00f5ff',
                   fontSize: '9px',

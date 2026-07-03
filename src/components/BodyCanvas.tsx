@@ -88,6 +88,7 @@ interface BodyCanvasProps {
   landmarks: Landmark[];
   onLandmarkChange: (id: string, x: number, y: number) => void;
   onResetLandmarks?: () => void;
+  onResetModel?: () => void;
   view: 'front' | 'side';
   onViewChange: (view: 'front' | 'side') => void;
   uploadedImage: string | null;
@@ -107,6 +108,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   landmarks,
   onLandmarkChange,
   onResetLandmarks,
+  onResetModel,
   view,
   onViewChange,
   uploadedImage,
@@ -1771,8 +1773,13 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {inputSource === 'mannequin' ? (
             <button
               type="button"
-              onClick={() => setCameraResetCounter(c => c + 1)}
-              title="Đặt lại góc xoay và độ thu phóng camera về mặc định"
+              onClick={() => {
+                setCameraResetCounter(c => c + 1);
+                if (onResetModel) {
+                  onResetModel();
+                }
+              }}
+              title="Đặt lại toàn bộ số đo mô hình và góc camera về mặc định chuẩn"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1793,7 +1800,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
             >
               <RefreshCw size={11} />
-              Reset camera
+              Reset mô hình & camera
             </button>
           ) : (
             onResetLandmarks && (
@@ -1962,6 +1969,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               scanRange={scanRange}
               measurements={measurements}
               cameraResetCounter={cameraResetCounter}
+              showLabels={inputSource === 'mannequin'}
+              interactive={inputSource === 'mannequin'}
             />
           )}
 

@@ -210,7 +210,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         )}
 
         {/* Dynamic HTML HUD overlays positioned relative to approximate body coordinates */}
-        {measurements && (
+        {measurements && showLabels && (
           <>
             {/* Cổ (Neck) - Left side anchor, card points INWARD (right), width: 16px */}
             <Html position={neckPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
@@ -675,11 +675,19 @@ class ModelErrorBoundary extends React.Component<any, { hasError: boolean }> {
 const CameraController: React.FC<{
   targetPoint: React.RefObject<THREE.Vector3>;
   controlsRef: React.RefObject<any>;
-}> = ({ targetPoint, controlsRef }) => {
+  interactive: boolean;
+}> = ({ targetPoint, controlsRef, interactive }) => {
+  const { camera } = useThree();
   useFrame(() => {
-    if (controlsRef.current && targetPoint.current) {
-      controlsRef.current.target.lerp(targetPoint.current, 0.12);
-      controlsRef.current.update();
+    if (interactive) {
+      if (controlsRef.current && targetPoint.current) {
+        controlsRef.current.target.lerp(targetPoint.current, 0.12);
+        controlsRef.current.update();
+      }
+    } else {
+      // Locked level front/side view, matching SVG template exactly
+      camera.position.set(0, -0.16, 4.9);
+      camera.lookAt(0, -0.16, 0);
     }
   });
   return null;
@@ -697,6 +705,8 @@ interface Mannequin3DViewProps {
   scanRange?: 'full' | 'half';
   measurements?: BodyMeasurements;
   cameraResetCounter?: number;
+  showLabels?: boolean;
+  interactive?: boolean;
 }
 
 export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
@@ -708,7 +718,9 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   measurements,
   rotationAngle = 0,
   scanRange = 'full',
-  cameraResetCounter = 0
+  cameraResetCounter = 0,
+  showLabels = true,
+  interactive = true
 }) => {
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
@@ -763,7 +775,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {/* Camera */}
         <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
         
-        <CameraController targetPoint={targetPoint} controlsRef={controlsRef} />
+        <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 
         {/* Futuristic Grid and Lighting */}
         <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.05, 0]} />
@@ -797,16 +809,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         </group>
 
         {/* Orbit Controls */}
-        <OrbitControls 
-          ref={controlsRef}
-          target={[0, -0.15, 0]}
-          enablePan={false}
-          minDistance={2.5}
-          maxDistance={8.0}
-          minPolarAngle={Math.PI / 4}
-          maxPolarAngle={Math.PI / 2 + 0.1}
-          autoRotate={false}
-        />
+        {interactive && (
+          <OrbitControls 
+            ref={controlsRef}
+            target={[0, -0.15, 0]}
+            enablePan={false}
+            minDistance={2.5}
+            maxDistance={8.0}
+            minPolarAngle={Math.PI / 4}
+            maxPolarAngle={Math.PI / 2 + 0.1}
+            autoRotate={false}
+          />
+        )}
 
         {/* Bloom Glow */}
         <EffectComposer>

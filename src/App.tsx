@@ -301,6 +301,21 @@ function App() {
     }
   };
 
+  // Reset model proportions and sliders to standard values (Nam, 180cm, 80kg)
+  const handleResetModel = () => {
+    setInput({
+      gender: 'male',
+      weight: 80,
+      calibrationType: 'height',
+      customHeight: 180,
+      sizeSystem: 'vietnam',
+      scanRange: 'full'
+    });
+    setReferencePixels(120);
+    setLandmarksFront([...initialFrontLandmarks]);
+    setLandmarksSide([...initialSideLandmarks]);
+  };
+
   // Upload handlers
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -587,6 +602,7 @@ function App() {
             landmarks={view === 'front' ? processedFrontLandmarks : processedSideLandmarks}
             onLandmarkChange={handleLandmarkChange}
             onResetLandmarks={handleResetLandmarks}
+            onResetModel={handleResetModel}
             view={view}
             onViewChange={setView}
             uploadedImage={view === 'front' ? uploadedImageFront : uploadedImageSide}

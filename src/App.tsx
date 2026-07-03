@@ -591,6 +591,7 @@ function App() {
             referencePixels={referencePixels}
             onReferencePixelsChange={setReferencePixels}
             inputSource={inputSource}
+            onResetModel={handleResetModel}
           />
         </div>
 

@@ -9,6 +9,7 @@ interface InputFormProps {
   referencePixels: number;
   onReferencePixelsChange: (pixels: number) => void;
   inputSource: 'mannequin' | 'image' | 'webcam' | 'video';
+  onResetModel?: () => void;
 }
 
 export const InputForm: React.FC<InputFormProps> = ({
@@ -16,7 +17,8 @@ export const InputForm: React.FC<InputFormProps> = ({
   onChange,
   referencePixels,
   onReferencePixelsChange,
-  inputSource
+  inputSource,
+  onResetModel
 }) => {
   const [weightInputVal, setWeightInputVal] = useState<string>(input.weight.toString());
   const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
@@ -601,6 +603,42 @@ export const InputForm: React.FC<InputFormProps> = ({
               {input.calibrationType === 'card' && 'Chiều rộng của thẻ ATM đặt ngang cơ thể.'}
               {input.calibrationType === 'ipd' && 'Khoảng cách giữa hai đồng tử của mắt trên ảnh chụp.'}
             </p>
+          </div>
+        )}
+
+        {/* Reset Model proportions button */}
+        {onResetModel && (
+          <div style={{ marginTop: '1.5rem', padding: '0 0.25rem' }}>
+            <button
+              type="button"
+              onClick={onResetModel}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.45rem',
+                backgroundColor: 'rgba(239, 68, 68, 0.06)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                borderRadius: 'var(--radius-md)',
+                color: '#ef4444',
+                padding: '0.65rem 1rem',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.18s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.45)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.06)';
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+              }}
+            >
+              🔄 Đặt lại vóc dáng mặc định (1m80 - 80kg)
+            </button>
           </div>
         )}
       </div>

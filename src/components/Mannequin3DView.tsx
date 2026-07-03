@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Center, useGLTF, PerspectiveCamera, Html } from '@react-three/drei';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, useGLTF, PerspectiveCamera, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { Landmark, Gender, BodyMeasurements } from '../types';
@@ -49,9 +49,10 @@ interface ModelProps {
   measurements?: BodyMeasurements;
   rotationAngle?: number;
   onClickModel?: (point: THREE.Vector3) => void;
+  showLabels?: boolean;
 }
 
-const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel }) => {
+const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel, showLabels = true }) => {
   const { scene } = useGLTF(path);
   
   // Clone the scene to render the neon wireframe grid overlay on top of the solid body
@@ -686,8 +687,8 @@ const CameraController: React.FC<{
       }
     } else {
       // Locked level front/side view, matching SVG template exactly
-      camera.position.set(0, -0.16, 4.9);
-      camera.lookAt(0, -0.16, 0);
+      camera.position.set(0, -0.06, 4.15);
+      camera.lookAt(0, -0.06, 0);
     }
   });
   return null;
@@ -713,11 +714,8 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   gender,
   weight,
   meshStyle = 'solid',
-  width,
-  height,
   measurements,
   rotationAngle = 0,
-  scanRange = 'full',
   cameraResetCounter = 0,
   showLabels = true,
   interactive = true
@@ -743,12 +741,6 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const handleClickModel = (point: THREE.Vector3) => {
     targetPoint.current.copy(point);
   };
-
-  // Derived measurement values for HTML overlay
-  const chestVal = measurements?.chestCircumference ? measurements.chestCircumference.toFixed(1) : null;
-  const waistVal = measurements?.waistCircumference ? measurements.waistCircumference.toFixed(1) : null;
-  const hipsVal  = measurements?.hipCircumference   ? measurements.hipCircumference.toFixed(1)   : null;
-  const legVal   = measurements?.legLength           ? measurements.legLength.toFixed(1)           : null;
 
   return (
     <div 
@@ -802,6 +794,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
                 measurements={measurements}
                 rotationAngle={rotationAngle}
                 onClickModel={handleClickModel}
+                showLabels={showLabels}
               />
             </ModelErrorBoundary>
           </React.Suspense>

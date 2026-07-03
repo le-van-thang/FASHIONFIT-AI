@@ -126,6 +126,25 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   // 3D rotation angle in degrees
   const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  // Handle countdown ticks and beep audio feedback
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) {
+      setCountdown(null);
+      setIsScanning(true);
+      playAudioBeep('success'); // High beep to signal scanning start
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      playAudioBeep('countdown'); // Medium beep for tick
+      setCountdown(countdown - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown]);
 
   useEffect(() => {
     if (view === 'side') {
@@ -366,7 +385,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
 
       setIsWebcamActive(true);
-      setIsScanning(true);
+      setIsScanning(false); // Wait for user to click scan button to start countdown
     } catch (err) {
       console.error(err);
       alert("Không thể kết nối Camera. Vui lòng kiểm tra quyền truy cập webcam.");
@@ -512,11 +531,25 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const dragStartRef = useRef<{ x: number; angle: number }>({ x: 0, angle: 0 });
 
   // Audio Feedback Synthesizer using Web Audio API
-  const playAudioBeep = (type: 'success' | 'double' = 'success') => {
+  const playAudioBeep = (type: 'success' | 'double' | 'countdown' = 'success') => {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
+      
+      if (type === 'countdown') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+        return;
+      }
       
       if (type === 'success') {
         const osc = ctx.createOscillator();
@@ -2204,11 +2237,15 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 type="button"
                 className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
                 onClick={() => {
-                  if (scanStatus === 'success') {
-                    setScanProgress(0);
-                    setScanStatus('idle');
+                  if (isScanning) {
+                    setIsScanning(false);
+                  } else {
+                    if (scanStatus === 'success') {
+                      setScanProgress(0);
+                      setScanStatus('idle');
+                    }
+                    setCountdown(5);
                   }
-                  setIsScanning(!isScanning);
                 }}
               >
                 {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
@@ -2282,12 +2319,112 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   onClick={() => {
                     setScanProgress(0);
                     setScanStatus('idle');
-                    setIsScanning(true);
+                    setCountdown(5);
                   }}
                 >
                   Quét Lại (Rescan)
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Start Scan Button Overlay (Webcam active, scan idle, not scanning/counting down) */}
+          {inputSource === 'webcam' && isWebcamActive && scanStatus === 'idle' && !isScanning && countdown === null && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.45)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 50
+            }}>
+              <button
+                type="button"
+                onClick={() => setCountdown(5)}
+                style={{
+                  background: 'linear-gradient(135deg, #0055ff, #00f5ff)',
+                  border: 'none',
+                  borderRadius: '50px',
+                  color: '#fff',
+                  padding: '0.85rem 1.75rem',
+                  fontSize: '0.92rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(0, 245, 255, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 245, 255, 0.65)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 245, 255, 0.45)';
+                }}
+              >
+                ⏱️ Bắt đầu quét AI (5s)
+              </button>
+              <p style={{
+                marginTop: '1rem',
+                color: 'rgba(255, 255, 255, 0.85)',
+                fontSize: '0.75rem',
+                textAlign: 'center',
+                maxWidth: '82%',
+                lineHeight: 1.45,
+                fontFamily: 'system-ui, sans-serif'
+              }}>
+                Vui lòng đặt máy cố định, đứng lùi ra xa khoảng 2.2m - 2.5m để camera thu trọn vẹn từ đầu đến chân trước khi đếm ngược kết thúc.
+              </p>
+            </div>
+          )}
+
+          {/* Countdown timer overlay with ticking animation */}
+          {countdown !== null && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(9, 13, 22, 0.75)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 100,
+              color: '#00f5ff',
+              fontFamily: 'system-ui, sans-serif'
+            }}>
+              <div style={{
+                width: '90px',
+                height: '90px',
+                borderRadius: '50%',
+                border: '4px solid #00f5ff',
+                boxShadow: '0 0 20px rgba(0, 245, 255, 0.4)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '2.8rem',
+                fontWeight: 800,
+                marginBottom: '1rem'
+              }}>
+                {countdown}
+              </div>
+              <span style={{ fontSize: '0.78rem', letterSpacing: '1px', textTransform: 'uppercase', color: '#fff', fontWeight: 600 }}>
+                Chuẩn bị tạo dáng đứng...
+              </span>
             </div>
           )}
 

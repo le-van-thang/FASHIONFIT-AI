@@ -213,7 +213,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         {measurements && (
           <>
             {/* Cổ (Neck) - Left side anchor, card points INWARD (right), width: 16px */}
-            <Html position={neckPos} style={{ pointerEvents: 'none' }}>
+            <Html position={neckPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -255,7 +255,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Rộng vai (Shoulder Width) - Right side anchor, card points INWARD (left), width: 16px */}
-            <Html position={shoulderPos} style={{ pointerEvents: 'none' }}>
+            <Html position={shoulderPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -298,7 +298,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Ngực (Chest) - Right side anchor, card points INWARD (left), width: 28px */}
-            <Html position={chestPos} style={{ pointerEvents: 'none' }}>
+            <Html position={chestPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -341,7 +341,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Dài tay (Arm Length) - Right side anchor, card points INWARD (left), width: 18px */}
-            <Html position={armPos} style={{ pointerEvents: 'none' }}>
+            <Html position={armPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -384,7 +384,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Eo (Waist) - Left side anchor, card points INWARD (right), width: 24px */}
-            <Html position={waistPos} style={{ pointerEvents: 'none' }}>
+            <Html position={waistPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -426,7 +426,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Mông (Hips) - Right side anchor, card points INWARD (left), width: 28px */}
-            <Html position={hipsPos} style={{ pointerEvents: 'none' }}>
+            <Html position={hipsPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -469,7 +469,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Đùi phải (Right Thigh) - Left side anchor, card points INWARD (right), width: 16px */}
-            <Html position={thighPos} style={{ pointerEvents: 'none' }}>
+            <Html position={thighPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -511,7 +511,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Bắp chân phải (Right Calf) - Left side anchor, card points INWARD (right), width: 24px */}
-            <Html position={calfPos} style={{ pointerEvents: 'none' }}>
+            <Html position={calfPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -553,7 +553,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </Html>
 
             {/* Dài chân (Leg Length) - Right side anchor, card points INWARD (left), width: 16px */}
-            <Html position={legPos} style={{ pointerEvents: 'none' }}>
+            <Html position={legPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',

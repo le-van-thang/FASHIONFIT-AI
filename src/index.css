@@ -429,7 +429,7 @@ body {
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   width: 100%;
-  max-width: 780px;
+  max-width: 440px;
   box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;

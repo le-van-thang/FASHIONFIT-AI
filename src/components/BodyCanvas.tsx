@@ -1830,92 +1830,34 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               Reset mô hình & camera
             </button>
           ) : (
-            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-              {inputSource === 'image' && uploadedImage && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Chọn tải lên một ảnh mẫu khác để đo"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    background: 'rgba(34, 211, 238, 0.08)',
-                    border: '1px solid rgba(34, 211, 238, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem',
-                    fontSize: '0.68rem',
-                    fontWeight: 600,
-                    color: '#06b6d4',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
-                >
-                  <Upload size={11} />
-                  Chọn ảnh khác
-                </button>
-              )}
-              {inputSource === 'video' && uploadedVideo && (
-                <button
-                  type="button"
-                  onClick={() => fileInputVideoRef.current?.click()}
-                  title="Chọn tải lên một video khác để đo"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    background: 'rgba(34, 211, 238, 0.08)',
-                    border: '1px solid rgba(34, 211, 238, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem',
-                    fontSize: '0.68rem',
-                    fontWeight: 600,
-                    color: '#06b6d4',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
-                >
-                  <Upload size={11} />
-                  Chọn video khác
-                </button>
-              )}
-              {onResetLandmarks && (
-                <button
-                  type="button"
-                  onClick={onResetLandmarks}
-                  title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem',
-                    fontSize: '0.68rem',
-                    fontWeight: 600,
-                    color: '#ef4444',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-                >
-                  <RefreshCw size={11} />
-                  Reset chấm
-                </button>
-              )}
-            </div>
+            onResetLandmarks && (
+              <button
+                type="button"
+                onClick={onResetLandmarks}
+                title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+              >
+                <RefreshCw size={11} />
+                Reset chấm
+              </button>
+            )
           )}
         </div>
       </div>
@@ -1924,17 +1866,119 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       <div className="canvas-container">
         <div className="media-viewport">
 
-          {hasMediaBackground && (
-            <button
-              type="button"
-              className="canvas-maximize-btn"
-              onClick={() => setIsMaximized(!isMaximized)}
-              title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
-            >
-              {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-              <span>{isMaximized ? "Thu nhỏ" : "Phóng to"}</span>
-            </button>
-          )}
+          {/* Floating Actions Group (Maximize & Change Image/Video) */}
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            display: 'flex',
+            gap: '6px',
+            zIndex: 50
+          }}>
+            {inputSource === 'image' && uploadedImage && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                title="Chọn tải lên một ảnh mẫu khác để đo"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(34, 211, 238, 0.45)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#22d3ee',
+                  padding: '0.4rem 0.65rem',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
+                  e.currentTarget.style.borderColor = '#06b6d4';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)';
+                  e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.45)';
+                }}
+              >
+                <Upload size={12} />
+                <span>Đổi ảnh</span>
+              </button>
+            )}
+            {inputSource === 'video' && uploadedVideo && (
+              <button
+                type="button"
+                onClick={() => fileInputVideoRef.current?.click()}
+                title="Chọn tải lên một video khác để đo"
+                style={{
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(34, 211, 238, 0.45)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#22d3ee',
+                  padding: '0.4rem 0.65rem',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
+                  e.currentTarget.style.borderColor = '#06b6d4';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)';
+                  e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.45)';
+                }}
+              >
+                <Upload size={12} />
+                <span>Đổi video</span>
+              </button>
+            )}
+            {hasMediaBackground && (
+              <button
+                type="button"
+                onClick={() => setIsMaximized(!isMaximized)}
+                title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#fff',
+                  padding: '0.4rem 0.65rem',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.45)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                }}
+              >
+                {isMaximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                <span>{isMaximized ? "Thu nhỏ" : "Phóng to"}</span>
+              </button>
+            )}
+          </div>
+
           {isModelLoading && (
             <div className="model-loading-overlay">
               <RefreshCw size={24} className="spin-anim" />
@@ -2031,6 +2075,71 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
+          {inputSource === 'video' && !uploadedVideo && (
+            <div className="webcam-placeholder-overlay" style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%)',
+              color: '#f8fafc',
+              padding: '2rem',
+              textAlign: 'center',
+              zIndex: 5,
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <div style={{
+                background: 'rgba(168, 85, 247, 0.1)',
+                border: '1px solid rgba(168, 85, 247, 0.25)',
+                borderRadius: '50%',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
+                animation: 'neonPulse 3s infinite ease-in-out'
+              }}>
+                <Upload size={40} style={{ color: '#c084fc' }} />
+              </div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
+                Chưa Chọn Video AI
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '300px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
+                Tải lên video quay cảnh bạn di chuyển hoặc tạo dáng để AI tự động quét khớp xương và đo đạc.
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputVideoRef.current?.click()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: '#7c3aed',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(124, 58, 237, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = '#6d28d9';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = '#7c3aed';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <Upload size={15} />
+                Chọn Video Tải Lên
+              </button>
+            </div>
+          )}
+
           {inputSource === 'image' && uploadedImage && (
             <img
               src={uploadedImage}
@@ -2039,12 +2148,75 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          {(inputSource === 'mannequin' || 
-            (inputSource === 'image' && !uploadedImage) || 
-            (inputSource === 'video' && !uploadedVideo)) && (
+          {inputSource === 'image' && !uploadedImage && (
+            <div className="webcam-placeholder-overlay" style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%)',
+              color: '#f8fafc',
+              padding: '2rem',
+              textAlign: 'center',
+              zIndex: 5,
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <div style={{
+                background: 'rgba(6, 182, 212, 0.1)',
+                border: '1px solid rgba(6, 182, 212, 0.25)',
+                borderRadius: '50%',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 20px rgba(6, 182, 212, 0.15)',
+                animation: 'neonPulse 3s infinite ease-in-out'
+              }}>
+                <Upload size={40} style={{ color: '#22d3ee' }} />
+              </div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
+                Chưa Chọn Ảnh Mẫu
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '300px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
+                Tải lên ảnh chụp toàn thân hoặc nửa người của bạn hoặc người mẫu để bắt đầu cân chỉnh số đo.
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: '#0284c7',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = '#0369a1';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = '#0284c7';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <Upload size={15} />
+                Chọn Ảnh Tải Lên
+              </button>
+            </div>
+          )}
+
+          {inputSource === 'mannequin' && (
             <Mannequin3DView
               gender={gender}
-              weight={inputSource === 'mannequin' ? weight : (gender === 'male' ? 80 : 55)}
+              weight={weight}
               scaleFactor={scaleFactor}
               landmarks={landmarks}
               rotationAngle={rotationAngle}
@@ -2052,14 +2224,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               width={width}
               height={height}
               scanRange={scanRange}
-              measurements={inputSource === 'mannequin' ? measurements : (gender === 'male' ? defaultMaleMeasurements : defaultFemaleMeasurements)}
+              measurements={measurements}
               cameraResetCounter={cameraResetCounter}
-              showLabels={inputSource === 'mannequin'}
-              interactive={inputSource === 'mannequin'}
+              showLabels={true}
+              interactive={true}
             />
           )}
 
-          {inputSource !== 'mannequin' && (
+          {inputSource !== 'mannequin' && (inputSource === 'webcam' || (inputSource === 'image' && uploadedImage) || (inputSource === 'video' && uploadedVideo)) && (
             <svg
               ref={containerRef}
               viewBox={`0 0 ${width} ${height}`}

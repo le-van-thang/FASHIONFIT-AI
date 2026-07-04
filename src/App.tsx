@@ -15,12 +15,12 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
     if (view === 'front') {
       return [
         { id: 'nasion', name: 'Gốc mũi', x: 200, y: 100, label: 'Gốc Mũi' },
-        { id: 'left_shoulder', name: 'Vai trái', x: 150, y: 158, label: 'Vai Trái' },
-        { id: 'right_shoulder', name: 'Vai phải', x: 250, y: 158, label: 'Vai Phải' },
-        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 135, y: 225, label: 'Khuỷu Trái' },
-        { id: 'left_wrist', name: 'Cổ tay trái', x: 125, y: 285, label: 'Cổ Trái' },
-        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 265, y: 225, label: 'Khuỷu Phải' },
-        { id: 'right_wrist', name: 'Cổ tay phải', x: 275, y: 285, label: 'Cổ Phải' },
+        { id: 'left_shoulder', name: 'Vai trái', x: 142, y: 145, label: 'Vai Trái' },
+        { id: 'right_shoulder', name: 'Vai phải', x: 258, y: 145, label: 'Vai Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 130, y: 238, label: 'Khuỷu Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 118, y: 320, label: 'Cổ Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 270, y: 238, label: 'Khuỷu Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 282, y: 320, label: 'Cổ Phải' },
         { id: 'left_hip', name: 'Hông trái', x: 165, y: 295, label: 'Hông Trái' },
         { id: 'right_hip', name: 'Hông phải', x: 235, y: 295, label: 'Hông Phải' },
         { id: 'left_knee', name: 'Đầu gối trái', x: 170, y: 395, label: 'Gối Trái' },
@@ -31,9 +31,9 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
     } else {
       return [
         { id: 'nasion', name: 'Gốc mũi', x: 215, y: 100, label: 'Gốc Mũi' },
-        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 158, label: 'Khớp Vai' },
-        { id: 'elbow', name: 'Khuỷu tay', x: 190, y: 225, label: 'Khuỷu Tay' },
-        { id: 'wrist', name: 'Cổ tay', x: 185, y: 285, label: 'Cổ Tay' },
+        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 145, label: 'Khớp Vai' },
+        { id: 'elbow', name: 'Khuỷu tay', x: 190, y: 238, label: 'Khuỷu Tay' },
+        { id: 'wrist', name: 'Cổ tay', x: 185, y: 320, label: 'Cổ Tay' },
         { id: 'hip', name: 'Khớp hông', x: 200, y: 295, label: 'Khớp Hông' },
         { id: 'knee', name: 'Khớp gối', x: 200, y: 395, label: 'Khớp Gối' },
         { id: 'ankle', name: 'Cổ chân', x: 200, y: 495, label: 'Cổ Chân' },
@@ -45,12 +45,12 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
     if (view === 'front') {
       return [
         { id: 'nasion', name: 'Gốc mũi', x: 200, y: 110, label: 'Gốc Mũi' },
-        { id: 'left_shoulder', name: 'Vai trái', x: 155, y: 168, label: 'Vai Trái' },
-        { id: 'right_shoulder', name: 'Vai phải', x: 245, y: 168, label: 'Vai Phải' },
-        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 125, y: 235, label: 'Khuỷu Trái' },
-        { id: 'left_wrist', name: 'Cổ tay trái', x: 98, y: 295, label: 'Cổ Trái' },
-        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 275, y: 235, label: 'Khuỷu Phải' },
-        { id: 'right_wrist', name: 'Cổ tay phải', x: 302, y: 295, label: 'Cổ Phải' },
+        { id: 'left_shoulder', name: 'Vai trái', x: 146, y: 152, label: 'Vai Trái' },
+        { id: 'right_shoulder', name: 'Vai phải', x: 254, y: 152, label: 'Vai Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 120, y: 248, label: 'Khuỷu Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 98, y: 328, label: 'Cổ Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 280, y: 248, label: 'Khuỷu Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 302, y: 328, label: 'Cổ Phải' },
         { id: 'left_hip', name: 'Hông trái', x: 168, y: 305, label: 'Hông Trái' },
         { id: 'right_hip', name: 'Hông phải', x: 232, y: 305, label: 'Hông Phải' },
         { id: 'left_knee', name: 'Đầu gối trái', x: 172, y: 405, label: 'Gối Trái' },
@@ -61,9 +61,9 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
     } else {
       return [
         { id: 'nasion', name: 'Gốc mũi', x: 215, y: 110, label: 'Gốc Mũi' },
-        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 168, label: 'Khớp Vai' },
-        { id: 'elbow', name: 'Khuỷu tay', x: 185, y: 235, label: 'Khuỷu Tay' },
-        { id: 'wrist', name: 'Cổ tay', x: 180, y: 295, label: 'Cổ Tay' },
+        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 152, label: 'Khớp Vai' },
+        { id: 'elbow', name: 'Khuỷu tay', x: 185, y: 248, label: 'Khuỷu Tay' },
+        { id: 'wrist', name: 'Cổ tay', x: 180, y: 328, label: 'Cổ Tay' },
         { id: 'hip', name: 'Khớp hông', x: 200, y: 305, label: 'Khớp Hông' },
         { id: 'knee', name: 'Khớp gối', x: 200, y: 405, label: 'Khớp Gối' },
         { id: 'ankle', name: 'Cổ chân', x: 200, y: 505, label: 'Cổ Chân' },

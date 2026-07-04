@@ -381,8 +381,17 @@ function App() {
           setUploadedImageSide(event.target.result as string);
         }
       }
+      e.target.value = ''; // Reset value to allow re-uploading same file!
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleClearImage = () => {
+    if (view === 'front') {
+      setUploadedImageFront(null);
+    } else {
+      setUploadedImageSide(null);
+    }
   };
 
   const scale = useMemo(() => {
@@ -659,6 +668,7 @@ function App() {
             onViewChange={setView}
             uploadedImage={view === 'front' ? uploadedImageFront : uploadedImageSide}
             onImageUpload={handleImageUpload}
+            onClearImage={handleClearImage}
             warning={anatomicalWarning}
             measurements={measurements}
             recommendation={recommendation}

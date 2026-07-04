@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
-import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload } from 'lucide-react';
+import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2 } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
 
 
@@ -119,6 +119,7 @@ interface BodyCanvasProps {
   onViewChange: (view: 'front' | 'side') => void;
   uploadedImage: string | null;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClearImage?: () => void;
   warning: string | null;
   measurements?: BodyMeasurements;
   recommendation?: SizeRecommendation;
@@ -139,6 +140,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   onViewChange,
   uploadedImage,
   onImageUpload,
+  onClearImage,
   warning,
   measurements,
   recommendation,
@@ -518,6 +520,59 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     }
     // Note: we do NOT auto-open file dialog here — user presses the button manually
   }, [inputSource]);
+
+  // Automatic pose detection on uploaded image
+  useEffect(() => {
+    if (inputSource === 'image' && uploadedImage) {
+      const runImagePoseDetection = async () => {
+        setIsModelLoading(true);
+        try {
+          await loadMediaPipeScripts();
+          
+          if (!poseInstanceRef.current) {
+            const Pose = (window as any).Pose;
+            const pose = new Pose({
+              locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+            });
+
+            pose.setOptions({
+              modelComplexity: 1,
+              smoothLandmarks: true,
+              enableSegmentation: false,
+              minDetectionConfidence: 0.5,
+              minTrackingConfidence: 0.5
+            });
+
+            pose.onResults((results: any) => {
+              if (results.poseLandmarks) {
+                updateLandmarksFromMediaPipe(results);
+              }
+            });
+
+            poseInstanceRef.current = pose;
+          }
+
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = async () => {
+            try {
+              await poseInstanceRef.current.send({ image: img });
+            } catch (err) {
+              console.error("Error sending image to MediaPipe Pose:", err);
+            } finally {
+              setIsModelLoading(false);
+            }
+          };
+          img.src = uploadedImage;
+        } catch (err) {
+          console.error("Failed to run image pose detection:", err);
+          setIsModelLoading(false);
+        }
+      };
+
+      runImagePoseDetection();
+    }
+  }, [uploadedImage, inputSource]);
 
   // Make sure to stop webcam on component unmount
   useEffect(() => {
@@ -1827,46 +1882,95 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           ) : (
             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
               {inputSource === 'image' && (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  title="Tải lên ảnh mẫu để đo"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(6, 182, 212, 0.08)',
-                    border: '1px solid rgba(6, 182, 212, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
-                >
-                  <Upload size={11} />
-                  {uploadedImage ? 'Đổi ảnh' : 'Chọn ảnh'}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Tải lên ảnh mẫu để đo"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.25rem',
+                      background: 'rgba(6, 182, 212, 0.08)',
+                      border: '1px solid rgba(6, 182, 212, 0.3)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                      color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap', flexShrink: 0
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
+                  >
+                    <Upload size={11} />
+                    {uploadedImage ? 'Đổi ảnh' : 'Chọn ảnh'}
+                  </button>
+                  {uploadedImage && onClearImage && (
+                    <button
+                      type="button"
+                      onClick={onClearImage}
+                      title="Xóa ảnh mẫu hiện tại để về mô hình ban đầu"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.25rem',
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                        color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                        whiteSpace: 'nowrap', flexShrink: 0
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+                    >
+                      <Trash2 size={11} />
+                      Xóa ảnh
+                    </button>
+                  )}
+                </>
               )}
               {inputSource === 'video' && (
-                <button
-                  type="button"
-                  onClick={() => fileInputVideoRef.current?.click()}
-                  title="Tải lên video để đo"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(168, 85, 247, 0.08)',
-                    border: '1px solid rgba(168, 85, 247, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#a855f7', cursor: 'pointer', transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.08)')}
-                >
-                  <Upload size={11} />
-                  {uploadedVideo ? 'Đổi video' : 'Chọn video'}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputVideoRef.current?.click()}
+                    title="Tải lên video để đo"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.25rem',
+                      background: 'rgba(168, 85, 247, 0.08)',
+                      border: '1px solid rgba(168, 85, 247, 0.3)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                      color: '#a855f7', cursor: 'pointer', transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap', flexShrink: 0
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.18)')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.08)')}
+                  >
+                    <Upload size={11} />
+                    {uploadedVideo ? 'Đổi video' : 'Chọn video'}
+                  </button>
+                  {uploadedVideo && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUploadedVideo(null);
+                        setIsScanning(false);
+                      }}
+                      title="Xóa video hiện tại để về mô hình ban đầu"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.25rem',
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: 'var(--radius-sm)',
+                        padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                        color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                        whiteSpace: 'nowrap', flexShrink: 0
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+                    >
+                      <Trash2 size={11} />
+                      Xóa video
+                    </button>
+                  )}
+                </>
               )}
               {onResetLandmarks && (
                 <button
@@ -2338,7 +2442,168 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   </g>
                 );
               })}
+
+              {/* Floating Measurements Labels on Photo/Video View */}
+              {measurements && hasMediaBackground && (() => {
+                const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
+                const rShoulder = landmarks.find(l => l.id === 'right_shoulder');
+                const lElbow = landmarks.find(l => l.id === 'left_elbow');
+                const lWrist = landmarks.find(l => l.id === 'left_wrist');
+                const lHip = landmarks.find(l => l.id === 'left_hip');
+                const rHip = landmarks.find(l => l.id === 'right_hip');
+                const lKnee = landmarks.find(l => l.id === 'left_knee');
+                const lAnkle = landmarks.find(l => l.id === 'left_ankle');
+
+                const shoulder = landmarks.find(l => l.id === 'shoulder');
+                const hip = landmarks.find(l => l.id === 'hip');
+                const chestDepth = landmarks.find(l => l.id === 'chest_depth');
+                const buttockDepth = landmarks.find(l => l.id === 'buttock_depth');
+
+                const labels: { text: string; x: number; y: number }[] = [];
+
+                if (view === 'front') {
+                  if (lShoulder && rShoulder) {
+                    labels.push({
+                      text: `VAI: ${measurements.shoulderWidth.toFixed(1)} cm`,
+                      x: (lShoulder.x + rShoulder.x) / 2,
+                      y: (lShoulder.y + rShoulder.y) / 2 - 16
+                    });
+                    if (lHip) {
+                      labels.push({
+                        text: `NGỰC: ${measurements.chestCircumference.toFixed(1)} cm`,
+                        x: (lShoulder.x + rShoulder.x) / 2,
+                        y: lShoulder.y + (lHip.y - lShoulder.y) * 0.3
+                      });
+                      labels.push({
+                        text: `EO: ${measurements.waistCircumference.toFixed(1)} cm`,
+                        x: (lShoulder.x + rShoulder.x) / 2,
+                        y: lShoulder.y + (lHip.y - lShoulder.y) * 0.75
+                      });
+                    }
+                  }
+                  if (lHip && rHip) {
+                    labels.push({
+                      text: `MÔNG: ${measurements.hipCircumference.toFixed(1)} cm`,
+                      x: (lHip.x + rHip.x) / 2,
+                      y: (lHip.y + rHip.y) / 2 + 18
+                    });
+                  }
+                  if (lShoulder && lElbow && lWrist) {
+                    labels.push({
+                      text: `TAY: ${measurements.armLength.toFixed(1)} cm`,
+                      x: (lShoulder.x + lElbow.x + lWrist.x) / 3 - 40,
+                      y: (lShoulder.y + lElbow.y + lWrist.y) / 3
+                    });
+                  }
+                  if (scanRange === 'full' && lHip && lKnee && lAnkle) {
+                    labels.push({
+                      text: `CHÂN: ${measurements.legLength.toFixed(1)} cm`,
+                      x: (lHip.x + lKnee.x + lAnkle.x) / 3 - 40,
+                      y: (lHip.y + lKnee.y + lAnkle.y) / 3
+                    });
+                  }
+                } else {
+                  // Side View
+                  if (chestDepth) {
+                    labels.push({
+                      text: `SÂU NGỰC: ${(measurements.chestDepth || 0).toFixed(1)} cm`,
+                      x: chestDepth.x + 45,
+                      y: chestDepth.y
+                    });
+                  }
+                  if (buttockDepth) {
+                    labels.push({
+                      text: `SÂU MÔNG: ${(measurements.hipDepth || 0).toFixed(1)} cm`,
+                      x: buttockDepth.x - 45,
+                      y: buttockDepth.y
+                    });
+                  }
+                  if (shoulder && hip) {
+                    labels.push({
+                      text: `SÂU EO: ${(measurements.waistDepth || 0).toFixed(1)} cm`,
+                      x: hip.x + 45,
+                      y: shoulder.y + (hip.y - shoulder.y) * 0.7
+                    });
+                  }
+                }
+
+                return labels.map((lbl, i) => (
+                  <g key={`lbl2d-${i}`} transform={`translate(${lbl.x}, ${lbl.y})`} style={{ pointerEvents: 'none' }}>
+                    <rect
+                      x="-38"
+                      y="-8"
+                      width="76"
+                      height="16"
+                      rx="8"
+                      fill="rgba(15, 23, 42, 0.85)"
+                      stroke="rgba(34, 211, 238, 0.45)"
+                      strokeWidth="1"
+                    />
+                    <text
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize="9px"
+                      fontWeight="bold"
+                      fill="#22d3ee"
+                    >
+                      {lbl.text}
+                    </text>
+                  </g>
+                ));
+              })()}
             </svg>
+          )}
+
+          {/* 3D Mannequin Live Preview (Picture-in-Picture) */}
+          {inputSource !== 'mannequin' && hasMediaBackground && (
+            <div style={{
+              position: 'absolute',
+              bottom: '12px',
+              left: '12px',
+              width: '110px',
+              height: '180px',
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+              zIndex: 35,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '0.55rem',
+                fontWeight: 700,
+                color: '#22d3ee',
+                padding: '4px 8px',
+                background: 'rgba(255, 255, 255, 0.03)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                textAlign: 'center',
+                letterSpacing: '0.5px',
+                whiteSpace: 'nowrap'
+              }}>
+                MÔ HÌNH 3D LIVE
+              </div>
+              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                <Mannequin3DView
+                  gender={gender}
+                  weight={weight}
+                  scaleFactor={scaleFactor}
+                  landmarks={landmarks}
+                  rotationAngle={rotationAngle}
+                  meshStyle={meshStyle}
+                  width={110}
+                  height={155}
+                  scanRange={scanRange}
+                  measurements={measurements}
+                  cameraResetCounter={cameraResetCounter}
+                  showLabels={false}
+                  interactive={false}
+                />
+              </div>
+            </div>
           )}
 
           {/* Floating AI Scanning Controls Overlay */}

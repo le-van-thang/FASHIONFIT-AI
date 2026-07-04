@@ -2098,20 +2098,25 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
               {/* Direct 3D HUD Measurements Labels (only in Mannequin mode) */}
               {measurements && !hasMediaBackground && projected3DData.hudPoints && (() => {
-                const leftLabels = [
+                const leftLabels = view === 'front' ? [
                   { label: 'CỔ', value: (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) + " cm", pt: projected3DData.hudPoints.neck },
                   { label: 'NGỰC', value: measurements.chestCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.chest },
                   { label: 'EO DƯỚI', value: (measurements.waistCircumference * 1.05).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistLower },
                   { label: 'ĐÙI PHẢI', value: (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) + " cm", pt: projected3DData.hudPoints.thighLeft },
                   { label: 'BẮP CHÂN PHẢI', value: (measurements.hipCircumference * 0.38).toFixed(1) + " cm", pt: projected3DData.hudPoints.calfLeft },
+                ] : [
+                  { label: 'ĐỘ SÂU NGỰC', value: (measurements.chestDepth || 0).toFixed(1) + " cm", pt: landmarks.find(l => l.id === 'chest_depth') || { x: 232, y: 195 } },
+                  { label: 'ĐỘ SÂU MÔNG', value: (measurements.hipDepth || 0).toFixed(1) + " cm", pt: landmarks.find(l => l.id === 'buttock_depth') || { x: 168, y: 305 } }
                 ];
 
-                const rightLabels = [
+                const rightLabels = view === 'front' ? [
                   { label: 'RỘNG VAI', value: measurements.shoulderWidth.toFixed(1) + " cm", pt: projected3DData.hudPoints.shoulder },
                   { label: 'EO TRÊN', value: (measurements.waistCircumference * 0.96).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistUpper },
                   { label: 'MÔNG', value: measurements.hipCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.hips },
                   { label: 'DÀI TAY', value: measurements.armLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.armRight },
                   { label: 'DÀI CHÂN', value: measurements.legLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.legRight },
+                ] : [
+                  { label: 'ĐỘ SÂU EO', value: (measurements.waistDepth || 0).toFixed(1) + " cm", pt: landmarks.find(l => l.id === 'hip') || { x: 200, y: 295 } }
                 ];
 
                 const leftY = relaxLabelY(leftLabels.map((item, idx) => ({ y: item.pt.y, originalIdx: idx })), 36, 40, 610);

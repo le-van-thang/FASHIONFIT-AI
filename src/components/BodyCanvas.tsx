@@ -2067,7 +2067,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          {inputSource !== 'mannequin' && (inputSource === 'webcam' || (inputSource === 'image' && uploadedImage) || (inputSource === 'video' && uploadedVideo)) && (
+          {inputSource !== 'mannequin' && (
             <svg
               ref={containerRef}
               viewBox={`0 0 ${width} ${height}`}

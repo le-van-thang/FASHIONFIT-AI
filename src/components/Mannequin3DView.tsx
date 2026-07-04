@@ -689,8 +689,8 @@ const CameraController: React.FC<{
       }
     } else {
       // Locked level front/side view, matching SVG templates exactly
-      camera.position.set(0, -0.14, 4.7);
-      camera.lookAt(0, -0.14, 0);
+      camera.position.set(0, -0.07, 4.05);
+      camera.lookAt(0, -0.07, 0);
     }
   });
   return null;

@@ -2560,66 +2560,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </svg>
           )}
 
-          {/* 3D Mannequin Live Preview (Picture-in-Picture) */}
-          {inputSource !== 'mannequin' && hasMediaBackground && (
-            <div style={{
-              position: 'absolute',
-              top: '12px',
-              left: '12px',
-              width: '110px',
-              height: '180px',
-              background: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-              zIndex: 35,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <div style={{
-                fontSize: '0.52rem',
-                fontWeight: 700,
-                color: '#22d3ee',
-                padding: '4px 8px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                textAlign: 'center',
-                letterSpacing: '0.5px',
-                whiteSpace: 'nowrap',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px'
-              }}>
-                <span>MÔ HÌNH 3D LIVE</span>
-                {measurements && (
-                  <span style={{ color: '#94a3b8', fontSize: '0.48rem' }}>
-                    {measurements.height.toFixed(0)} cm | {weight} kg
-                  </span>
-                )}
-              </div>
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                <Mannequin3DView
-                  gender={gender}
-                  weight={weight}
-                  scaleFactor={scaleFactor}
-                  landmarks={landmarks}
-                  rotationAngle={rotationAngle}
-                  meshStyle={meshStyle}
-                  width={110}
-                  height={155}
-                  scanRange={scanRange}
-                  measurements={measurements}
-                  cameraResetCounter={cameraResetCounter}
-                  showLabels={false}
-                  interactive={false}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Floating AI Scanning Controls Overlay */}
           {inputSource === 'webcam' && isWebcamActive && !isModelLoading && (
             <div className="ai-controls-overlay">
@@ -2946,6 +2886,64 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             >
               Nhiệt (AI)
             </button>
+          </div>
+        )}
+
+        {/* 3D Mannequin Live Preview (Picture-in-Picture) - Rendered OUTSIDE the viewport to never block the image */}
+        {!isMaximized && inputSource !== 'mannequin' && hasMediaBackground && (
+          <div style={{
+            marginTop: '16px',
+            width: '180px',
+            height: '240px',
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            alignSelf: 'center'
+          }}>
+            <div style={{
+              fontSize: '0.62rem',
+              fontWeight: 700,
+              color: '#22d3ee',
+              padding: '6px 10px',
+              background: 'rgba(255, 255, 255, 0.03)',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              textAlign: 'center',
+              letterSpacing: '0.5px',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '2px'
+            }}>
+              <span>MÔ HÌNH 3D LIVE</span>
+              {measurements && (
+                <span style={{ color: '#94a3b8', fontSize: '0.55rem' }}>
+                  {measurements.height.toFixed(0)} cm | {weight} kg
+                </span>
+              )}
+            </div>
+            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <Mannequin3DView
+                gender={gender}
+                weight={weight}
+                scaleFactor={scaleFactor}
+                landmarks={landmarks}
+                rotationAngle={rotationAngle}
+                meshStyle={meshStyle}
+                width={180}
+                height={200}
+                scanRange={scanRange}
+                measurements={measurements}
+                cameraResetCounter={cameraResetCounter}
+                showLabels={false}
+                interactive={false}
+              />
+            </div>
           </div>
         )}
 

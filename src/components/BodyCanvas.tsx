@@ -2472,7 +2472,38 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* Sizing HUD overlay removed to avoid clutter */}
+          {/* Floating AI Scanning Guidance Tooltip */}
+          {hasMediaBackground && (
+            <div style={{
+              position: 'absolute',
+              bottom: '12px',
+              left: '12px',
+              right: '12px',
+              background: 'rgba(15, 23, 42, 0.95)',
+              border: '1px solid rgba(34, 211, 238, 0.45)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.6rem 0.85rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.25rem',
+              zIndex: 40,
+              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.55)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              pointerEvents: 'none',
+              fontFamily: 'system-ui, sans-serif'
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                💡 HƯỚNG DẪN CÂN CHỈNH SỐ ĐO ẢNH CHỤP
+              </span>
+              <p style={{ fontSize: '0.7rem', color: '#cbd5e1', margin: 0, lineHeight: 1.45 }}>
+                1. <strong>Nhấn giữ và kéo các chấm tròn</strong> (Mũi, Vai, Tay, Hông, Gối, Cổ chân...) trên màn hình khớp vào các khớp xương tương ứng của người mẫu trong ảnh.
+              </p>
+              <p style={{ fontSize: '0.7rem', color: '#cbd5e1', margin: 0, lineHeight: 1.45 }}>
+                2. Điền <strong>Chiều cao ước tính</strong> và kéo thanh trượt <strong>Cân nặng thực tế</strong> ở cột bên trái tương ứng với người mẫu để hệ thống tính toán chính xác.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Style Controls Rendered Cleanly BELOW the Viewport Box */}

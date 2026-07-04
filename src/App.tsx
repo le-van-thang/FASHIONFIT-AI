@@ -191,9 +191,11 @@ function App() {
   const handleInputSourceChange = (source: 'mannequin' | 'image' | 'webcam' | 'video') => {
     setInputSource(source);
     if (source === 'webcam') {
-      setInput(prev => ({ ...prev, scanRange: 'half' }));
+      setInput(prev => ({ ...prev, scanRange: 'half', calibrationType: 'height' }));
     } else if (source === 'mannequin') {
-      setInput(prev => ({ ...prev, scanRange: 'full' }));
+      setInput(prev => ({ ...prev, scanRange: 'full', calibrationType: 'height' }));
+    } else if (source === 'image' || source === 'video') {
+      setInput(prev => ({ ...prev, calibrationType: 'height' }));
     }
   };
 

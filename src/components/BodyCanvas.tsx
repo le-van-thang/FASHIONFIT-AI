@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
-import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff } from 'lucide-react';
+import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
 
 
@@ -1830,34 +1830,92 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               Reset mô hình & camera
             </button>
           ) : (
-            onResetLandmarks && (
-              <button
-                type="button"
-                onClick={onResetLandmarks}
-                title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.3rem 0.55rem',
-                  fontSize: '0.68rem',
-                  fontWeight: 600,
-                  color: '#ef4444',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap',
-                  flexShrink: 0
-                }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-              >
-                <RefreshCw size={11} />
-                Reset chấm
-              </button>
-            )
+            <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+              {inputSource === 'image' && uploadedImage && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Chọn tải lên một ảnh mẫu khác để đo"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    background: 'rgba(34, 211, 238, 0.08)',
+                    border: '1px solid rgba(34, 211, 238, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.3rem 0.55rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    color: '#06b6d4',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
+                >
+                  <Upload size={11} />
+                  Chọn ảnh khác
+                </button>
+              )}
+              {inputSource === 'video' && uploadedVideo && (
+                <button
+                  type="button"
+                  onClick={() => fileInputVideoRef.current?.click()}
+                  title="Chọn tải lên một video khác để đo"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    background: 'rgba(34, 211, 238, 0.08)',
+                    border: '1px solid rgba(34, 211, 238, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.3rem 0.55rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    color: '#06b6d4',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
+                >
+                  <Upload size={11} />
+                  Chọn video khác
+                </button>
+              )}
+              {onResetLandmarks && (
+                <button
+                  type="button"
+                  onClick={onResetLandmarks}
+                  title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.3rem 0.55rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    color: '#ef4444',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+                >
+                  <RefreshCw size={11} />
+                  Reset chấm
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

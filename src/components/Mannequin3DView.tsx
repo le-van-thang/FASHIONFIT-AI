@@ -146,8 +146,9 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const meshRef = useRef<THREE.Group>(null);
   useFrame((state) => {
     if (meshRef.current) {
+      const genderOffset = gender === 'female' ? Math.PI : 0;
       const baseRotationY = (rotationAngle * Math.PI) / 180;
-      meshRef.current.rotation.y = baseRotationY + Math.sin(state.clock.getElapsedTime() * 0.3) * 0.12;
+      meshRef.current.rotation.y = genderOffset + baseRotationY + Math.sin(state.clock.getElapsedTime() * 0.3) * 0.12;
     }
   });
 
@@ -689,12 +690,12 @@ const CameraController: React.FC<{
     } else {
       // Locked level front/side view, matching SVG templates exactly
       if (gender === 'male') {
-        camera.position.set(0, -0.06, 4.25);
-        camera.lookAt(0, -0.06, 0);
+        camera.position.set(0, 0.08, 3.55);
+        camera.lookAt(0, 0.08, 0);
       } else {
-        // Zoom out more for female (Z=4.65) to bring wide arms inside viewport boundaries
-        camera.position.set(0, -0.08, 4.65);
-        camera.lookAt(0, -0.08, 0);
+        // Zoom for female (Z=3.48) to fit perfectly and align hands with the wide front dots template
+        camera.position.set(0, 0.06, 3.48);
+        camera.lookAt(0, 0.06, 0);
       }
     }
   });

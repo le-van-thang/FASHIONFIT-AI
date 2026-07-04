@@ -9,35 +9,74 @@ import { Activity, History, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
 
-// Default initial keypoints for front view
-const initialFrontLandmarks: Landmark[] = [
-  { id: 'nasion', name: 'Gốc mũi', x: 200, y: 75, label: 'Gốc Mũi' },
-  { id: 'left_shoulder', name: 'Vai trái', x: 130, y: 125, label: 'Vai Trái' },
-  { id: 'right_shoulder', name: 'Vai phải', x: 270, y: 125, label: 'Vai Phải' },
-  { id: 'left_elbow', name: 'Khuỷu tay trái', x: 115, y: 220, label: 'Khuỷu Trái' },
-  { id: 'left_wrist', name: 'Cổ tay trái', x: 105, y: 310, label: 'Cổ Trái' },
-  { id: 'right_elbow', name: 'Khuỷu tay phải', x: 285, y: 220, label: 'Khuỷu Phải' },
-  { id: 'right_wrist', name: 'Cổ tay phải', x: 295, y: 310, label: 'Cổ Phải' },
-  { id: 'left_hip', name: 'Hông trái', x: 160, y: 300, label: 'Hông Trái' },
-  { id: 'right_hip', name: 'Hông phải', x: 240, y: 300, label: 'Hông Phải' },
-  { id: 'left_knee', name: 'Đầu gối trái', x: 165, y: 460, label: 'Gối Trái' },
-  { id: 'left_ankle', name: 'Cổ chân trái', x: 170, y: 610, label: 'Cổ Chân Trái' },
-  { id: 'right_knee', name: 'Đầu gối phải', x: 235, y: 460, label: 'Gối Phải' },
-  { id: 'right_ankle', name: 'Cổ chân phải', x: 230, y: 610, label: 'Cổ Chân Phải' }
-];
+// Helper function to get initial landmarks based on gender and view
+const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'): Landmark[] => {
+  if (gender === 'male') {
+    if (view === 'front') {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 200, y: 110, label: 'Gốc Mũi' },
+        { id: 'left_shoulder', name: 'Vai trái', x: 150, y: 162, label: 'Vai Trái' },
+        { id: 'right_shoulder', name: 'Vai phải', x: 250, y: 162, label: 'Vai Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 135, y: 255, label: 'Khuỷu Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 125, y: 345, label: 'Cổ Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 265, y: 255, label: 'Khuỷu Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 275, y: 345, label: 'Cổ Phải' },
+        { id: 'left_hip', name: 'Hông trái', x: 165, y: 320, label: 'Hông Trái' },
+        { id: 'right_hip', name: 'Hông phải', x: 235, y: 320, label: 'Hông Phải' },
+        { id: 'left_knee', name: 'Đầu gối trái', x: 170, y: 465, label: 'Gối Trái' },
+        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 590, label: 'Cổ Chân Trái' },
+        { id: 'right_knee', name: 'Đầu gối phải', x: 230, y: 465, label: 'Gối Phải' },
+        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 590, label: 'Cổ Chân Phải' }
+      ];
+    } else {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 215, y: 110, label: 'Gốc Mũi' },
+        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 162, label: 'Khớp Vai' },
+        { id: 'elbow', name: 'Khuỷu tay', x: 190, y: 255, label: 'Khuỷu Tay' },
+        { id: 'wrist', name: 'Cổ tay', x: 185, y: 345, label: 'Cổ Tay' },
+        { id: 'hip', name: 'Khớp hông', x: 200, y: 320, label: 'Khớp Hông' },
+        { id: 'knee', name: 'Khớp gối', x: 200, y: 465, label: 'Khớp Gối' },
+        { id: 'ankle', name: 'Cổ chân', x: 200, y: 590, label: 'Cổ Chân' },
+        { id: 'chest_depth', name: 'Độ sâu ngực', x: 232, y: 205, label: 'Độ Sâu Ngực' },
+        { id: 'buttock_depth', name: 'Độ sâu mông', x: 168, y: 345, label: 'Độ Sâu Mông' }
+      ];
+    }
+  } else {
+    if (view === 'front') {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 200, y: 130, label: 'Gốc Mũi' },
+        { id: 'left_shoulder', name: 'Vai trái', x: 155, y: 178, label: 'Vai Trái' },
+        { id: 'right_shoulder', name: 'Vai phải', x: 245, y: 178, label: 'Vai Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 125, y: 265, label: 'Khuỷu Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 98, y: 345, label: 'Cổ Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 275, y: 265, label: 'Khuỷu Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 302, y: 345, label: 'Cổ Phải' },
+        { id: 'left_hip', name: 'Hông trái', x: 168, y: 328, label: 'Hông Trái' },
+        { id: 'right_hip', name: 'Hông phải', x: 232, y: 328, label: 'Hông Phải' },
+        { id: 'left_knee', name: 'Đầu gối trái', x: 172, y: 460, label: 'Gối Trái' },
+        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 575, label: 'Cổ Chân Trái' },
+        { id: 'right_knee', name: 'Đầu gối phải', x: 228, y: 460, label: 'Gối Phải' },
+        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 575, label: 'Cổ Chân Phải' }
+      ];
+    } else {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 215, y: 130, label: 'Gốc Mũi' },
+        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 178, label: 'Khớp Vai' },
+        { id: 'elbow', name: 'Khuỷu tay', x: 185, y: 265, label: 'Khuỷu Tay' },
+        { id: 'wrist', name: 'Cổ tay', x: 180, y: 345, label: 'Cổ Tay' },
+        { id: 'hip', name: 'Khớp hông', x: 200, y: 328, label: 'Khớp Hông' },
+        { id: 'knee', name: 'Khớp gối', x: 200, y: 460, label: 'Khớp Gối' },
+        { id: 'ankle', name: 'Cổ chân', x: 200, y: 575, label: 'Cổ Chân' },
+        { id: 'chest_depth', name: 'Độ sâu ngực', x: 232, y: 210, label: 'Độ Sâu Ngực' },
+        { id: 'buttock_depth', name: 'Độ sâu mông', x: 168, y: 350, label: 'Độ Sâu Mông' }
+      ];
+    }
+  }
+};
 
-// Default initial keypoints for side view
-const initialSideLandmarks: Landmark[] = [
-  { id: 'nasion', name: 'Gốc mũi', x: 215, y: 75, label: 'Gốc Mũi' },
-  { id: 'shoulder', name: 'Khớp vai', x: 195, y: 125, label: 'Khớp Vai' },
-  { id: 'elbow', name: 'Khuỷu tay', x: 185, y: 220, label: 'Khuỷu Tay' },
-  { id: 'wrist', name: 'Cổ tay', x: 180, y: 310, label: 'Cổ Tay' },
-  { id: 'hip', name: 'Khớp hông', x: 195, y: 300, label: 'Khớp Hông' },
-  { id: 'knee', name: 'Khớp gối', x: 195, y: 460, label: 'Khớp Gối' },
-  { id: 'ankle', name: 'Cổ chân', x: 195, y: 610, label: 'Cổ Chân' },
-  { id: 'chest_depth', name: 'Độ sâu ngực', x: 232, y: 160, label: 'Độ Sâu Ngực' },
-  { id: 'buttock_depth', name: 'Độ sâu mông', x: 168, y: 320, label: 'Độ Sâu Mông' }
-];
+// Default initial keypoints for front and side views (using female as startup default)
+const initialFrontLandmarks: Landmark[] = getInitialLandmarks('female', 'front');
+const initialSideLandmarks: Landmark[] = getInitialLandmarks('female', 'side');
 
 function App() {
   const [input, setInput] = useState<UserInput>(() => {
@@ -181,6 +220,16 @@ function App() {
     localStorage.setItem('fashionfit_input_source', inputSource);
   }, [inputSource]);
 
+  // Synchronize gender changes to automatically load the corresponding template coordinates
+  useEffect(() => {
+    const hasFrontUploaded = (view === 'front' && uploadedImageFront);
+    const hasSideUploaded = (view === 'side' && uploadedImageSide);
+    if (!hasFrontUploaded && !hasSideUploaded) {
+      setLandmarksFront(getInitialLandmarks(input.gender, 'front'));
+      setLandmarksSide(getInitialLandmarks(input.gender, 'side'));
+    }
+  }, [input.gender, inputSource]);
+
   const [uploadedImageFront, setUploadedImageFront] = useState<string | null>(null);
   const [uploadedImageSide, setUploadedImageSide] = useState<string | null>(null);
 
@@ -295,9 +344,9 @@ function App() {
   // Reset landmarks to anatomically correct default positions
   const handleResetLandmarks = () => {
     if (view === 'front') {
-      setLandmarksFront([...initialFrontLandmarks]);
+      setLandmarksFront(getInitialLandmarks(input.gender, 'front'));
     } else {
-      setLandmarksSide([...initialSideLandmarks]);
+      setLandmarksSide(getInitialLandmarks(input.gender, 'side'));
     }
   };
 
@@ -312,8 +361,8 @@ function App() {
       scanRange: 'full'
     });
     setReferencePixels(120);
-    setLandmarksFront([...initialFrontLandmarks]);
-    setLandmarksSide([...initialSideLandmarks]);
+    setLandmarksFront(getInitialLandmarks('male', 'front'));
+    setLandmarksSide(getInitialLandmarks('male', 'side'));
   };
 
   // Upload handlers

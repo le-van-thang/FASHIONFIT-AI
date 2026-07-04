@@ -689,14 +689,8 @@ const CameraController: React.FC<{
       }
     } else {
       // Locked level front/side view, matching SVG templates exactly
-      if (gender === 'male') {
-        camera.position.set(0, 0.08, 3.55);
-        camera.lookAt(0, 0.08, 0);
-      } else {
-        // Zoom for female (Z=3.48) to fit perfectly and align hands with the wide front dots template
-        camera.position.set(0, 0.06, 3.48);
-        camera.lookAt(0, 0.06, 0);
-      }
+      camera.position.set(0, -0.14, 4.7);
+      camera.lookAt(0, -0.14, 0);
     }
   });
   return null;

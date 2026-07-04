@@ -1790,96 +1790,48 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   return (
     <div className={`canvas-wrapper ${isMaximized ? 'maximized' : ''}`}>
       <div className="canvas-header">
-        <div className="source-select-tabs">
-          <button
-            type="button"
-            className={`source-tab ${inputSource === 'mannequin' ? 'active' : ''}`}
-            onClick={() => {
-              onInputSourceChange('mannequin');
-            }}
-          >
-            Mô hình 3D
-          </button>
-          <button
-            type="button"
-            className={`source-tab ${inputSource === 'image' ? 'active' : ''}`}
-            onClick={() => {
-              onInputSourceChange('image');
-            }}
-          >
-            Ảnh mẫu
-          </button>
-          <button
-            type="button"
-            className={`source-tab ${inputSource === 'webcam' ? 'active' : ''}`}
-            onClick={() => {
-              onInputSourceChange('webcam');
-            }}
-          >
-            Webcam AI
-          </button>
-          <button
-            type="button"
-            className={`source-tab ${inputSource === 'video' ? 'active' : ''}`}
-            onClick={() => {
-              onInputSourceChange('video');
-            }}
-          >
-            Video AI
-          </button>
-        </div>
-
-        <div className="canvas-header-row2">
-          <div className="view-toggle-tabs">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div className="source-select-tabs">
             <button
               type="button"
-              className={`tab-btn ${view === 'front' ? 'active' : ''}`}
-              onClick={() => onViewChange('front')}
+              className={`source-tab ${inputSource === 'mannequin' ? 'active' : ''}`}
+              onClick={() => {
+                onInputSourceChange('mannequin');
+              }}
             >
-              Mặt trước
+              Mô hình 3D
             </button>
             <button
               type="button"
-              className={`tab-btn ${view === 'side' ? 'active' : ''}`}
-              onClick={() => onViewChange('side')}
+              className={`source-tab ${inputSource === 'image' ? 'active' : ''}`}
+              onClick={() => {
+                onInputSourceChange('image');
+              }}
             >
-              Mặt nghiêng
+              Ảnh mẫu
+            </button>
+            <button
+              type="button"
+              className={`source-tab ${inputSource === 'webcam' ? 'active' : ''}`}
+              onClick={() => {
+                onInputSourceChange('webcam');
+              }}
+            >
+              Webcam AI
+            </button>
+            <button
+              type="button"
+              className={`source-tab ${inputSource === 'video' ? 'active' : ''}`}
+              onClick={() => {
+                onInputSourceChange('video');
+              }}
+            >
+              Video AI
             </button>
           </div>
-          {/* Reset button (Reset camera for 3D model, Reset landmarks for 2D inputs) */}
-          {inputSource === 'mannequin' ? (
-            <button
-              type="button"
-              onClick={() => {
-                setCameraResetCounter(c => c + 1);
-                if (onResetModel) {
-                  onResetModel();
-                }
-              }}
-              title="Đặt lại toàn bộ số đo mô hình và góc camera về mặc định chuẩn"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                background: 'rgba(6, 182, 212, 0.08)',
-                border: '1px solid rgba(6, 182, 212, 0.3)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '0.3rem 0.55rem',
-                fontSize: '0.68rem',
-                fontWeight: 600,
-                color: '#06b6d4',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
-            >
-              <RefreshCw size={11} />
-              Reset mô hình & camera
-            </button>
-          ) : (
+
+          {/* Action buttons (Đổi ảnh / Xóa ảnh / Đổi video / Xóa video) on Row 1 */}
+          {inputSource !== 'mannequin' && (
             <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
               {inputSource === 'image' && (
                 <>
@@ -1972,28 +1924,82 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   )}
                 </>
               )}
-              {onResetLandmarks && (
-                <button
-                  type="button"
-                  onClick={onResetLandmarks}
-                  title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-                >
-                  <RefreshCw size={11} />
-                  Reset chấm
-                </button>
-              )}
             </div>
+          )}
+        </div>
+
+        <div className="canvas-header-row2">
+          <div className="view-toggle-tabs">
+            <button
+              type="button"
+              className={`tab-btn ${view === 'front' ? 'active' : ''}`}
+              onClick={() => onViewChange('front')}
+            >
+              Mặt trước
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${view === 'side' ? 'active' : ''}`}
+              onClick={() => onViewChange('side')}
+            >
+              Mặt nghiêng
+            </button>
+          </div>
+          {/* Reset button always sits on Row 2 */}
+          {inputSource === 'mannequin' ? (
+            <button
+              type="button"
+              onClick={() => {
+                setCameraResetCounter(c => c + 1);
+                if (onResetModel) {
+                  onResetModel();
+                }
+              }}
+              title="Đặt lại toàn bộ số đo mô hình và góc camera về mặc định chuẩn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                background: 'rgba(6, 182, 212, 0.08)',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.3rem 0.55rem',
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                color: '#06b6d4',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
+            >
+              <RefreshCw size={11} />
+              Reset mô hình & camera
+            </button>
+          ) : (
+            onResetLandmarks && (
+              <button
+                type="button"
+                onClick={onResetLandmarks}
+                title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.25rem',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                  color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap', flexShrink: 0
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+              >
+                <RefreshCw size={11} />
+                Reset chấm
+              </button>
+            )
           )}
         </div>
       </div>
@@ -2558,7 +2564,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {inputSource !== 'mannequin' && hasMediaBackground && (
             <div style={{
               position: 'absolute',
-              bottom: '12px',
+              top: '12px',
               left: '12px',
               width: '110px',
               height: '180px',
@@ -2574,7 +2580,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               flexDirection: 'column'
             }}>
               <div style={{
-                fontSize: '0.55rem',
+                fontSize: '0.52rem',
                 fontWeight: 700,
                 color: '#22d3ee',
                 padding: '4px 8px',
@@ -2582,9 +2588,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 textAlign: 'center',
                 letterSpacing: '0.5px',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px'
               }}>
-                MÔ HÌNH 3D LIVE
+                <span>MÔ HÌNH 3D LIVE</span>
+                {measurements && (
+                  <span style={{ color: '#94a3b8', fontSize: '0.48rem' }}>
+                    {measurements.height.toFixed(0)} cm | {weight} kg
+                  </span>
+                )}
               </div>
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                 <Mannequin3DView

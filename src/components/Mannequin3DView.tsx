@@ -677,7 +677,8 @@ const CameraController: React.FC<{
   targetPoint: React.RefObject<THREE.Vector3>;
   controlsRef: React.RefObject<any>;
   interactive: boolean;
-}> = ({ targetPoint, controlsRef, interactive }) => {
+  gender: Gender;
+}> = ({ targetPoint, controlsRef, interactive, gender }) => {
   const { camera } = useThree();
   useFrame(() => {
     if (interactive) {
@@ -686,9 +687,15 @@ const CameraController: React.FC<{
         controlsRef.current.update();
       }
     } else {
-      // Locked level front/side view, matching SVG template exactly
-      camera.position.set(0, -0.06, 4.15);
-      camera.lookAt(0, -0.06, 0);
+      // Locked level front/side view, matching SVG templates exactly
+      if (gender === 'male') {
+        camera.position.set(0, -0.06, 4.25);
+        camera.lookAt(0, -0.06, 0);
+      } else {
+        // Zoom out more for female (Z=4.65) to bring wide arms inside viewport boundaries
+        camera.position.set(0, -0.08, 4.65);
+        camera.lookAt(0, -0.08, 0);
+      }
     }
   });
   return null;
@@ -767,7 +774,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {/* Camera */}
         <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
         
-        <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
+        <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} gender={gender} />
 
         {/* Futuristic Grid and Lighting */}
         <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.05, 0]} />

@@ -81,6 +81,32 @@ const relaxLabelY = (
   return result;
 };
 
+const defaultMaleMeasurements = {
+  height: 180,
+  shoulderWidth: 44.6,
+  armLength: 59.5,
+  legLength: 98.8,
+  chestCircumference: 103.5,
+  waistCircumference: 83.0,
+  hipCircumference: 101.0,
+  chestDepth: 21.6,
+  waistDepth: 22.1,
+  hipDepth: 25.2
+};
+
+const defaultFemaleMeasurements = {
+  height: 165,
+  shoulderWidth: 38.0,
+  armLength: 56.0,
+  legLength: 88.0,
+  chestCircumference: 88.0,
+  waistCircumference: 68.0,
+  hipCircumference: 92.0,
+  chestDepth: 18.5,
+  waistDepth: 19.0,
+  hipDepth: 22.0
+};
+
 interface BodyCanvasProps {
   gender: Gender;
   weight: number;
@@ -1959,7 +1985,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             (inputSource === 'video' && !uploadedVideo)) && (
             <Mannequin3DView
               gender={gender}
-              weight={weight}
+              weight={inputSource === 'mannequin' ? weight : (gender === 'male' ? 80 : 55)}
               scaleFactor={scaleFactor}
               landmarks={landmarks}
               rotationAngle={rotationAngle}
@@ -1967,7 +1993,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               width={width}
               height={height}
               scanRange={scanRange}
-              measurements={measurements}
+              measurements={inputSource === 'mannequin' ? measurements : (gender === 'male' ? defaultMaleMeasurements : defaultFemaleMeasurements)}
               cameraResetCounter={cameraResetCounter}
               showLabels={inputSource === 'mannequin'}
               interactive={inputSource === 'mannequin'}

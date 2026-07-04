@@ -150,6 +150,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputVideoRef = useRef<HTMLInputElement | null>(null);
   const [activePointId, setActivePointId] = useState<string | null>(null);
+  const [showImageGuidance, setShowImageGuidance] = useState<boolean>(true);
   
   // 3D rotation angle in degrees
   const [rotationAngle, setRotationAngle] = useState<number>(0);
@@ -2473,7 +2474,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           )}
 
           {/* Floating AI Scanning Guidance Tooltip */}
-          {hasMediaBackground && (
+          {hasMediaBackground && showImageGuidance && (
             <div style={{
               position: 'absolute',
               bottom: '12px',
@@ -2490,9 +2491,31 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.55)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
-              pointerEvents: 'none',
               fontFamily: 'system-ui, sans-serif'
             }}>
+              <button
+                type="button"
+                onClick={() => setShowImageGuidance(false)}
+                style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '8px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94a3b8',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  padding: '0.2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.15s ease'
+                }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#f8fafc')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#94a3b8')}
+              >
+                ✕
+              </button>
               <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#22d3ee', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                 💡 HƯỚNG DẪN CÂN CHỈNH SỐ ĐO ẢNH CHỤP
               </span>

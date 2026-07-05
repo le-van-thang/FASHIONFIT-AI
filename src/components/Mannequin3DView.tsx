@@ -97,7 +97,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     
     console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
     return {
-      bounds: { min: box.min.y, max: box.max.y },
+      bounds: { min: -size.y / 2, max: size.y / 2 },
       centerOffset: offset
     };
   }, [scene, path]);
@@ -172,6 +172,16 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     });
   }, [scene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
 
+  // Dynamic Y-scale adjustment for heatmap based on heightScale
+  useEffect(() => {
+    if (heatmapMaterial && heatmapMaterial.uniforms) {
+      const heightVal = measurements?.height || 165;
+      const heightScale = (heightVal / 165) * 0.95;
+      heatmapMaterial.uniforms.minY.value = bounds.min * heightScale;
+      heatmapMaterial.uniforms.maxY.value = bounds.max * heightScale;
+    }
+  }, [heatmapMaterial, bounds, measurements?.height]);
+
   // Apply Y-rotation (supporting front/side view angle and breathing rotation effect)
   const meshRef = useRef<THREE.Group>(null);
   useFrame((state) => {
@@ -228,7 +238,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         {/* Base solid translucent body */}
         <primitive 
           object={scene} 
-          onClick={(e) => {
+          onClick={(e: any) => {
             e.stopPropagation();
             if (e.point && onClickModel) {
               onClickModel(e.point);
@@ -708,8 +718,7 @@ const CameraController: React.FC<{
   targetPoint: React.RefObject<THREE.Vector3>;
   controlsRef: React.RefObject<any>;
   interactive: boolean;
-  gender: Gender;
-}> = ({ targetPoint, controlsRef, interactive, gender }) => {
+}> = ({ targetPoint, controlsRef, interactive }) => {
   const { camera } = useThree();
   useFrame(() => {
     if (interactive) {
@@ -799,7 +808,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {/* Camera */}
         <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
         
-        <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} gender={gender} />
+        <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 
         {/* Futuristic Grid and Lighting */}
         <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.05, 0]} />

@@ -4,49 +4,7 @@ import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2 } fr
 import { Mannequin3DView } from './Mannequin3DView';
 
 
-const getLimbSilhouettePath = (
-  limbPoints: { x: number; y: number }[][],
-  dx2d: number,
-  dy2d: number
-): string => {
-  const nx = -dy2d;
-  const ny = dx2d;
-  const leftSide: { x: number; y: number }[] = [];
-  const rightSide: { x: number; y: number }[] = [];
 
-  limbPoints.forEach((ring) => {
-    let minDot = Infinity;
-    let maxDot = -Infinity;
-    let minPt = ring[0];
-    let maxPt = ring[0];
-
-    ring.forEach((pt) => {
-      const dot = pt.x * nx + pt.y * ny;
-      if (dot < minDot) {
-        minDot = dot;
-        minPt = pt;
-      }
-      if (dot > maxDot) {
-        maxDot = dot;
-        maxPt = pt;
-      }
-    });
-
-    leftSide.push(minPt);
-    rightSide.push(maxPt);
-  });
-
-  const pathParts: string[] = [];
-  pathParts.push(`M ${leftSide[0].x} ${leftSide[0].y}`);
-  for (let i = 1; i < leftSide.length; i++) {
-    pathParts.push(`L ${leftSide[i].x} ${leftSide[i].y}`);
-  }
-  for (let i = rightSide.length - 1; i >= 0; i--) {
-    pathParts.push(`L ${rightSide[i].x} ${rightSide[i].y}`);
-  }
-  pathParts.push('Z');
-  return pathParts.join(' ');
-};
 
 const relaxLabelY = (
   items: { y: number; originalIdx: number }[],
@@ -81,31 +39,7 @@ const relaxLabelY = (
   return result;
 };
 
-const defaultMaleMeasurements = {
-  height: 180,
-  shoulderWidth: 44.6,
-  armLength: 59.5,
-  legLength: 98.8,
-  chestCircumference: 103.5,
-  waistCircumference: 83.0,
-  hipCircumference: 101.0,
-  chestDepth: 21.6,
-  waistDepth: 22.1,
-  hipDepth: 25.2
-};
 
-const defaultFemaleMeasurements = {
-  height: 165,
-  shoulderWidth: 38.0,
-  armLength: 56.0,
-  legLength: 88.0,
-  chestCircumference: 88.0,
-  waistCircumference: 68.0,
-  hipCircumference: 92.0,
-  chestDepth: 18.5,
-  waistDepth: 19.0,
-  hipDepth: 22.0
-};
 
 interface BodyCanvasProps {
   gender: Gender;
@@ -185,7 +119,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     }
   }, [view]);
 
-  const uniqueId = useMemo(() => Math.random().toString(36).substring(2, 9), []);
+
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isModelLoading, setIsModelLoading] = useState<boolean>(false);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
@@ -1411,381 +1345,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   }, [rotationAngle, landmarks, gender, weight, scaleFactor, view]);
 
   const projected3DMesh = projected3DData.meshLines;
-  const renderSilhouette = () => {
-    const { ringsPoints2D, headCenterY, headRadius, limbsData, heights } = projected3DData;
 
-    if (hasMediaBackground && meshStyle !== 'solid') {
-      return null;
-    }
-
-    if (ringsPoints2D.length < 6) return null;
-
-    const getOuterPoints = (ringPoints: { x: number; y: number }[]) => {
-      let left = ringPoints[0];
-      let right = ringPoints[0];
-      ringPoints.forEach(pt => {
-        if (pt.x < left.x) left = pt;
-        if (pt.x > right.x) right = pt;
-      });
-      return { left, right };
-    };
-
-    const leftSide: { x: number; y: number }[] = [];
-    const rightSide: { x: number; y: number }[] = [];
-
-    ringsPoints2D.forEach(ring => {
-      const { left, right } = getOuterPoints(ring);
-      leftSide.push(left);
-      rightSide.push(right);
-    });
-
-    const lKnee = landmarks.find(l => l.id === 'left_knee') || landmarks.find(l => l.id === 'knee') || { x: 185, y: 460 };
-    const rKnee = landmarks.find(l => l.id === 'right_knee') || landmarks.find(l => l.id === 'knee') || { x: 215, y: 460 };
-    const lAnkle = landmarks.find(l => l.id === 'left_ankle') || landmarks.find(l => l.id === 'ankle') || { x: 185, y: 610 };
-    const rAnkle = landmarks.find(l => l.id === 'right_ankle') || landmarks.find(l => l.id === 'ankle') || { x: 215, y: 610 };
-
-    const strokeId = `body3dStroke_${uniqueId}`;
-    const heatGradId = `bodyHeatGrad_${uniqueId}`;
-    const skinGradId = `skinGrad_${uniqueId}`;
-    const limbGradId = `limbGrad_${uniqueId}`;
-    const faceGradId = `faceGrad_${uniqueId}`;
-
-    let fillUrl = `url(#${skinGradId})`;
-    let strokeColor = '#22d3ee';
-    let strokeWidth = '1.8';
-    let opacity = 1.0;
-    let limbFill = `url(#${limbGradId})`;
-    let headFill = `url(#${faceGradId})`;
-    let useGlowFilter = true;
-
-    if (meshStyle === 'heatmap') {
-      fillUrl = `url(#${heatGradId})`;
-      strokeColor = 'rgba(255, 255, 255, 0.25)';
-      strokeWidth = '1.0';
-      limbFill = `url(#${heatGradId})`;
-      headFill = `url(#${heatGradId})`;
-      useGlowFilter = false;
-    } else if (meshStyle === 'neon') {
-      fillUrl = 'rgba(15, 23, 42, 0.75)';
-      strokeColor = '#06b6d4';
-      strokeWidth = '2.2';
-      limbFill = 'rgba(15, 23, 42, 0.75)';
-      headFill = 'rgba(15, 23, 42, 0.75)';
-      useGlowFilter = true;
-    } else if (hasMediaBackground) {
-      fillUrl = 'none';
-      limbFill = 'none';
-      headFill = 'none';
-      strokeColor = '#22d3ee';
-      strokeWidth = '1.2';
-      opacity = 0.85;
-      useGlowFilter = true;
-    }
-
-    const pathParts = [];
-    pathParts.push(`M ${leftSide[0].x} ${leftSide[0].y}`);
-    for (let i = 1; i < leftSide.length; i++) {
-      pathParts.push(`L ${leftSide[i].x} ${leftSide[i].y}`);
-    }
-
-    const isLegVisible = scanRange === 'full' || inputSource === 'mannequin';
-
-    if (isLegVisible) {
-      pathParts.push(`L ${lKnee.x - 12} ${lKnee.y}`);
-      pathParts.push(`L ${lAnkle.x - 8} ${lAnkle.y}`);
-      pathParts.push(`L ${lAnkle.x - 8} ${lAnkle.y + 6}`);
-      pathParts.push(`L ${lAnkle.x + 10} ${lAnkle.y + 6}`);
-      pathParts.push(`L ${lAnkle.x + 8} ${lAnkle.y}`);
-      pathParts.push(`L ${lKnee.x + 10} ${lKnee.y}`);
-      pathParts.push(`L 200 ${leftSide[leftSide.length - 1].y + 15}`);
-      
-      pathParts.push(`L ${rKnee.x - 10} ${rKnee.y}`);
-      pathParts.push(`L ${rAnkle.x - 8} ${rAnkle.y}`);
-      pathParts.push(`L ${rAnkle.x - 10} ${rAnkle.y + 6}`);
-      pathParts.push(`L ${rAnkle.x + 8} ${rAnkle.y + 6}`);
-      pathParts.push(`L ${rAnkle.x + 8} ${rAnkle.y}`);
-      pathParts.push(`L ${rKnee.x + 12} ${rKnee.y}`);
-      pathParts.push(`L ${rightSide[rightSide.length - 1].x} ${rightSide[rightSide.length - 1].y}`);
-    } else {
-      pathParts.push(`C ${leftSide[leftSide.length - 1].x} ${leftSide[leftSide.length - 1].y + 22}, ${rightSide[rightSide.length - 1].x} ${rightSide[rightSide.length - 1].y + 22}, ${rightSide[rightSide.length - 1].x} ${rightSide[rightSide.length - 1].y}`);
-    }
-
-    for (let i = rightSide.length - 1; i >= 0; i--) {
-      pathParts.push(`L ${rightSide[i].x} ${rightSide[i].y}`);
-    }
-    pathParts.push('Z');
-
-    const bodyPathD = pathParts.join(' ');
-
-    const limbPaths: React.ReactNode[] = [];
-    if (limbsData) {
-      limbsData.forEach((limb) => {
-        const isLegLimb = ['l_thigh', 'l_calf', 'l_foot', 'r_thigh', 'r_calf', 'r_foot'].includes(limb.id);
-        if (isLegLimb && !isLegVisible) return;
-
-        const pathD = getLimbSilhouettePath(limb.points, limb.dx, limb.dy);
-        limbPaths.push(
-          <path
-            key={`silhouette-${limb.id}`}
-            d={pathD}
-            fill={limbFill}
-            stroke={meshStyle === 'solid' ? '#22d3ee' : strokeColor}
-            strokeWidth={meshStyle === 'solid' ? '1.5' : strokeWidth}
-            filter={useGlowFilter ? 'url(#neonGlow)' : undefined}
-          />
-        );
-      });
-    }
-
-
-
-    const shadowGrad = `shadowGrad_${uniqueId}`;
-    const neckGrad = `neckGrad_${uniqueId}`;
-
-    return (
-      <g style={{ opacity, transition: 'opacity 0.25s ease' }}>
-        <defs>
-          <radialGradient id={skinGradId} cx="50%" cy="40%" r="70%">
-            <stop offset="0%" stopColor="rgba(34, 211, 238, 0.2)" />
-            <stop offset="60%" stopColor="rgba(14, 116, 144, 0.45)" />
-            <stop offset="100%" stopColor="rgba(15, 23, 42, 0.9)" />
-          </radialGradient>
-          <radialGradient id={limbGradId} cx="50%" cy="40%" r="70%">
-            <stop offset="0%" stopColor="rgba(34, 211, 238, 0.16)" />
-            <stop offset="60%" stopColor="rgba(14, 116, 144, 0.38)" />
-            <stop offset="100%" stopColor="rgba(15, 23, 42, 0.9)" />
-          </radialGradient>
-          <radialGradient id={faceGradId} cx="50%" cy="40%" r="65%">
-            <stop offset="0%" stopColor="rgba(34, 211, 238, 0.25)" />
-            <stop offset="60%" stopColor="rgba(14, 116, 144, 0.45)" />
-            <stop offset="100%" stopColor="rgba(15, 23, 42, 0.92)" />
-          </radialGradient>
-          <linearGradient id={shadowGrad} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(6, 182, 212, 0.2)" />
-            <stop offset="50%" stopColor="rgba(15, 23, 42, 0.0)" />
-            <stop offset="100%" stopColor="rgba(6, 182, 212, 0.2)" />
-          </linearGradient>
-          <linearGradient id={neckGrad} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="rgba(14, 116, 144, 0.6)" />
-            <stop offset="50%" stopColor="rgba(34, 211, 238, 0.3)" />
-            <stop offset="100%" stopColor="rgba(14, 116, 144, 0.6)" />
-          </linearGradient>
-          <linearGradient id={strokeId} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#22d3ee" />
-            <stop offset="100%" stopColor="#0891b2" />
-          </linearGradient>
-          <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <radialGradient id="backlightGlow" cx="50%" cy="45%" r="60%">
-            <stop offset="0%" stopColor="rgba(6, 182, 212, 0.15)" />
-            <stop offset="60%" stopColor="rgba(14, 116, 144, 0.04)" />
-            <stop offset="100%" stopColor="rgba(9, 13, 22, 0.0)" />
-          </radialGradient>
-          <linearGradient id={heatGradId} x1="0" y1="50" x2="0" y2="650" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#00d2ff" />
-            <stop offset="12%" stopColor="#00f5a0" />
-            <stop offset="22%" stopColor="#eab308" />
-            <stop offset="35%" stopColor="#ea580c" />
-            <stop offset="48%" stopColor="#ef4444" />
-            <stop offset="58%" stopColor="#ea580c" />
-            <stop offset="70%" stopColor="#eab308" />
-            <stop offset="85%" stopColor="#22c55e" />
-            <stop offset="100%" stopColor="#00d2ff" />
-          </linearGradient>
-          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(148, 163, 184, 0.05)" strokeWidth="1" />
-          </pattern>
-        </defs>
-
-        {!hasMediaBackground && (
-          <>
-            <rect width={width} height={height} fill="url(#grid)" />
-            <rect width={width} height={height} fill="url(#backlightGlow)" />
-          </>
-        )}
-
-        <ellipse
-          cx={200}
-          cy={headCenterY}
-          rx={headRadius * 0.88}
-          ry={headRadius}
-          fill={headFill}
-          stroke={meshStyle === 'solid' ? '#22d3ee' : strokeColor}
-          strokeWidth={meshStyle === 'solid' ? '1.8' : strokeWidth}
-          filter={useGlowFilter ? 'url(#neonGlow)' : undefined}
-        />
-
-        {meshStyle === 'solid' && (
-          <>
-            <path
-              d={`M ${leftSide[0].x} ${leftSide[0].y} L ${200 - (rightSide[0].x - leftSide[0].x) * 0.45} ${headCenterY + headRadius * 0.85} L ${200 + (rightSide[0].x - leftSide[0].x) * 0.45} ${headCenterY + headRadius * 0.85} L ${rightSide[0].x} ${rightSide[0].y} Z`}
-              fill={`url(#${neckGrad})`}
-            />
-            <line
-              x1={leftSide[0].x} y1={leftSide[0].y}
-              x2={200 - (rightSide[0].x - leftSide[0].x) * 0.45}
-              y2={headCenterY + headRadius * 0.85}
-              stroke="#22d3ee" strokeWidth="1.2"
-              filter={useGlowFilter ? 'url(#neonGlow)' : undefined}
-            />
-            <line
-              x1={rightSide[0].x} y1={rightSide[0].y}
-              x2={200 + (rightSide[0].x - leftSide[0].x) * 0.45}
-              y2={headCenterY + headRadius * 0.85}
-              stroke="#22d3ee" strokeWidth="1.2"
-              filter={useGlowFilter ? 'url(#neonGlow)' : undefined}
-            />
-          </>
-        )}
-        {meshStyle !== 'solid' && (
-          <path
-            d={`M ${leftSide[0].x} ${leftSide[0].y} L ${200 - (rightSide[0].x - leftSide[0].x) * 0.45} ${headCenterY + headRadius * 0.85} L ${200 + (rightSide[0].x - leftSide[0].x) * 0.45} ${headCenterY + headRadius * 0.85} L ${rightSide[0].x} ${rightSide[0].y} Z`}
-            fill={fillUrl}
-            stroke={strokeColor}
-            strokeWidth={strokeWidth}
-            filter={useGlowFilter ? 'url(#neonGlow)' : undefined}
-          />
-        )}
-
-        <path
-          d={bodyPathD}
-          fill={fillUrl}
-          stroke={meshStyle === 'solid' ? '#22d3ee' : strokeColor}
-          strokeWidth={meshStyle === 'solid' ? '1.8' : strokeWidth}
-          filter={useGlowFilter ? 'url(#neonGlow)' : undefined}
-        />
-
-        {meshStyle === 'solid' && (
-          <path
-            d={bodyPathD}
-            fill={`url(#${shadowGrad})`}
-            stroke="none"
-            style={{ mixBlendMode: 'screen', opacity: 0.35 }}
-          />
-        )}
-
-        {limbPaths}
-
-        {meshStyle === 'solid' && (
-          <>
-            <path
-              d={`M 200 ${leftSide[0].y} L 200 ${heights.chest + (heights.waist - heights.chest) * 0.4}`}
-              stroke="rgba(34, 211, 238, 0.25)"
-              strokeWidth="1.2"
-              strokeDasharray="3,5"
-            />
-
-            {gender === 'female' && (
-              <>
-                <path
-                  d={`M ${200 - 12} ${projected3DData.hudPoints.chest.y + 4} Q ${leftSide[10].x + 12} ${projected3DData.hudPoints.chest.y + 14} ${200 - 2} ${projected3DData.hudPoints.chest.y + 19}`}
-                  fill="none"
-                  stroke="rgba(34, 211, 238, 0.4)"
-                  strokeWidth="2.8"
-                />
-                <path
-                  d={`M ${200 - 12} ${projected3DData.hudPoints.chest.y + 5.5} Q ${leftSide[10].x + 12} ${projected3DData.hudPoints.chest.y + 15.5} ${200 - 2} ${projected3DData.hudPoints.chest.y + 20.5}`}
-                  fill="none"
-                  stroke="rgba(6, 182, 212, 0.3)"
-                  strokeWidth="3.8"
-                />
-                <path
-                  d={`M ${200 + 12} ${projected3DData.hudPoints.chest.y + 4} Q ${rightSide[10].x - 12} ${projected3DData.hudPoints.chest.y + 14} ${200 + 2} ${projected3DData.hudPoints.chest.y + 19}`}
-                  fill="none"
-                  stroke="rgba(34, 211, 238, 0.4)"
-                  strokeWidth="2.8"
-                />
-                <path
-                  d={`M ${200 + 12} ${projected3DData.hudPoints.chest.y + 5.5} Q ${rightSide[10].x - 12} ${projected3DData.hudPoints.chest.y + 15.5} ${200 + 2} ${projected3DData.hudPoints.chest.y + 20.5}`}
-                  fill="none"
-                  stroke="rgba(6, 182, 212, 0.3)"
-                  strokeWidth="3.8"
-                />
-              </>
-            )}
-
-            {gender === 'male' && (
-              <>
-                <path
-                  d={`M ${leftSide[8].x + 10} ${projected3DData.hudPoints.chest.y + 3} L ${200 - 8} ${projected3DData.hudPoints.chest.y + 10} L ${200 - 8} ${projected3DData.hudPoints.chest.y + 12} L ${leftSide[8].x + 12} ${projected3DData.hudPoints.chest.y + 5}`}
-                  fill="rgba(6, 182, 212, 0.15)"
-                />
-                <path
-                  d={`M ${rightSide[8].x - 10} ${projected3DData.hudPoints.chest.y + 3} L ${200 + 8} ${projected3DData.hudPoints.chest.y + 10} L ${200 + 8} ${projected3DData.hudPoints.chest.y + 12} L ${rightSide[8].x - 12} ${projected3DData.hudPoints.chest.y + 5}`}
-                  fill="rgba(6, 182, 212, 0.15)"
-                />
-              </>
-            )}
-
-            <path
-              d={`M ${leftSide[12].x + 12} ${heights.chest + (heights.waist - heights.chest) * 0.9} Q ${200 - 15} ${heights.waist} ${200 - 4} ${heights.waist + 3}`}
-              fill="none"
-              stroke="rgba(6, 182, 212, 0.25)"
-              strokeWidth="2"
-            />
-            <path
-              d={`M ${rightSide[12].x - 12} ${heights.chest + (heights.waist - heights.chest) * 0.9} Q ${200 + 15} ${heights.waist} ${200 + 4} ${heights.waist + 3}`}
-              fill="none"
-              stroke="rgba(6, 182, 212, 0.25)"
-              strokeWidth="2"
-            />
-
-            <path
-              d={`M ${leftSide[16].x + 4} ${heights.waist + 12} Q ${200 - 15} ${heights.waist + 24} ${200 - 3} ${heights.waist + 28}`}
-              fill="none"
-              stroke="rgba(6, 182, 212, 0.25)"
-              strokeWidth="2"
-            />
-            <path
-              d={`M ${rightSide[16].x - 4} ${heights.waist + 12} Q ${200 + 15} ${heights.waist + 24} ${200 + 3} ${heights.waist + 28}`}
-              fill="none"
-              stroke="rgba(6, 182, 212, 0.25)"
-              strokeWidth="2"
-            />
-
-            <path
-              d={`M ${leftSide[2].x + 6} ${heights.neck + 6} Q 200 ${heights.neck + 15} ${rightSide[2].x - 6} ${heights.neck + 6}`}
-              fill="none"
-              stroke="rgba(34, 211, 238, 0.3)"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-
-            {isLegVisible && (
-              <>
-                <ellipse cx={lKnee.x} cy={lKnee.y} rx={8} ry={6}
-                  fill="rgba(34, 211, 238, 0.15)" stroke="rgba(6, 182, 212, 0.35)" strokeWidth="0.8" />
-                <ellipse cx={rKnee.x} cy={rKnee.y} rx={8} ry={6}
-                  fill="rgba(34, 211, 238, 0.15)" stroke="rgba(6, 182, 212, 0.35)" strokeWidth="0.8" />
-              </>
-            )}
-
-            {/* Hologram Laser Scan Line */}
-            <line
-              x1="5"
-              y1="0"
-              x2="395"
-              y2="0"
-              stroke="#22d3ee"
-              strokeWidth="2.0"
-              filter="url(#neonGlow)"
-              className="laser-beam"
-            />
-          </>
-        )}
-      </g>
-    );
-  };
 
   const hasMediaBackground = 
-    (inputSource === 'image' && uploadedImage) || 
-    (inputSource === 'webcam') || 
-    (inputSource === 'video' && uploadedVideo);
+    (inputSource === 'image' && !!uploadedImage) || 
+    (inputSource === 'webcam' && isWebcamActive) || 
+    (inputSource === 'video' && !!uploadedVideo);
 
   return (
     <div className={isMaximized ? "canvas-wrapper maximized" : "canvas-main-horizontal-layout"}>
@@ -2296,12 +1861,140 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          {(inputSource === 'mannequin' ||
-            (inputSource === 'image' && !uploadedImage) ||
-            (inputSource === 'video' && !uploadedVideo)) && (
+          {inputSource === 'image' && !uploadedImage && (
+            <div className="media-placeholder-overlay" style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%)',
+              color: '#f8fafc',
+              padding: '2rem',
+              textAlign: 'center',
+              zIndex: 5,
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <div style={{
+                background: 'rgba(6, 182, 212, 0.1)',
+                border: '1px solid rgba(6, 182, 212, 0.25)',
+                borderRadius: '50%',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 20px rgba(6, 182, 212, 0.15)',
+                animation: 'neonPulse 3s infinite ease-in-out'
+              }}>
+                <Upload size={40} style={{ color: '#22d3ee' }} />
+              </div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
+                Chưa Tải Ảnh Mẫu Phân Tích
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '320px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
+                Tải lên ảnh chụp thẳng toàn thân để AI tự động trích xuất các điểm đo nhân trắc học 3D.
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: '#06b6d4',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = '#0891b2';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = '#06b6d4';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <Upload size={15} />
+                Chọn Ảnh Mẫu Đo
+              </button>
+            </div>
+          )}
+
+          {inputSource === 'video' && !uploadedVideo && (
+            <div className="media-placeholder-overlay" style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%)',
+              color: '#f8fafc',
+              padding: '2rem',
+              textAlign: 'center',
+              zIndex: 5,
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <div style={{
+                background: 'rgba(168, 85, 247, 0.1)',
+                border: '1px solid rgba(168, 85, 247, 0.25)',
+                borderRadius: '50%',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
+                animation: 'neonPulse 3s infinite ease-in-out'
+              }}>
+                <Upload size={40} style={{ color: '#a855f7' }} />
+              </div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
+                Chưa Tải Video AI Phân Tích
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '320px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
+                Tải lên video di chuyển xoay người để hệ thống quét và dựng mô hình hình thể 3D động.
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputVideoRef.current?.click()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: '#a855f7',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.backgroundColor = '#9333ea';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.backgroundColor = '#a855f7';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <Upload size={15} />
+                Chọn Video Đo
+              </button>
+            </div>
+          )}
+
+          {inputSource === 'mannequin' && (
             <Mannequin3DView
               gender={gender}
-              weight={inputSource === 'mannequin' ? weight : (gender === 'male' ? 75 : 55)}
+              weight={weight}
               scaleFactor={scaleFactor}
               landmarks={landmarks}
               rotationAngle={rotationAngle}
@@ -2309,10 +2002,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               width={width}
               height={height}
               scanRange={scanRange}
-              measurements={inputSource === 'mannequin' ? measurements : (gender === 'male' ? defaultMaleMeasurements : defaultFemaleMeasurements)}
+              measurements={measurements}
               cameraResetCounter={cameraResetCounter}
-              showLabels={inputSource === 'mannequin'}
-              interactive={inputSource === 'mannequin'}
+              showLabels={true}
+              interactive={true}
             />
           )}
 
@@ -2329,8 +2022,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 background: 'transparent'
               }}
             >
-              {/* We render background silhouette only when no media background exists and not using 3D mannequin */}
-              {!hasMediaBackground && inputSource !== 'image' && inputSource !== 'video' && renderSilhouette()}
+              {/* Hologram Laser Scan Line */}
+              <line
+                x1="5"
+                y1="0"
+                x2="395"
+                y2="0"
+                stroke="#22d3ee"
+                strokeWidth="2.0"
+                filter="url(#neonGlow)"
+                className="laser-beam"
+              />
 
               {/* Render webcam guide silhouette to help user align their body */}
               {hasMediaBackground && inputSource === 'webcam' && (
@@ -2544,10 +2246,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               })()}
 
               {/* Render connecting bone lines in 2D calibration editing mode */}
-              {getBones()}
+              {hasMediaBackground && getBones()}
 
               {/* Render interactive landmarks */}
-              {landmarks.map((point) => {
+              {hasMediaBackground && landmarks.map((point) => {
                 // Smart layout text offsets to prevent overlapping labels
                 const getTextOffset = (id: string) => {
                   if (id.includes('left')) return { dx: -12, dy: 4, anchor: 'end' as const };

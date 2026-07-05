@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF, PerspectiveCamera, Html } from '@react-three/drei';
+import { OrbitControls, useGLTF, PerspectiveCamera } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { Landmark, Gender, BodyMeasurements } from '../types';
@@ -176,7 +176,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   useEffect(() => {
     if (heatmapMaterial && heatmapMaterial.uniforms) {
       const heightVal = measurements?.height || 165;
-      const heightScale = (heightVal / 165) * 0.72;
+      const heightScale = (heightVal / 165) * 0.95;
       heatmapMaterial.uniforms.minY.value = bounds.min * heightScale;
       heatmapMaterial.uniforms.maxY.value = bounds.max * heightScale;
     }
@@ -201,45 +201,16 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const heightVal = measurements?.height || 165;
     const heightScale = heightVal / 165;
     
-    return [weightFactor * 0.72, heightScale * 0.72, weightFactor * 0.72] as [number, number, number];
+    return [weightFactor * 0.95, heightScale * 0.95, weightFactor * 0.95] as [number, number, number];
   }, [gender, weight, measurements]);
 
-  // Derived measurement values
-  const neckVal = measurements?.chestCircumference ? (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) : '36.0';
-  const shoulderVal = measurements?.shoulderWidth ? measurements.shoulderWidth.toFixed(1) : '44.0';
-  const chestVal = measurements?.chestCircumference ? measurements.chestCircumference.toFixed(1) : '90.0';
-  const hipsVal = measurements?.hipCircumference ? measurements.hipCircumference.toFixed(1) : '95.0';
-  const armVal = measurements?.armLength ? measurements.armLength.toFixed(1) : '60.0';
-  const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
-  const thighVal = measurements?.hipCircumference ? (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) : '55.0';
-  const calfVal = measurements?.hipCircumference ? (measurements.hipCircumference * 0.38).toFixed(1) : '36.0';
-
-  // Gender-specific optimized anatomical anchor coordinates (relative to feet Y = 0 origin inside the group)
-  const neckPos     = useMemo(() => [gender === 'female' ? -0.07 : -0.08, gender === 'female' ? 1.38 : 1.60, 0] as [number, number, number], [gender]);
-  const shoulderPos = useMemo(() => [gender === 'female' ? 0.18 : 0.22, gender === 'female' ? 1.30 : 1.50, 0] as [number, number, number], [gender]);
-  const chestPos    = useMemo(() => [gender === 'female' ? 0.14 : 0.16, gender === 'female' ? 1.20 : 1.40, 0] as [number, number, number], [gender]);
-  const waistPos    = useMemo(() => [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.98 : 1.15, 0] as [number, number, number], [gender]);
-  const hipsPos     = useMemo(() => [gender === 'female' ? 0.17 : 0.18, gender === 'female' ? 0.80 : 0.95, 0] as [number, number, number], [gender]);
-  const armPos      = useMemo(() => [gender === 'female' ? 0.24 : 0.28, gender === 'female' ? 1.10 : 1.28, 0] as [number, number, number], [gender]);
-  const legPos      = useMemo(() => [gender === 'female' ? 0.11 : 0.12, gender === 'female' ? 0.72 : 0.85, 0] as [number, number, number], [gender]);
-  const thighPos    = useMemo(() => [gender === 'female' ? -0.13 : -0.15, gender === 'female' ? 0.62 : 0.75, 0] as [number, number, number], [gender]);
-  const calfPos     = useMemo(() => [gender === 'female' ? -0.11 : -0.13, gender === 'female' ? 0.38 : 0.46, 0] as [number, number, number], [gender]);
-  const waistUpperPos = useMemo(() => [gender === 'female' ? 0.12 : 0.14, gender === 'female' ? 1.05 : 1.22, 0] as [number, number, number], [gender]);
-
-  const jointDots = useMemo(() => [
-    { id: 'nasion', label: 'Góc Mũi', pos: [0, gender === 'female' ? 1.48 : 1.70, 0.08] },
-    { id: 'l_shoulder', label: 'Vai Trái', pos: [gender === 'female' ? -0.18 : -0.22, gender === 'female' ? 1.30 : 1.50, 0] },
-    { id: 'r_shoulder', label: 'Vai Phải', pos: [gender === 'female' ? 0.18 : 0.22, gender === 'female' ? 1.30 : 1.50, 0] },
-    { id: 'l_elbow', label: 'Khuỷu Trái', pos: [gender === 'female' ? -0.26 : -0.32, gender === 'female' ? 1.05 : 1.20, 0] },
-    { id: 'r_elbow', label: 'Khuỷu Phải', pos: [gender === 'female' ? 0.26 : 0.32, gender === 'female' ? 1.05 : 1.20, 0] },
-    { id: 'l_wrist', label: 'Cổ Trái', pos: [gender === 'female' ? -0.32 : -0.38, gender === 'female' ? 0.80 : 0.92, 0] },
-    { id: 'r_wrist', label: 'Cổ Phải', pos: [gender === 'female' ? 0.32 : 0.38, gender === 'female' ? 0.80 : 0.92, 0] },
-    { id: 'l_hip', label: 'Hông Trái', pos: [gender === 'female' ? -0.13 : -0.16, gender === 'female' ? 0.80 : 0.95, 0] },
-    { id: 'r_hip', label: 'Hông Phải', pos: [gender === 'female' ? 0.13 : 0.16, gender === 'female' ? 0.80 : 0.95, 0] },
-    { id: 'l_knee', label: 'Gối Trái', pos: [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.48 : 0.58, 0] },
-    { id: 'r_knee', label: 'Gối Phải', pos: [gender === 'female' ? 0.12 : 0.14, gender === 'female' ? 0.48 : 0.58, 0] },
-    { id: 'l_ankle', label: 'Cổ Chân Trái', pos: [gender === 'female' ? -0.10 : -0.12, gender === 'female' ? 0.15 : 0.18, 0] },
-    { id: 'r_ankle', label: 'Cổ Chân Phải', pos: [gender === 'female' ? 0.10 : 0.12, gender === 'female' ? 0.15 : 0.18, 0] },
+  // 5 key measurement ring heights on the body (Y coordinates relative to model origin)
+  const measureRings = useMemo(() => [
+    { id: 'neck',  y: gender === 'female' ? 1.38 : 1.58, color: '#22d3ee', radius: gender === 'female' ? 0.09 : 0.10 },
+    { id: 'chest', y: gender === 'female' ? 1.20 : 1.40, color: '#22d3ee', radius: gender === 'female' ? 0.15 : 0.17 },
+    { id: 'waist', y: gender === 'female' ? 1.00 : 1.18, color: '#a78bfa', radius: gender === 'female' ? 0.12 : 0.14 },
+    { id: 'hips',  y: gender === 'female' ? 0.82 : 0.97, color: '#f59e0b', radius: gender === 'female' ? 0.16 : 0.17 },
+    { id: 'thigh', y: gender === 'female' ? 0.60 : 0.73, color: '#34d399', radius: gender === 'female' ? 0.10 : 0.11 },
   ], [gender]);
 
   // Apply default rotation to primitive scene contents
@@ -267,441 +238,21 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
           <primitive object={wireframeScene} />
         )}
 
-        {/* Dynamic HTML HUD overlays positioned relative to approximate body coordinates */}
-        {measurements && showLabels && (
-          <>
-            {/* 13 skeletal joint dots from Image 1 */}
-            {jointDots.map((joint) => (
-              <Html key={joint.id} position={joint.pos as [number, number, number]} style={{ pointerEvents: 'none' }} zIndexRange={[1, 4]}>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  transform: 'translate(-50%, -50%)',
-                  fontFamily: 'system-ui, -apple-system, sans-serif'
-                }}>
-                  <div style={{
-                    width: '10px',
-                    height: '10px',
-                    border: '1px solid rgba(34, 211, 238, 0.85)',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    animation: 'jointPulse 2.0s infinite ease-in-out',
-                    pointerEvents: 'none'
-                  }} />
-                  <div style={{
-                    width: '5px',
-                    height: '5px',
-                    background: '#ffffff',
-                    border: '1px solid #22d3ee',
-                    borderRadius: '50%',
-                    boxShadow: '0 0 8px #22d3ee',
-                    zIndex: 2
-                  }} />
-                  <div style={{
-                    marginTop: '4px',
-                    background: 'rgba(15, 23, 42, 0.75)',
-                    border: '1.2px solid rgba(6, 182, 212, 0.4)',
-                    borderRadius: '3px',
-                    padding: '1.5px 3.5px',
-                    whiteSpace: 'nowrap',
-                    color: '#e2e8f0',
-                    fontSize: '6.5px',
-                    fontWeight: 600,
-                    letterSpacing: '0.02em',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
-                  }}>
-                    {joint.label}
-                  </div>
-                </div>
-              </Html>
-            ))}
-
-            {/* LEFT SIDE LABELS */}
-
-            {/* Cổ (Neck) */}
-            <Html position={neckPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  right: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(6, 182, 212, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#22d3ee', letterSpacing: '0.04em' }}>cổ</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{neckVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Ngực (Chest) */}
-            <Html position={chestPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  right: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(6, 182, 212, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#22d3ee', letterSpacing: '0.04em' }}>NGỰC</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{chestVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Eo dưới (Lower Waist) */}
-            <Html position={waistPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  right: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(6, 182, 212, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#22d3ee', letterSpacing: '0.04em' }}>EO DƯỚI</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{(measurements?.waistCircumference ? (measurements.waistCircumference * 1.05).toFixed(1) : '73.5')} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Đùi phải (Right Thigh) */}
-            <Html position={thighPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  right: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(6, 182, 212, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#22d3ee', letterSpacing: '0.04em' }}>ĐÙI PHẢI</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{thighVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Bắp chân phải (Right Calf) */}
-            <Html position={calfPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-end',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  right: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(6, 182, 212, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-end',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#22d3ee', letterSpacing: '0.04em' }}>BẮP CHÂN PHẢI</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{calfVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* RIGHT SIDE LABELS */}
-
-            {/* Rộng vai (Shoulder Width) */}
-            <Html position={shoulderPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  left: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(245, 158, 11, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em' }}>RỘNG VAI</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{shoulderVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Eo trên (Upper Waist) */}
-            <Html position={waistUpperPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  left: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(245, 158, 11, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em' }}>EO TRÊN</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{(measurements?.waistCircumference ? (measurements.waistCircumference * 0.96).toFixed(1) : '67.2')} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Dài tay (Arm Length) */}
-            <Html position={armPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  left: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(245, 158, 11, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em' }}>DÀI TAY</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{armVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Mông (Hips) */}
-            <Html position={hipsPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  left: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(245, 158, 11, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em' }}>MÔNG</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{hipsVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Dài chân (Leg Length) */}
-            <Html position={legPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                width: '0px',
-                height: '0px',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <svg width="60" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="60" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
-                </svg>
-                <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
-                <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
-                <div style={{
-                  position: 'absolute',
-                  left: '60px',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1.2px solid rgba(245, 158, 11, 0.45)',
-                  borderRadius: '5px',
-                  padding: '5px 9px',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  gap: '1px',
-                  pointerEvents: 'auto'
-                }}>
-                  <span style={{ fontSize: '7.5px', fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em' }}>DÀI CHÂN</span>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, color: '#ffffff' }}>{legVal} cm</span>
-                </div>
-              </div>
-            </Html>
-          </>
-        )}
+        {/* Clean measurement ring indicators - pure Three.js, no HTML overlays */}
+        {measurements && showLabels && measureRings.map((ring) => (
+          <group key={ring.id} position={[0, ring.y, 0]}>
+            {/* Glowing horizontal ring line */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[ring.radius - 0.003, ring.radius + 0.003, 64]} />
+              <meshBasicMaterial color={ring.color} transparent opacity={0.7} side={THREE.DoubleSide} />
+            </mesh>
+            {/* Outer subtle glow ring */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[ring.radius - 0.008, ring.radius + 0.008, 64]} />
+              <meshBasicMaterial color={ring.color} transparent opacity={0.15} side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        ))}
       </group>
     </group>
   );
@@ -859,13 +410,6 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         border: '1px solid rgba(0, 85, 255, 0.15)'
       }}
     >
-      <style>{`
-        @keyframes jointPulse {
-          0% { transform: scale(0.65); opacity: 1; }
-          50% { transform: scale(1.35); opacity: 0.35; }
-          100% { transform: scale(0.65); opacity: 1; }
-        }
-      `}</style>
       {/* 3D WebGL Canvas */}
       <Canvas
         style={{ width: '100%', height: '100%' }}

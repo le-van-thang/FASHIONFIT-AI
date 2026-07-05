@@ -1,42 +1,65 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF, PerspectiveCamera, Html } from '@react-three/drei';
+import { OrbitControls, useGLTF, PerspectiveCamera } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { Landmark, Gender, BodyMeasurements } from '../types';
 
-// Custom Shader Material for Heatmap Mode (ColorMetric Shader)
+// Custom Shader Material for Heatmap Mode (Anatomical Pressure / Fit Tension Map)
 const HeatmapShaderMaterial = {
   uniforms: {
-    colorBottom: { value: new THREE.Color('#0055ff') }, // Ocean Blue
-    colorTop: { value: new THREE.Color('#ffb703') },    // Yellow/Orange
     minY: { value: -1.0 },
     maxY: { value: 1.0 }
   },
   vertexShader: `
-    varying vec3 vPosition;
+    varying vec3 vWorldPosition;
     void main() {
-      vPosition = position;
+      // Calculate world coordinates of the vertex so gradient aligns across sub-meshes
+      vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
   `,
   fragmentShader: `
-    uniform vec3 colorBottom;
-    uniform vec3 colorTop;
     uniform float minY;
     uniform float maxY;
-    varying vec3 vPosition;
+    varying vec3 vWorldPosition;
 
     void main() {
-      // Normalize Y position between minY and maxY
-      float h = clamp((vPosition.y - minY) / (maxY - minY), 0.0, 1.0);
+      // Normalize world Y position between minY and maxY bounds of the entire model
+      float h = clamp((vWorldPosition.y - minY) / (maxY - minY), 0.0, 1.0);
       
-      // Smooth interpolation between bottom (Blue) and top (Yellow/Orange)
-      float mixFactor = smoothstep(0.0, 1.0, h);
-      vec3 finalColor = mix(colorBottom, colorTop, mixFactor);
+      // Define multi-stop thermal tension map colors
+      vec3 colorBlue = vec3(0.01, 0.22, 0.98);   // Blue: Loose fit / low contact
+      vec3 colorCyan = vec3(0.00, 0.96, 1.00);   // Cyan: Semi-loose
+      vec3 colorYellow = vec3(1.00, 0.78, 0.00); // Yellow: Medium contact / soft drape
+      vec3 colorRed = vec3(0.95, 0.08, 0.08);    // Red: Tight fit / high pressure (chest/shoulders/hip curves)
       
-      // Semi-transparent hologram overlay style
-      gl_FragColor = vec4(finalColor, 0.85);
+      vec3 finalColor;
+      
+      if (h < 0.15) {
+        // Feet: Cool blue
+        finalColor = colorBlue;
+      } else if (h < 0.32) {
+        // Calves/Legs: Blue to Cyan (low tension)
+        finalColor = mix(colorBlue, colorCyan, (h - 0.15) / 0.17);
+      } else if (h < 0.48) {
+        // Thighs to Hips/Glutes: Cyan to Red (high tension fit zone)
+        finalColor = mix(colorCyan, colorRed, (h - 0.32) / 0.16);
+      } else if (h < 0.60) {
+        // Waist/Stomach: Red back to Yellow (looser drape zone)
+        finalColor = mix(colorRed, colorYellow, (h - 0.48) / 0.12);
+      } else if (h < 0.78) {
+        // Chest/Bust and Shoulders: Yellow to Red (high tension drape zone)
+        finalColor = mix(colorYellow, colorRed, (h - 0.60) / 0.18);
+      } else if (h < 0.86) {
+        // Neck: Red back to Blue (very quick cool down)
+        finalColor = mix(colorRed, colorBlue, (h - 0.78) / 0.08);
+      } else {
+        // Head: Cool blue (zero garment contact)
+        finalColor = colorBlue;
+      }
+      
+      gl_FragColor = vec4(finalColor, 0.82);
     }
   `
 };
@@ -74,7 +97,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     
     console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
     return {
-      bounds: { min: box.min.y, max: box.max.y },
+      bounds: { min: -size.y / 2, max: size.y / 2 },
       centerOffset: offset
     };
   }, [scene, path]);
@@ -82,9 +105,9 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
     return new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#021430'), // Deep translucent ocean navy blue
+      color: new THREE.Color('#0ea5e9'), // Brighter glowing cyber sky blue
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.55,
       side: THREE.DoubleSide,
       depthWrite: true
     });
@@ -104,8 +127,6 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const heatmapMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
-        colorBottom: { value: new THREE.Color('#0055ff') }, // Ocean Blue
-        colorTop: { value: new THREE.Color('#ffb703') },    // Yellow/Orange
         minY: { value: bounds.min },
         maxY: { value: bounds.max }
       },
@@ -123,9 +144,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (viewMode === 'heatmap') {
+          child.visible = true;
           child.material = heatmapMaterial;
-        } else {
+        } else if (viewMode === 'solid') {
+          child.visible = true;
           child.material = solidMaterial;
+        } else {
+          // 'neon' mode: hide base solid body!
+          child.visible = false;
         }
       }
     });
@@ -134,13 +160,27 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     wireframeScene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (viewMode === 'heatmap') {
-          child.material = heatmapMaterial;
+          child.visible = false;
+        } else if (viewMode === 'solid') {
+          child.visible = false;
         } else {
+          // 'neon' mode: show neon grid!
+          child.visible = true;
           child.material = neonMaterial;
         }
       }
     });
   }, [scene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
+
+  // Dynamic Y-scale adjustment for heatmap based on heightScale
+  useEffect(() => {
+    if (heatmapMaterial && heatmapMaterial.uniforms) {
+      const heightVal = measurements?.height || 165;
+      const heightScale = (heightVal / 165) * 0.95;
+      heatmapMaterial.uniforms.minY.value = bounds.min * heightScale;
+      heatmapMaterial.uniforms.maxY.value = bounds.max * heightScale;
+    }
+  }, [heatmapMaterial, bounds, measurements?.height]);
 
   // Apply Y-rotation (supporting front/side view angle and breathing rotation effect)
   const meshRef = useRef<THREE.Group>(null);
@@ -164,42 +204,13 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     return [weightFactor * 0.95, heightScale * 0.95, weightFactor * 0.95] as [number, number, number];
   }, [gender, weight, measurements]);
 
-  // Derived measurement values
-  const neckVal = measurements?.chestCircumference ? (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) : '36.0';
-  const shoulderVal = measurements?.shoulderWidth ? measurements.shoulderWidth.toFixed(1) : '44.0';
-  const chestVal = measurements?.chestCircumference ? measurements.chestCircumference.toFixed(1) : '90.0';
-  const waistVal = measurements?.waistCircumference ? measurements.waistCircumference.toFixed(1) : '70.0';
-  const hipsVal = measurements?.hipCircumference ? measurements.hipCircumference.toFixed(1) : '95.0';
-  const armVal = measurements?.armLength ? measurements.armLength.toFixed(1) : '60.0';
-  const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
-  const thighVal = measurements?.hipCircumference ? (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) : '55.0';
-  const calfVal = measurements?.hipCircumference ? (measurements.hipCircumference * 0.38).toFixed(1) : '36.0';
-
-  // Gender-specific optimized anatomical anchor coordinates (relative to feet Y = 0 origin inside the group)
-  const neckPos     = useMemo(() => [gender === 'female' ? -0.07 : -0.08, gender === 'female' ? 1.38 : 1.60, 0] as [number, number, number], [gender]);
-  const shoulderPos = useMemo(() => [gender === 'female' ? 0.18 : 0.22, gender === 'female' ? 1.30 : 1.50, 0] as [number, number, number], [gender]);
-  const chestPos    = useMemo(() => [gender === 'female' ? 0.14 : 0.16, gender === 'female' ? 1.20 : 1.40, 0] as [number, number, number], [gender]);
-  const waistPos    = useMemo(() => [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.98 : 1.15, 0] as [number, number, number], [gender]);
-  const hipsPos     = useMemo(() => [gender === 'female' ? 0.17 : 0.18, gender === 'female' ? 0.80 : 0.95, 0] as [number, number, number], [gender]);
-  const armPos      = useMemo(() => [gender === 'female' ? 0.45 : 0.52, gender === 'female' ? 1.28 : 1.48, 0] as [number, number, number], [gender]);
-  const legPos      = useMemo(() => [gender === 'female' ? 0.11 : 0.12, gender === 'female' ? 0.72 : 0.85, 0] as [number, number, number], [gender]);
-  const thighPos    = useMemo(() => [gender === 'female' ? -0.13 : -0.15, gender === 'female' ? 0.62 : 0.75, 0] as [number, number, number], [gender]);
-  const calfPos     = useMemo(() => [gender === 'female' ? -0.11 : -0.13, gender === 'female' ? 0.38 : 0.46, 0] as [number, number, number], [gender]);
-
-  const jointDots = useMemo(() => [
-    { id: 'nasion', pos: [0, gender === 'female' ? 1.48 : 1.70, 0.08] },
-    { id: 'l_shoulder', pos: [gender === 'female' ? -0.18 : -0.22, gender === 'female' ? 1.30 : 1.50, 0] },
-    { id: 'r_shoulder', pos: [gender === 'female' ? 0.18 : 0.22, gender === 'female' ? 1.30 : 1.50, 0] },
-    { id: 'l_elbow', pos: [gender === 'female' ? -0.45 : -0.52, gender === 'female' ? 1.28 : 1.48, 0] },
-    { id: 'r_elbow', pos: [gender === 'female' ? 0.45 : 0.52, gender === 'female' ? 1.28 : 1.48, 0] },
-    { id: 'l_wrist', pos: [gender === 'female' ? -0.68 : -0.82, gender === 'female' ? 1.28 : 1.48, 0] },
-    { id: 'r_wrist', pos: [gender === 'female' ? 0.68 : 0.82, gender === 'female' ? 1.28 : 1.48, 0] },
-    { id: 'l_hip', pos: [gender === 'female' ? -0.13 : -0.16, gender === 'female' ? 0.80 : 0.95, 0] },
-    { id: 'r_hip', pos: [gender === 'female' ? 0.13 : 0.16, gender === 'female' ? 0.80 : 0.95, 0] },
-    { id: 'l_knee', pos: [gender === 'female' ? -0.12 : -0.14, gender === 'female' ? 0.48 : 0.58, 0] },
-    { id: 'r_knee', pos: [gender === 'female' ? 0.12 : 0.14, gender === 'female' ? 0.48 : 0.58, 0] },
-    { id: 'l_ankle', pos: [gender === 'female' ? -0.10 : -0.12, gender === 'female' ? 0.15 : 0.18, 0] },
-    { id: 'r_ankle', pos: [gender === 'female' ? 0.10 : 0.12, gender === 'female' ? 0.15 : 0.18, 0] },
+  // 5 key measurement ring heights on the body (Y coordinates relative to model origin)
+  const measureRings = useMemo(() => [
+    { id: 'neck',  y: gender === 'female' ? 1.38 : 1.58, color: '#22d3ee', radius: gender === 'female' ? 0.09 : 0.10 },
+    { id: 'chest', y: gender === 'female' ? 1.20 : 1.40, color: '#22d3ee', radius: gender === 'female' ? 0.15 : 0.17 },
+    { id: 'waist', y: gender === 'female' ? 1.00 : 1.18, color: '#a78bfa', radius: gender === 'female' ? 0.12 : 0.14 },
+    { id: 'hips',  y: gender === 'female' ? 0.82 : 0.97, color: '#f59e0b', radius: gender === 'female' ? 0.16 : 0.17 },
+    { id: 'thigh', y: gender === 'female' ? 0.60 : 0.73, color: '#34d399', radius: gender === 'female' ? 0.10 : 0.11 },
   ], [gender]);
 
   // Apply default rotation to primitive scene contents
@@ -222,429 +233,26 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
           }}
         />
 
-        {/* Grid overlay wireframe centered (hidden in heatmap mode) */}
-        {viewMode !== 'heatmap' && (
+        {/* Grid overlay wireframe centered */}
+        {viewMode === 'neon' && (
           <primitive object={wireframeScene} />
         )}
 
-        {/* Dynamic HTML HUD overlays positioned relative to approximate body coordinates */}
-        {measurements && showLabels && (
-          <>
-            {/* 13 skeletal joint dots */}
-            {jointDots.map((joint) => (
-              <Html key={joint.id} position={joint.pos as [number, number, number]} style={{ pointerEvents: 'none' }} zIndexRange={[1, 4]}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transform: 'translate(-50%, -50%)',
-                }}>
-                  <div style={{
-                    width: '10px',
-                    height: '10px',
-                    border: '1.2px solid rgba(34, 211, 238, 0.85)',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    animation: 'jointPulse 2.0s infinite ease-in-out',
-                    pointerEvents: 'none'
-                  }} />
-                  <div style={{
-                    width: '5px',
-                    height: '5px',
-                    background: '#ffffff',
-                    border: '1px solid #22d3ee',
-                    borderRadius: '50%',
-                    boxShadow: '0 0 8px #22d3ee',
-                    zIndex: 2
-                  }} />
-                </div>
-              </Html>
-            ))}
-
-            {/* Cổ (Neck) - Left side anchor, card points INWARD (right), width: 16px */}
-            <Html position={neckPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translateY(-50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '16px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Cổ: <span style={{ color: '#fff' }}>{neckVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Rộng vai (Shoulder Width) - Right side anchor, card points INWARD (left), width: 16px */}
-            <Html position={shoulderPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                flexDirection: 'row-reverse',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '16px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  VAI: <span style={{ color: '#fff' }}>{shoulderVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Ngực (Chest) - Right side anchor, card points INWARD (left), width: 28px */}
-            <Html position={chestPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                flexDirection: 'row-reverse',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '28px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  NGỰC: <span style={{ color: '#fff' }}>{chestVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Dài tay (Arm Length) - Right side anchor, card points INWARD (left), width: 18px */}
-            <Html position={armPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                flexDirection: 'row-reverse',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '18px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  DÀI TAY: <span style={{ color: '#fff' }}>{armVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Eo (Waist) - Left side anchor, card points INWARD (right), width: 24px */}
-            <Html position={waistPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translateY(-50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '24px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  EO: <span style={{ color: '#fff' }}>{waistVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Mông (Hips) - Right side anchor, card points INWARD (left), width: 28px */}
-            <Html position={hipsPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                flexDirection: 'row-reverse',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '28px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  MÔNG: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Đùi phải (Right Thigh) - Left side anchor, card points INWARD (right), width: 16px */}
-            <Html position={thighPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translateY(-50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '16px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  ĐÙI PHẢI: <span style={{ color: '#fff' }}>{thighVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Bắp chân phải (Right Calf) - Left side anchor, card points INWARD (right), width: 24px */}
-            <Html position={calfPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translateY(-50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '24px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  BẮP CHÂN: <span style={{ color: '#fff' }}>{calfVal} cm</span>
-                </div>
-              </div>
-            </Html>
-
-            {/* Dài chân (Leg Length) - Right side anchor, card points INWARD (left), width: 16px */}
-            <Html position={legPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                flexDirection: 'row-reverse',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
-                <div style={{
-                  width: '16px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
-                }}>
-                  <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2.5px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
-                </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  DÀI CHÂN: <span style={{ color: '#fff' }}>{legVal} cm</span>
-                </div>
-              </div>
-            </Html>
-          </>
-        )}
+        {/* Clean measurement ring indicators - pure Three.js, no HTML overlays */}
+        {measurements && showLabels && measureRings.map((ring) => (
+          <group key={ring.id} position={[0, ring.y, 0]}>
+            {/* Glowing horizontal ring line */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[ring.radius - 0.003, ring.radius + 0.003, 64]} />
+              <meshBasicMaterial color={ring.color} transparent opacity={0.7} side={THREE.DoubleSide} />
+            </mesh>
+            {/* Outer subtle glow ring */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[ring.radius - 0.008, ring.radius + 0.008, 64]} />
+              <meshBasicMaterial color={ring.color} transparent opacity={0.15} side={THREE.DoubleSide} />
+            </mesh>
+          </group>
+        ))}
       </group>
     </group>
   );
@@ -802,13 +410,6 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         border: '1px solid rgba(0, 85, 255, 0.15)'
       }}
     >
-      <style>{`
-        @keyframes jointPulse {
-          0% { transform: scale(0.65); opacity: 1; }
-          50% { transform: scale(1.35); opacity: 0.35; }
-          100% { transform: scale(0.65); opacity: 1; }
-        }
-      `}</style>
       {/* 3D WebGL Canvas */}
       <Canvas
         style={{ width: '100%', height: '100%' }}

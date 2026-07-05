@@ -740,61 +740,100 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   // Generate bone paths between landmarks (for 2D editing mode)
   const getBones = () => {
-    const connections: [string, string][] = [];
-    
-    if (view === 'front') {
-      connections.push(
-        ['nasion', 'left_shoulder'],
-        ['nasion', 'right_shoulder'],
-        ['left_shoulder', 'right_shoulder'],
-        ['left_shoulder', 'left_elbow'],
-        ['left_elbow', 'left_wrist'],
-        ['right_shoulder', 'right_elbow'],
-        ['right_elbow', 'right_wrist'],
-        ['left_shoulder', 'left_hip'],
-        ['right_shoulder', 'right_hip'],
-        ['left_hip', 'right_hip']
-      );
-      if (scanRange === 'full' || inputSource === 'mannequin') {
-        connections.push(
-          ['left_hip', 'left_knee'],
-          ['left_knee', 'left_ankle'],
-          ['right_hip', 'right_knee'],
-          ['right_knee', 'right_ankle']
-        );
-      }
-    } else {
-      connections.push(
-        ['nasion', 'shoulder'],
-        ['shoulder', 'elbow'],
-        ['elbow', 'wrist'],
-        ['shoulder', 'hip'],
-        ['hip', 'chest_depth'],
-        ['hip', 'buttock_depth']
-      );
-      if (scanRange === 'full' || inputSource === 'mannequin') {
-        connections.push(
-          ['hip', 'knee'],
-          ['knee', 'ankle']
-        );
-      }
-    }
+    const lines: React.ReactNode[] = [];
+    let idx = 0;
 
-    return connections.map(([startId, endId], index) => {
-      const start = landmarks.find(l => l.id === startId);
-      const end = landmarks.find(l => l.id === endId);
-      if (!start || !end) return null;
-      return (
+    const drawLine = (p1: { x: number; y: number } | undefined, p2: { x: number; y: number } | undefined) => {
+      if (!p1 || !p2) return;
+      lines.push(
         <line
-          key={`bone-${index}`}
-          x1={start.x}
-          y1={start.y}
-          x2={end.x}
-          y2={end.y}
+          key={`bone-${idx++}`}
+          x1={p1.x}
+          y1={p1.y}
+          x2={p2.x}
+          y2={p2.y}
           className="skeletal-line"
         />
       );
-    });
+    };
+
+    if (view === 'front') {
+      const nasion = landmarks.find(l => l.id === 'nasion');
+      const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
+      const rShoulder = landmarks.find(l => l.id === 'right_shoulder');
+      const lElbow = landmarks.find(l => l.id === 'left_elbow');
+      const rElbow = landmarks.find(l => l.id === 'right_elbow');
+      const lWrist = landmarks.find(l => l.id === 'left_wrist');
+      const rWrist = landmarks.find(l => l.id === 'right_wrist');
+      const lHip = landmarks.find(l => l.id === 'left_hip');
+      const rHip = landmarks.find(l => l.id === 'right_hip');
+      const lKnee = landmarks.find(l => l.id === 'left_knee');
+      const rKnee = landmarks.find(l => l.id === 'right_knee');
+      const lAnkle = landmarks.find(l => l.id === 'left_ankle');
+      const rAnkle = landmarks.find(l => l.id === 'right_ankle');
+
+      // Midpoints for spine
+      let midShoulder: { x: number; y: number } | undefined = undefined;
+      if (lShoulder && rShoulder) {
+        midShoulder = { x: (lShoulder.x + rShoulder.x) / 2, y: (lShoulder.y + rShoulder.y) / 2 };
+      }
+      let midHip: { x: number; y: number } | undefined = undefined;
+      if (lHip && rHip) {
+        midHip = { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 };
+      }
+
+      // 1. Central line from nose (nasion) to feet
+      drawLine(nasion, midShoulder);
+      drawLine(midShoulder, midHip);
+
+      // 2. Shoulder line
+      drawLine(lShoulder, rShoulder);
+
+      // 3. Pelvis line
+      drawLine(lHip, rHip);
+
+      // 4. Arms
+      drawLine(lShoulder, lElbow);
+      drawLine(lElbow, lWrist);
+      drawLine(rShoulder, rElbow);
+      drawLine(rElbow, rWrist);
+
+      // 5. Legs (if full range or mannequin)
+      if (scanRange === 'full' || inputSource === 'mannequin') {
+        drawLine(lHip, lKnee);
+        drawLine(lKnee, lAnkle);
+        drawLine(rHip, rKnee);
+        drawLine(rKnee, rAnkle);
+        // Connect midHip split to hips
+        drawLine(midHip, lHip);
+        drawLine(midHip, rHip);
+      }
+    } else {
+      // Side view: just connect in a single chain
+      const nasion = landmarks.find(l => l.id === 'nasion');
+      const shoulder = landmarks.find(l => l.id === 'shoulder');
+      const elbow = landmarks.find(l => l.id === 'elbow');
+      const wrist = landmarks.find(l => l.id === 'wrist');
+      const hip = landmarks.find(l => l.id === 'hip');
+      const knee = landmarks.find(l => l.id === 'knee');
+      const ankle = landmarks.find(l => l.id === 'ankle');
+      const chestDepth = landmarks.find(l => l.id === 'chest_depth');
+      const buttockDepth = landmarks.find(l => l.id === 'buttock_depth');
+
+      drawLine(nasion, shoulder);
+      drawLine(shoulder, elbow);
+      drawLine(elbow, wrist);
+      drawLine(shoulder, hip);
+      drawLine(hip, chestDepth);
+      drawLine(hip, buttockDepth);
+
+      if (scanRange === 'full' || inputSource === 'mannequin') {
+        drawLine(hip, knee);
+        drawLine(knee, ankle);
+      }
+    }
+
+    return lines;
   };
 
   /*
@@ -1996,111 +2035,137 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
               {/* Floating Measurements Labels on Photo/Video View */}
               {measurements && hasMediaBackground && (() => {
+                const nasion = landmarks.find(l => l.id === 'nasion');
                 const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
                 const rShoulder = landmarks.find(l => l.id === 'right_shoulder');
-                const lElbow = landmarks.find(l => l.id === 'left_elbow');
                 const lWrist = landmarks.find(l => l.id === 'left_wrist');
                 const lHip = landmarks.find(l => l.id === 'left_hip');
                 const rHip = landmarks.find(l => l.id === 'right_hip');
-                const lKnee = landmarks.find(l => l.id === 'left_knee');
-                const lAnkle = landmarks.find(l => l.id === 'left_ankle');
+                const rKnee = landmarks.find(l => l.id === 'right_knee');
+                const rAnkle = landmarks.find(l => l.id === 'right_ankle');
 
                 const shoulder = landmarks.find(l => l.id === 'shoulder');
                 const hip = landmarks.find(l => l.id === 'hip');
                 const chestDepth = landmarks.find(l => l.id === 'chest_depth');
                 const buttockDepth = landmarks.find(l => l.id === 'buttock_depth');
 
-                const labels: { text: string; x: number; y: number }[] = [];
+                // Derived measurement values
+                const neckVal = (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1);
+                const shoulderVal = measurements.shoulderWidth.toFixed(1);
+                const chestVal = measurements.chestCircumference.toFixed(1);
+                const waistVal = measurements.waistCircumference.toFixed(1);
+                const hipsVal = measurements.hipCircumference.toFixed(1);
+                const armVal = measurements.armLength.toFixed(1);
+                const legVal = measurements.legLength.toFixed(1);
+                const thighVal = (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1);
+                const calfVal = (measurements.hipCircumference * 0.38).toFixed(1);
+
+                const items: {
+                  side: 'left' | 'right';
+                  cardX: number;
+                  cardY: number;
+                  anchor: { x: number; y: number } | undefined;
+                  text: string;
+                }[] = [];
 
                 if (view === 'front') {
-                  if (lShoulder && rShoulder) {
-                    labels.push({
-                      text: `VAI: ${measurements.shoulderWidth.toFixed(1)} cm`,
-                      x: (lShoulder.x + rShoulder.x) / 2,
-                      y: (lShoulder.y + rShoulder.y) / 2 - 16
-                    });
-                    if (lHip) {
-                      labels.push({
-                        text: `NGỰC: ${measurements.chestCircumference.toFixed(1)} cm`,
-                        x: (lShoulder.x + rShoulder.x) / 2,
-                        y: lShoulder.y + (lHip.y - lShoulder.y) * 0.3
-                      });
-                      labels.push({
-                        text: `EO: ${measurements.waistCircumference.toFixed(1)} cm`,
-                        x: (lShoulder.x + rShoulder.x) / 2,
-                        y: lShoulder.y + (lHip.y - lShoulder.y) * 0.75
-                      });
-                    }
-                  }
-                  if (lHip && rHip) {
-                    labels.push({
-                      text: `MÔNG: ${measurements.hipCircumference.toFixed(1)} cm`,
-                      x: (lHip.x + rHip.x) / 2,
-                      y: (lHip.y + rHip.y) / 2 + 18
-                    });
-                  }
-                  if (lShoulder && lElbow && lWrist) {
-                    labels.push({
-                      text: `TAY: ${measurements.armLength.toFixed(1)} cm`,
-                      x: (lShoulder.x + lElbow.x + lWrist.x) / 3 - 40,
-                      y: (lShoulder.y + lElbow.y + lWrist.y) / 3
-                    });
-                  }
-                  if (scanRange === 'full' && lHip && lKnee && lAnkle) {
-                    labels.push({
-                      text: `CHÂN: ${measurements.legLength.toFixed(1)} cm`,
-                      x: (lHip.x + lKnee.x + lAnkle.x) / 3 - 40,
-                      y: (lHip.y + lKnee.y + lAnkle.y) / 3
-                    });
-                  }
+                  // Midpoints
+                  const midShoulder = lShoulder && rShoulder ? { x: (lShoulder.x + rShoulder.x) / 2, y: (lShoulder.y + rShoulder.y) / 2 } : undefined;
+                  const midHip = lHip && rHip ? { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 } : undefined;
+                  const neckAnchor = nasion && midShoulder ? { x: nasion.x * 0.3 + midShoulder.x * 0.7, y: nasion.y * 0.3 + midShoulder.y * 0.7 } : undefined;
+                  const chestAnchor = lShoulder && rShoulder && lHip ? { x: (lShoulder.x + rShoulder.x) / 2, y: lShoulder.y + (lHip.y - lShoulder.y) * 0.35 } : undefined;
+                  const waistAnchor = lShoulder && lHip && rHip ? { x: (lHip.x + rHip.x) / 2, y: lShoulder.y + (lHip.y - lShoulder.y) * 0.75 } : undefined;
+                  const thighAnchor = rHip && rKnee ? { x: (rHip.x + rKnee.x) / 2, y: (rHip.y + rKnee.y) / 2 } : undefined;
+                  const calfAnchor = rKnee && rAnkle ? { x: (rKnee.x + rAnkle.x) / 2, y: (rKnee.y + rAnkle.y) / 2 } : undefined;
+
+                  items.push(
+                    // Left Column
+                    { side: 'left', cardX: 55, cardY: 90, anchor: neckAnchor, text: `Cổ: ${neckVal} cm` },
+                    { side: 'left', cardX: 55, cardY: 180, anchor: lWrist, text: `Dài tay: ${armVal} cm` },
+                    { side: 'left', cardX: 55, cardY: 280, anchor: waistAnchor, text: `Eo: ${waistVal} cm` },
+                    { side: 'left', cardX: 55, cardY: 460, anchor: thighAnchor, text: `Đùi phải: ${thighVal} cm` },
+                    { side: 'left', cardX: 55, cardY: 560, anchor: calfAnchor, text: `Bắp chân: ${calfVal} cm` },
+
+                    // Right Column
+                    { side: 'right', cardX: 345, cardY: 120, anchor: rShoulder, text: `Vai: ${shoulderVal} cm` },
+                    { side: 'right', cardX: 345, cardY: 220, anchor: chestAnchor, text: `Ngực: ${chestVal} cm` },
+                    { side: 'right', cardX: 345, cardY: 360, anchor: midHip, text: `Mông: ${hipsVal} cm` },
+                    { side: 'right', cardX: 345, cardY: 510, anchor: midHip, text: `Dài chân: ${legVal} cm` }
+                  );
                 } else {
-                  // Side View
-                  if (chestDepth) {
-                    labels.push({
-                      text: `SÂU NGỰC: ${(measurements.chestDepth || 0).toFixed(1)} cm`,
-                      x: chestDepth.x + 45,
-                      y: chestDepth.y
-                    });
-                  }
-                  if (buttockDepth) {
-                    labels.push({
-                      text: `SÂU MÔNG: ${(measurements.hipDepth || 0).toFixed(1)} cm`,
-                      x: buttockDepth.x - 45,
-                      y: buttockDepth.y
-                    });
-                  }
-                  if (shoulder && hip) {
-                    labels.push({
-                      text: `SÂU EO: ${(measurements.waistDepth || 0).toFixed(1)} cm`,
-                      x: hip.x + 45,
-                      y: shoulder.y + (hip.y - shoulder.y) * 0.7
-                    });
-                  }
+                  // Side view
+                  const waistDepthY = shoulder && hip ? shoulder.y + (hip.y - shoulder.y) * 0.75 : undefined;
+                  const waistDepthAnchor = hip && waistDepthY ? { x: hip.x, y: waistDepthY } : undefined;
+
+                  items.push(
+                    // Left Column (pointing behind)
+                    { side: 'left', cardX: 55, cardY: 360, anchor: buttockDepth, text: `Sâu mông: ${(measurements.hipDepth || 0).toFixed(1)} cm` },
+
+                    // Right Column (pointing forward)
+                    { side: 'right', cardX: 345, cardY: 220, anchor: chestDepth, text: `Sâu ngực: ${(measurements.chestDepth || 0).toFixed(1)} cm` },
+                    { side: 'right', cardX: 345, cardY: 290, anchor: waistDepthAnchor, text: `Sâu eo: ${(measurements.waistDepth || 0).toFixed(1)} cm` }
+                  );
                 }
 
-                return labels.map((lbl, i) => (
-                  <g key={`lbl2d-${i}`} transform={`translate(${lbl.x}, ${lbl.y})`} style={{ pointerEvents: 'none' }}>
-                    <rect
-                      x="-38"
-                      y="-8"
-                      width="76"
-                      height="16"
-                      rx="8"
-                      fill="rgba(15, 23, 42, 0.85)"
-                      stroke="rgba(34, 211, 238, 0.45)"
-                      strokeWidth="1"
-                    />
-                    <text
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fontSize="9px"
-                      fontWeight="bold"
-                      fill="#22d3ee"
-                    >
-                      {lbl.text}
-                    </text>
-                  </g>
-                ));
+                return items.map((item, idx) => {
+                  if (!item.anchor) return null;
+                  const anchorDx = item.anchor.x - item.cardX;
+                  const anchorDy = item.anchor.y - item.cardY;
+
+                  return (
+                    <g key={`lbl2d-${idx}`} transform={`translate(${item.cardX}, ${item.cardY})`} style={{ pointerEvents: 'none' }}>
+                      {/* Connection Line */}
+                      <line
+                        x1={0}
+                        y1={0}
+                        x2={anchorDx}
+                        y2={anchorDy}
+                        style={{
+                          stroke: 'rgba(34, 211, 238, 0.65)',
+                          strokeWidth: 1.0,
+                          strokeDasharray: '2,2'
+                        }}
+                      />
+                      {/* Glowing Target Dot */}
+                      <circle
+                        cx={anchorDx}
+                        cy={anchorDy}
+                        r="3.5"
+                        style={{
+                          fill: '#22d3ee',
+                          stroke: '#0891b2',
+                          strokeWidth: 1.5,
+                          filter: 'drop-shadow(0 0 4px #22d3ee)'
+                        }}
+                      />
+                      {/* Card Label */}
+                      <g>
+                        <rect
+                          x={item.side === 'left' ? -80 : 0}
+                          y={-9}
+                          width={80}
+                          height={18}
+                          rx={4}
+                          fill="rgba(9, 13, 22, 0.88)"
+                          stroke="rgba(0, 245, 255, 0.45)"
+                          strokeWidth="1"
+                          style={{ filter: 'drop-shadow(0 0 6px rgba(0, 245, 255, 0.15))' }}
+                        />
+                        <text
+                          x={item.side === 'left' ? -40 : 40}
+                          y={0}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize="9px"
+                          fontWeight="bold"
+                          fill="#00f5ff"
+                        >
+                          {item.text}
+                        </text>
+                      </g>
+                    </g>
+                  );
+                });
               })()}
             </svg>
           )}

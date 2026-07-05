@@ -1861,140 +1861,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          {inputSource === 'image' && !uploadedImage && (
-            <div className="media-placeholder-overlay" style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%)',
-              color: '#f8fafc',
-              padding: '2rem',
-              textAlign: 'center',
-              zIndex: 5,
-              borderRadius: 'var(--radius-md)'
-            }}>
-              <div style={{
-                background: 'rgba(6, 182, 212, 0.1)',
-                border: '1px solid rgba(6, 182, 212, 0.25)',
-                borderRadius: '50%',
-                padding: '1.5rem',
-                marginBottom: '1rem',
-                boxShadow: '0 0 20px rgba(6, 182, 212, 0.15)',
-                animation: 'neonPulse 3s infinite ease-in-out'
-              }}>
-                <Upload size={40} style={{ color: '#22d3ee' }} />
-              </div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
-                Chưa Tải Ảnh Mẫu Phân Tích
-              </h3>
-              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '320px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
-                Tải lên ảnh chụp thẳng toàn thân để AI tự động trích xuất các điểm đo nhân trắc học 3D.
-              </p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  backgroundColor: '#06b6d4',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '0.65rem 1.25rem',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(6, 182, 212, 0.3)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.backgroundColor = '#0891b2';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.backgroundColor = '#06b6d4';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <Upload size={15} />
-                Chọn Ảnh Mẫu Đo
-              </button>
-            </div>
-          )}
-
-          {inputSource === 'video' && !uploadedVideo && (
-            <div className="media-placeholder-overlay" style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%)',
-              color: '#f8fafc',
-              padding: '2rem',
-              textAlign: 'center',
-              zIndex: 5,
-              borderRadius: 'var(--radius-md)'
-            }}>
-              <div style={{
-                background: 'rgba(168, 85, 247, 0.1)',
-                border: '1px solid rgba(168, 85, 247, 0.25)',
-                borderRadius: '50%',
-                padding: '1.5rem',
-                marginBottom: '1rem',
-                boxShadow: '0 0 20px rgba(168, 85, 247, 0.15)',
-                animation: 'neonPulse 3s infinite ease-in-out'
-              }}>
-                <Upload size={40} style={{ color: '#a855f7' }} />
-              </div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
-                Chưa Tải Video AI Phân Tích
-              </h3>
-              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '320px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
-                Tải lên video di chuyển xoay người để hệ thống quét và dựng mô hình hình thể 3D động.
-              </p>
-              <button
-                type="button"
-                onClick={() => fileInputVideoRef.current?.click()}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  backgroundColor: '#a855f7',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '0.65rem 1.25rem',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.backgroundColor = '#9333ea';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.backgroundColor = '#a855f7';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
-              >
-                <Upload size={15} />
-                Chọn Video Đo
-              </button>
-            </div>
-          )}
-
-          {inputSource === 'mannequin' && (
+          {(inputSource === 'mannequin' ||
+            (inputSource === 'image' && !uploadedImage) ||
+            (inputSource === 'video' && !uploadedVideo)) && (
             <Mannequin3DView
               gender={gender}
-              weight={weight}
+              weight={inputSource === 'mannequin' ? weight : (gender === 'male' ? 75 : 55)}
               scaleFactor={scaleFactor}
               landmarks={landmarks}
               rotationAngle={rotationAngle}
@@ -2002,10 +1874,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               width={width}
               height={height}
               scanRange={scanRange}
-              measurements={measurements}
+              measurements={inputSource === 'mannequin' ? measurements : undefined}
               cameraResetCounter={cameraResetCounter}
-              showLabels={true}
-              interactive={true}
+              showLabels={inputSource === 'mannequin'}
+              interactive={inputSource === 'mannequin'}
             />
           )}
 

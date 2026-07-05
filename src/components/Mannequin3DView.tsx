@@ -267,15 +267,6 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
           <primitive object={wireframeScene} />
         )}
 
-        {/* Style for joint pulses */}
-        <style>{`
-          @keyframes jointPulse {
-            0% { transform: scale(0.65); opacity: 1; }
-            50% { transform: scale(1.35); opacity: 0.35; }
-            100% { transform: scale(0.65); opacity: 1; }
-          }
-        `}</style>
-
         {/* Dynamic HTML HUD overlays positioned relative to approximate body coordinates */}
         {measurements && showLabels && (
           <>
@@ -339,14 +330,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  right: '130px',
+                  right: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(6, 182, 212, 0.45)',
@@ -377,14 +368,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  right: '130px',
+                  right: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(6, 182, 212, 0.45)',
@@ -415,14 +406,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  right: '130px',
+                  right: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(6, 182, 212, 0.45)',
@@ -453,14 +444,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  right: '130px',
+                  right: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(6, 182, 212, 0.45)',
@@ -491,14 +482,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', right: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(6, 182, 212, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#22d3ee', borderRadius: '50%', boxShadow: '0 0 8px #22d3ee', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(34, 211, 238, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  right: '130px',
+                  right: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(6, 182, 212, 0.45)',
@@ -531,14 +522,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  left: '130px',
+                  left: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(245, 158, 11, 0.45)',
@@ -569,14 +560,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  left: '130px',
+                  left: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(245, 158, 11, 0.45)',
@@ -607,14 +598,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  left: '130px',
+                  left: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(245, 158, 11, 0.45)',
@@ -645,14 +636,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  left: '130px',
+                  left: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(245, 158, 11, 0.45)',
@@ -683,14 +674,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 height: '0px',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
-                <svg width="130" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
-                  <line x1="0" y1="1" x2="130" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
+                <svg width="80" height="2" style={{ position: 'absolute', left: '0px', top: '0px', overflow: 'visible', pointerEvents: 'none' }}>
+                  <line x1="0" y1="1" x2="80" y2="1" stroke="rgba(245, 158, 11, 0.6)" strokeWidth="1.2" strokeDasharray="3,3" />
                 </svg>
                 <div style={{ width: '6px', height: '6px', background: '#fbbf24', borderRadius: '50%', boxShadow: '0 0 8px #fbbf24', position: 'absolute', left: '-3px', top: '-3px', zIndex: 10 }} />
                 <div style={{ width: '14px', height: '14px', border: '1.2px solid rgba(251, 191, 36, 0.8)', borderRadius: '50%', position: 'absolute', left: '-7px', top: '-7px', animation: 'jointPulse 2.0s infinite ease-in-out', pointerEvents: 'none' }} />
                 <div style={{
                   position: 'absolute',
-                  left: '130px',
+                  left: '80px',
                   transform: 'translateY(-50%)',
                   background: 'rgba(15, 23, 42, 0.85)',
                   border: '1.2px solid rgba(245, 158, 11, 0.45)',
@@ -868,6 +859,13 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         border: '1px solid rgba(0, 85, 255, 0.15)'
       }}
     >
+      <style>{`
+        @keyframes jointPulse {
+          0% { transform: scale(0.65); opacity: 1; }
+          50% { transform: scale(1.35); opacity: 0.35; }
+          100% { transform: scale(0.65); opacity: 1; }
+        }
+      `}</style>
       {/* 3D WebGL Canvas */}
       <Canvas
         style={{ width: '100%', height: '100%' }}

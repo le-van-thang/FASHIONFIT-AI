@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
 import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2 } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
@@ -6,6 +6,7 @@ import { Mannequin3DView } from './Mannequin3DView';
 
 
 
+/*
 const relaxLabelY = (
   items: { y: number; originalIdx: number }[],
   minGap: number = 36,
@@ -38,6 +39,7 @@ const relaxLabelY = (
   });
   return result;
 };
+*/
 
 
 
@@ -795,8 +797,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     });
   };
 
+  /*
   // Generate 3D Wireframe Mannequin mesh points and project them to 2D
-  const projected3DData = useMemo(() => {
+  const _projected3DData = useMemo(() => {
     // Rotation matrix variables
     const rad = (rotationAngle * Math.PI) / 180;
     const cosA = Math.cos(rad);
@@ -1343,8 +1346,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       widths
     };
   }, [rotationAngle, landmarks, gender, weight, scaleFactor, view]);
+  */
 
-  const projected3DMesh = projected3DData.meshLines;
+
 
 
   const hasMediaBackground = 
@@ -1874,10 +1878,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               width={width}
               height={height}
               scanRange={scanRange}
-              measurements={inputSource === 'mannequin' ? measurements : undefined}
+              measurements={measurements}
               cameraResetCounter={cameraResetCounter}
-              showLabels={inputSource === 'mannequin'}
-              interactive={inputSource === 'mannequin'}
+              showLabels={true}
+              interactive={true}
             />
           )}
 
@@ -1930,192 +1934,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 </g>
               )}
 
-              {/* Render 3D Wireframe Mesh only in default mannequin view (no media background) */}
-              {!hasMediaBackground && (
-                <g className={`mesh-group ${meshStyle}`}>
-                  {projected3DMesh.map((line, idx) => {
-                    let strokeColor = undefined;
-                    if (meshStyle === 'heatmap') {
-                      const y = (line.y1 + line.y2) / 2;
-                      if (y < 160) {
-                        strokeColor = '#38bdf8'; // Blue (neck)
-                      } else if (y < 230) {
-                        strokeColor = '#f43f5e'; // Pink/Red (chest/bust depth area)
-                      } else if (y < 330) {
-                        strokeColor = '#fb923c'; // Orange (waist/belly fat area)
-                      } else if (y < 460) {
-                        strokeColor = '#fbbf24'; // Yellow (hips/glute depth area)
-                      } else {
-                        strokeColor = '#4ade80'; // Green (thighs/legs)
-                      }
-                    }
 
-                    // Apply Z-depth shading
-                    const zAvg = (line.z1 + line.z2) / 2;
-                    const maxZ = 60; // approximate max depth
-                    const normalizedZ = Math.max(-1, Math.min(1, zAvg / maxZ));
-                    const zFactor = (normalizedZ + 1) / 2; // 0 to 1
-                    
-                    // Base opacity based on line type - in solid mode make mesh subtle
-                    const baseOpacity = line.type === 'ring' 
-                      ? (meshStyle === 'solid' ? 0.12 : 0.85)
-                      : (meshStyle === 'solid' ? 0.06 : 0.45);
-                    const lineOpacity = baseOpacity * (0.28 + 0.72 * zFactor);
-
-                    const customStyle: React.CSSProperties = {
-                      opacity: lineOpacity,
-                      stroke: meshStyle === 'solid' ? 'rgba(34, 211, 238, 0.35)' : undefined
-                    };
-                    if (strokeColor) {
-                      customStyle.stroke = strokeColor;
-                      customStyle.strokeWidth = line.type === 'ring' ? '1.3px' : '0.7px';
-                    }
-
-                    return (
-                      <line
-                        key={`mesh-${idx}`}
-                        x1={line.x1}
-                        y1={line.y1}
-                        x2={line.x2}
-                        y2={line.y2}
-                        className={`mesh-line ${line.type}`}
-                        style={customStyle}
-                      />
-                    );
-                  })}
-                </g>
-              )}
-
-              {/* Direct 3D HUD Measurements Labels (only in Mannequin mode) */}
-              {measurements && !hasMediaBackground && projected3DData.hudPoints && (() => {
-                const leftLabels = view === 'front' ? [
-                  { label: 'CỔ', value: (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) + " cm", pt: projected3DData.hudPoints.neck },
-                  { label: 'NGỰC', value: measurements.chestCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.chest },
-                  { label: 'EO DƯỚI', value: (measurements.waistCircumference * 1.05).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistLower },
-                  { label: 'ĐÙI PHẢI', value: (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) + " cm", pt: projected3DData.hudPoints.thighLeft },
-                  { label: 'BẮP CHÂN PHẢI', value: (measurements.hipCircumference * 0.38).toFixed(1) + " cm", pt: projected3DData.hudPoints.calfLeft },
-                ] : [
-                  { label: 'ĐỘ SÂU NGỰC', value: (measurements.chestDepth || 0).toFixed(1) + " cm", pt: landmarks.find(l => l.id === 'chest_depth') || { x: 232, y: 195 } },
-                  { label: 'ĐỘ SÂU MÔNG', value: (measurements.hipDepth || 0).toFixed(1) + " cm", pt: landmarks.find(l => l.id === 'buttock_depth') || { x: 168, y: 305 } }
-                ];
-
-                const rightLabels = view === 'front' ? [
-                  { label: 'RỘNG VAI', value: measurements.shoulderWidth.toFixed(1) + " cm", pt: projected3DData.hudPoints.shoulder },
-                  { label: 'EO TRÊN', value: (measurements.waistCircumference * 0.96).toFixed(1) + " cm", pt: projected3DData.hudPoints.waistUpper },
-                  { label: 'MÔNG', value: measurements.hipCircumference.toFixed(1) + " cm", pt: projected3DData.hudPoints.hips },
-                  { label: 'DÀI TAY', value: measurements.armLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.armRight },
-                  { label: 'DÀI CHÂN', value: measurements.legLength.toFixed(1) + " cm", pt: projected3DData.hudPoints.legRight },
-                ] : [
-                  { label: 'ĐỘ SÂU EO', value: (measurements.waistDepth || 0).toFixed(1) + " cm", pt: landmarks.find(l => l.id === 'hip') || { x: 200, y: 295 } }
-                ];
-
-                const leftY = relaxLabelY(leftLabels.map((item, idx) => ({ y: item.pt.y, originalIdx: idx })), 36, 40, 610);
-                const rightY = relaxLabelY(rightLabels.map((item, idx) => ({ y: item.pt.y, originalIdx: idx })), 36, 40, 610);
-                
-                return (
-                  <g className="hud-labels-group" style={{ pointerEvents: 'none' }}>
-                    {/* Left Labels */}
-                    {leftLabels.map((item, idx) => {
-                      const displayY = leftY[idx];
-                      return (
-                        <g key={`hud-l-comp-${idx}`} className="hud-label-group">
-                          <line
-                            x1={85}
-                            y1={displayY}
-                            x2={item.pt.x}
-                            y2={item.pt.y}
-                            className="hud-pointer-line left"
-                          />
-                          <circle
-                            cx={item.pt.x}
-                            cy={item.pt.y}
-                            className="hud-pointer-dot left"
-                          />
-                          <rect
-                            x={3}
-                            y={displayY - 12}
-                            width={82}
-                            height={24}
-                            rx={6}
-                            ry={6}
-                            fill="rgba(15, 23, 42, 0.85)"
-                            stroke="rgba(6, 182, 212, 0.25)"
-                            strokeWidth="1"
-                          />
-                          <text
-                            x={80}
-                            y={displayY - 2}
-                            textAnchor="end"
-                            className="hud-label-text left"
-                            style={{ fill: '#22d3ee', fontSize: '8px', fontWeight: 700 }}
-                          >
-                            {item.label}
-                          </text>
-                          <text
-                            x={80}
-                            y={displayY + 8}
-                            textAnchor="end"
-                            className="hud-label-value left"
-                            style={{ fill: '#06b6d4', fontSize: '10px', fontWeight: 800 }}
-                          >
-                            {item.value}
-                          </text>
-                        </g>
-                      );
-                    })}
-
-                    {/* Right Labels */}
-                    {rightLabels.map((item, idx) => {
-                      const displayY = rightY[idx];
-                      return (
-                        <g key={`hud-r-comp-${idx}`} className="hud-label-group">
-                          <line
-                            x1={315}
-                            y1={displayY}
-                            x2={item.pt.x}
-                            y2={item.pt.y}
-                            className="hud-pointer-line right"
-                          />
-                          <circle
-                            cx={item.pt.x}
-                            cy={item.pt.y}
-                            className="hud-pointer-dot right"
-                          />
-                          <rect
-                            x={315}
-                            y={displayY - 12}
-                            width={82}
-                            height={24}
-                            rx={6}
-                            ry={6}
-                            fill="rgba(15, 23, 42, 0.85)"
-                            stroke="rgba(251, 191, 36, 0.25)"
-                            strokeWidth="1"
-                          />
-                          <text
-                            x={320}
-                            y={displayY - 2}
-                            textAnchor="start"
-                            className="hud-label-text right"
-                            style={{ fill: '#f59e0b', fontSize: '8px', fontWeight: 700 }}
-                          >
-                            {item.label}
-                          </text>
-                          <text
-                            x={320}
-                            y={displayY + 8}
-                            textAnchor="start"
-                            className="hud-label-value right"
-                            style={{ fill: '#fbbf24', fontSize: '10px', fontWeight: 800 }}
-                          >
-                            {item.value}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </g>
-                );
-              })()}
 
               {/* Render connecting bone lines in 2D calibration editing mode */}
               {hasMediaBackground && getBones()}

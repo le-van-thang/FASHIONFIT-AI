@@ -3209,34 +3209,61 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             height: '240px',
             fontFamily: 'system-ui, sans-serif'
           }}>
-            <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#fbbf24', letterSpacing: '0.5px' }}>
-              ⚡ CHẨN ĐOÁN AI
-            </span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
-              {view === 'front' ? (
-                <>
-                  <div>🟢 <strong>Khớp vai:</strong> Cân đối (98%)</div>
-                  <div>🟢 <strong>Vòng ngực:</strong> Ổn định (95%)</div>
-                  <div>🟢 <strong>Vòng eo:</strong> Cân đối (97%)</div>
-                  <div>🟢 <strong>Khớp hông:</strong> Đã khóa (94%)</div>
-                  <div>🟢 <strong>Khớp gối:</strong> Song song (96%)</div>
-                  <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
-                    TỶ LỆ VÀNG: ĐẠT
+            {hasMediaBackground ? (
+              <>
+                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#fbbf24', letterSpacing: '0.5px' }}>
+                  ⚡ CHẨN ĐOÁN AI
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
+                  {view === 'front' ? (
+                    <>
+                      <div>🟢 <strong>Khớp vai:</strong> Cân đối (98%)</div>
+                      <div>🟢 <strong>Vòng ngực:</strong> Ổn định (95%)</div>
+                      <div>🟢 <strong>Vòng eo:</strong> Cân đối (97%)</div>
+                      <div>🟢 <strong>Khớp hông:</strong> Đã khóa (94%)</div>
+                      <div>🟢 <strong>Khớp gối:</strong> Song song (96%)</div>
+                      <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
+                        TỶ LỆ VÀNG: ĐẠT
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>🟢 <strong>Đỉnh đầu:</strong> Khớp nasion</div>
+                      <div>🟢 <strong>Sâu ngực:</strong> Trực diện tốt</div>
+                      <div>🟢 <strong>Sâu eo:</strong> Điểm lõm tốt</div>
+                      <div>🟢 <strong>Sâu mông:</strong> Điểm lồi tốt</div>
+                      <div>🟢 <strong>Trục dọc:</strong> Thẳng đứng (99%)</div>
+                      <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
+                        ĐỘ SÂU 3D: KHỚP
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#10b981', letterSpacing: '0.5px' }}>
+                  🤖 MẪU 3D MẶC ĐỊNH
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
+                  <div>🧘 <strong>Tư thế:</strong> T-Pose (Chuẩn)</div>
+                  <div>👤 <strong>Giới tính:</strong> {gender === 'male' ? 'Nam giới' : 'Nữ giới'}</div>
+                  <div>⚖️ <strong>Thể trạng:</strong> {weight && measurements?.height ? (
+                    (() => {
+                      const bmi = weight / ((measurements.height / 100) * (measurements.height / 100));
+                      if (bmi < 18.5) return 'Mảnh khảnh';
+                      if (bmi < 24.9) return 'Cân đối';
+                      return 'Tròn trịa';
+                    })()
+                  ) : 'Cân đối'}</div>
+                  <div>🟢 <strong>Mốc đo:</strong> Khởi tạo chuẩn</div>
+                  <div>⚙️ <strong>Vật liệu:</strong> Neon Wireframe</div>
+                  <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '4px', color: '#10b981', textAlign: 'center' }}>
+                    CHƯA CÓ ẢNH ĐO
                   </div>
-                </>
-              ) : (
-                <>
-                  <div>🟢 <strong>Đỉnh đầu:</strong> Khớp nasion</div>
-                  <div>🟢 <strong>Sâu ngực:</strong> Trực diện tốt</div>
-                  <div>🟢 <strong>Sâu eo:</strong> Điểm lõm tốt</div>
-                  <div>🟢 <strong>Sâu mông:</strong> Điểm lồi tốt</div>
-                  <div>🟢 <strong>Trục dọc:</strong> Thẳng đứng (99%)</div>
-                  <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
-                    ĐỘ SÂU 3D: KHỚP
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

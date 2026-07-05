@@ -5,38 +5,55 @@ import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import type { Landmark, Gender, BodyMeasurements } from '../types';
 
-// Custom Shader Material for Heatmap Mode (ColorMetric Shader)
+// Custom Shader Material for Heatmap Mode (Anatomical Pressure / Fit Tension Map)
 const HeatmapShaderMaterial = {
   uniforms: {
-    colorBottom: { value: new THREE.Color('#0055ff') }, // Ocean Blue
-    colorTop: { value: new THREE.Color('#ffb703') },    // Yellow/Orange
     minY: { value: -1.0 },
     maxY: { value: 1.0 }
   },
   vertexShader: `
-    varying vec3 vPosition;
+    varying vec3 vWorldPosition;
     void main() {
-      vPosition = position;
+      // Calculate world coordinates of the vertex so gradient aligns across sub-meshes
+      vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
       gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     }
   `,
   fragmentShader: `
-    uniform vec3 colorBottom;
-    uniform vec3 colorTop;
     uniform float minY;
     uniform float maxY;
-    varying vec3 vPosition;
+    varying vec3 vWorldPosition;
 
     void main() {
-      // Normalize Y position between minY and maxY
-      float h = clamp((vPosition.y - minY) / (maxY - minY), 0.0, 1.0);
+      // Normalize world Y position between minY and maxY bounds of the entire model
+      float h = clamp((vWorldPosition.y - minY) / (maxY - minY), 0.0, 1.0);
       
-      // Smooth interpolation between bottom (Blue) and top (Yellow/Orange)
-      float mixFactor = smoothstep(0.0, 1.0, h);
-      vec3 finalColor = mix(colorBottom, colorTop, mixFactor);
+      // Define multi-stop thermal tension map colors
+      vec3 colorBlue = vec3(0.01, 0.22, 0.98);   // Blue: Loose fit / low contact
+      vec3 colorCyan = vec3(0.00, 0.96, 1.00);   // Cyan: Semi-loose
+      vec3 colorYellow = vec3(1.00, 0.78, 0.00); // Yellow: Medium contact / soft drape
+      vec3 colorRed = vec3(0.95, 0.08, 0.08);    // Red: Tight fit / high pressure (chest/waist/hip curves)
       
-      // Semi-transparent hologram overlay style
-      gl_FragColor = vec4(finalColor, 0.85);
+      vec3 finalColor;
+      
+      if (h < 0.20) {
+        // Feet to calves: Blue to Cyan
+        finalColor = mix(colorBlue, colorCyan, h / 0.20);
+      } else if (h < 0.40) {
+        // Thighs to Hips: Cyan to Red (high contact curve)
+        finalColor = mix(colorCyan, colorRed, (h - 0.20) / 0.20);
+      } else if (h < 0.60) {
+        // Waist/Stomach: Red back to Yellow
+        finalColor = mix(colorRed, colorYellow, (h - 0.40) / 0.20);
+      } else if (h < 0.80) {
+        // Bust/Chest to Shoulders: Yellow to Red (tight fit zone)
+        finalColor = mix(colorYellow, colorRed, (h - 0.60) / 0.20);
+      } else {
+        // Neck and Head: Red back to Blue/Cyan
+        finalColor = mix(colorRed, colorBlue, (h - 0.80) / 0.20);
+      }
+      
+      gl_FragColor = vec4(finalColor, 0.82);
     }
   `
 };
@@ -104,8 +121,6 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const heatmapMaterial = useMemo(() => {
     return new THREE.ShaderMaterial({
       uniforms: {
-        colorBottom: { value: new THREE.Color('#0055ff') }, // Ocean Blue
-        colorTop: { value: new THREE.Color('#ffb703') },    // Yellow/Orange
         minY: { value: bounds.min },
         maxY: { value: bounds.max }
       },
@@ -123,9 +138,14 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (viewMode === 'heatmap') {
+          child.visible = true;
           child.material = heatmapMaterial;
-        } else {
+        } else if (viewMode === 'solid') {
+          child.visible = true;
           child.material = solidMaterial;
+        } else {
+          // 'neon' mode: hide base solid body!
+          child.visible = false;
         }
       }
     });
@@ -134,8 +154,12 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     wireframeScene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (viewMode === 'heatmap') {
-          child.material = heatmapMaterial;
+          child.visible = false;
+        } else if (viewMode === 'solid') {
+          child.visible = false;
         } else {
+          // 'neon' mode: show neon grid!
+          child.visible = true;
           child.material = neonMaterial;
         }
       }
@@ -206,8 +230,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
           }}
         />
 
-        {/* Grid overlay wireframe centered (hidden in heatmap mode) */}
-        {viewMode !== 'heatmap' && (
+        {/* Grid overlay wireframe centered */}
+        {viewMode === 'neon' && (
           <primitive object={wireframeScene} />
         )}
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
 import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2 } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
@@ -797,9 +797,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     });
   };
 
-  /*
   // Generate 3D Wireframe Mannequin mesh points and project them to 2D
-  const _projected3DData = useMemo(() => {
+  const projected3DData = useMemo(() => {
     // Rotation matrix variables
     const rad = (rotationAngle * Math.PI) / 180;
     const cosA = Math.cos(rad);
@@ -1346,7 +1345,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       widths
     };
   }, [rotationAngle, landmarks, gender, weight, scaleFactor, view]);
-  */
+
+  const projected3DMesh = projected3DData.meshLines;
+
 
 
 
@@ -1934,7 +1935,61 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 </g>
               )}
 
+              {/* Render 3D Wireframe Mesh if in mannequin mode OR if webcam scanning is active OR on media background with non-solid meshStyle */}
+              {(!hasMediaBackground || meshStyle !== 'solid') && (
+                <g className={`mesh-group ${meshStyle} ${hasMediaBackground ? 'ar-overlay' : ''}`}>
+                  {projected3DMesh.map((line: any, idx: number) => {
+                    let strokeColor = undefined;
+                    if (meshStyle === 'heatmap') {
+                      const y = (line.y1 + line.y2) / 2;
+                      if (y < 160) {
+                        strokeColor = '#38bdf8'; // Blue (neck)
+                      } else if (y < 230) {
+                        strokeColor = '#f43f5e'; // Pink/Red (chest/bust depth area)
+                      } else if (y < 330) {
+                        strokeColor = '#fb923c'; // Orange (waist/belly fat area)
+                      } else if (y < 460) {
+                        strokeColor = '#fbbf24'; // Yellow (hips/glute depth area)
+                      } else {
+                        strokeColor = '#4ade80'; // Green (thighs/legs)
+                      }
+                    }
 
+                    // Apply Z-depth shading
+                    const zAvg = (line.z1 + line.z2) / 2;
+                    const maxZ = 60; // approximate max depth
+                    const normalizedZ = Math.max(-1, Math.min(1, zAvg / maxZ));
+                    const zFactor = (normalizedZ + 1) / 2; // 0 to 1
+                    
+                    // Base opacity based on line type - in solid mode make mesh subtle
+                    const baseOpacity = line.type === 'ring' 
+                      ? (meshStyle === 'solid' ? 0.12 : 0.85)
+                      : (meshStyle === 'solid' ? 0.06 : 0.45);
+                    const lineOpacity = baseOpacity * (0.28 + 0.72 * zFactor);
+
+                    const customStyle: React.CSSProperties = {
+                      opacity: lineOpacity,
+                      stroke: meshStyle === 'solid' ? 'rgba(34, 211, 238, 0.35)' : undefined
+                    };
+                    if (strokeColor) {
+                      customStyle.stroke = strokeColor;
+                      customStyle.strokeWidth = line.type === 'ring' ? '1.3px' : '0.7px';
+                    }
+
+                    return (
+                      <line
+                        key={`mesh-${idx}`}
+                        x1={line.x1}
+                        y1={line.y1}
+                        x2={line.x2}
+                        y2={line.y2}
+                        className={`mesh-line ${line.type}`}
+                        style={customStyle}
+                      />
+                    );
+                  })}
+                </g>
+              )}
 
               {/* Render connecting bone lines in 2D calibration editing mode */}
               {hasMediaBackground && getBones()}

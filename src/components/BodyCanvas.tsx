@@ -1788,15 +1788,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     (inputSource === 'video' && uploadedVideo);
 
   return (
-    <div className={isMaximized ? "canvas-wrapper maximized" : "canvas-main-horizontal-layout"} style={isMaximized ? {} : {
-      display: 'flex',
-      gap: '1.25rem',
-      alignItems: 'start',
-      justifyContent: 'center',
-      width: '100%',
-      flexWrap: 'wrap',
-      marginTop: '0.25rem'
-    }}>
+    <div className={isMaximized ? "canvas-wrapper maximized" : "canvas-main-horizontal-layout"}>
       {/* Left Side Panel: 3D Live Preview or WebGL Status */}
       {!isMaximized && (
         <div className="canvas-side-panel left-panel" style={{

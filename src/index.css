@@ -3107,4 +3107,24 @@ body {
   pointer-events: none;
 }
 
+/* Floating side-by-side dashboard layout for center column */
+.canvas-main-horizontal-layout {
+  display: flex;
+  gap: 0.5rem;
+  align-items: start;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+  margin-top: 0.25rem;
+}
+
+@media (min-width: 1100px) {
+  .canvas-main-horizontal-layout {
+    margin-left: -70px;
+    margin-right: -70px;
+    width: calc(100% + 140px);
+    flex-wrap: nowrap !important;
+  }
+}
+
 

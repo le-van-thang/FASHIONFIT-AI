@@ -32,25 +32,31 @@ const HeatmapShaderMaterial = {
       vec3 colorBlue = vec3(0.01, 0.22, 0.98);   // Blue: Loose fit / low contact
       vec3 colorCyan = vec3(0.00, 0.96, 1.00);   // Cyan: Semi-loose
       vec3 colorYellow = vec3(1.00, 0.78, 0.00); // Yellow: Medium contact / soft drape
-      vec3 colorRed = vec3(0.95, 0.08, 0.08);    // Red: Tight fit / high pressure (chest/waist/hip curves)
+      vec3 colorRed = vec3(0.95, 0.08, 0.08);    // Red: Tight fit / high pressure (chest/shoulders/hip curves)
       
       vec3 finalColor;
       
-      if (h < 0.20) {
-        // Feet to calves: Blue to Cyan
-        finalColor = mix(colorBlue, colorCyan, h / 0.20);
-      } else if (h < 0.40) {
-        // Thighs to Hips: Cyan to Red (high contact curve)
-        finalColor = mix(colorCyan, colorRed, (h - 0.20) / 0.20);
+      if (h < 0.15) {
+        // Feet: Cool blue
+        finalColor = colorBlue;
+      } else if (h < 0.32) {
+        // Calves/Legs: Blue to Cyan (low tension)
+        finalColor = mix(colorBlue, colorCyan, (h - 0.15) / 0.17);
+      } else if (h < 0.48) {
+        // Thighs to Hips/Glutes: Cyan to Red (high tension fit zone)
+        finalColor = mix(colorCyan, colorRed, (h - 0.32) / 0.16);
       } else if (h < 0.60) {
-        // Waist/Stomach: Red back to Yellow
-        finalColor = mix(colorRed, colorYellow, (h - 0.40) / 0.20);
-      } else if (h < 0.80) {
-        // Bust/Chest to Shoulders: Yellow to Red (tight fit zone)
-        finalColor = mix(colorYellow, colorRed, (h - 0.60) / 0.20);
+        // Waist/Stomach: Red back to Yellow (looser drape zone)
+        finalColor = mix(colorRed, colorYellow, (h - 0.48) / 0.12);
+      } else if (h < 0.78) {
+        // Chest/Bust and Shoulders: Yellow to Red (high tension drape zone)
+        finalColor = mix(colorYellow, colorRed, (h - 0.60) / 0.18);
+      } else if (h < 0.86) {
+        // Neck: Red back to Blue (very quick cool down)
+        finalColor = mix(colorRed, colorBlue, (h - 0.78) / 0.08);
       } else {
-        // Neck and Head: Red back to Blue/Cyan
-        finalColor = mix(colorRed, colorBlue, (h - 0.80) / 0.20);
+        // Head: Cool blue (zero garment contact)
+        finalColor = colorBlue;
       }
       
       gl_FragColor = vec4(finalColor, 0.82);
@@ -99,9 +105,9 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
     return new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#021430'), // Deep translucent ocean navy blue
+      color: new THREE.Color('#0ea5e9'), // Brighter glowing cyber sky blue
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.55,
       side: THREE.DoubleSide,
       depthWrite: true
     });

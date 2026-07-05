@@ -1473,11 +1473,13 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       headFill = 'rgba(15, 23, 42, 0.75)';
       useGlowFilter = true;
     } else if (hasMediaBackground) {
-      fillUrl = `url(#${skinGradId})`;
-      limbFill = `url(#${limbGradId})`;
-      headFill = `url(#${faceGradId})`;
-      opacity = 0.45;
-      useGlowFilter = false;
+      fillUrl = 'none';
+      limbFill = 'none';
+      headFill = 'none';
+      strokeColor = '#22d3ee';
+      strokeWidth = '1.2';
+      opacity = 0.85;
+      useGlowFilter = true;
     }
 
     const pathParts = [];
@@ -1764,18 +1766,16 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             )}
 
             {/* Hologram Laser Scan Line */}
-            {!hasMediaBackground && (
-              <line
-                x1="5"
-                y1="0"
-                x2="395"
-                y2="0"
-                stroke="#22d3ee"
-                strokeWidth="2.5"
-                filter="url(#neonGlow)"
-                className="laser-beam"
-              />
-            )}
+            <line
+              x1="5"
+              y1="0"
+              x2="395"
+              y2="0"
+              stroke="#22d3ee"
+              strokeWidth="2.0"
+              filter="url(#neonGlow)"
+              className="laser-beam"
+            />
           </>
         )}
       </g>
@@ -2356,9 +2356,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 </g>
               )}
 
-              {/* Render 3D Wireframe Mesh if in mannequin mode OR if webcam scanning is active */}
-              {(!hasMediaBackground || meshStyle !== 'solid' || (isScanning && (inputSource === 'webcam' || inputSource === 'video'))) && (
-                <g className={`mesh-group ${meshStyle} ${hasMediaBackground ? 'ar-overlay' : ''}`}>
+              {/* Render 3D Wireframe Mesh only in default mannequin view (no media background) */}
+              {!hasMediaBackground && (
+                <g className={`mesh-group ${meshStyle}`}>
                   {projected3DMesh.map((line, idx) => {
                     let strokeColor = undefined;
                     if (meshStyle === 'heatmap') {
@@ -2565,10 +2565,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
                 return (
                   <g key={point.id} className="landmark-group">
+                    {/* Glowing outer HUD pulse target ring */}
                     <circle
                       cx={point.x}
                       cy={point.y}
-                      r={activePointId === point.id ? 8 : 6}
+                      r={activePointId === point.id ? 10 : 8}
+                      className="landmark-pulse"
+                      style={{
+                        fill: 'none',
+                        stroke: activePointId === point.id ? '#22d3ee' : '#0891b2',
+                        strokeWidth: 1.2,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={activePointId === point.id ? 6 : 4.5}
                       onMouseDown={() => handleMouseDown(point.id)}
                       onTouchStart={(e) => {
                         e.stopPropagation();

@@ -176,7 +176,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   useEffect(() => {
     if (heatmapMaterial && heatmapMaterial.uniforms) {
       const heightVal = measurements?.height || 165;
-      const heightScale = (heightVal / 165) * 0.95;
+      const heightScale = (heightVal / 165) * 0.72;
       heatmapMaterial.uniforms.minY.value = bounds.min * heightScale;
       heatmapMaterial.uniforms.maxY.value = bounds.max * heightScale;
     }
@@ -201,7 +201,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const heightVal = measurements?.height || 165;
     const heightScale = heightVal / 165;
     
-    return [weightFactor * 0.95, heightScale * 0.95, weightFactor * 0.95] as [number, number, number];
+    return [weightFactor * 0.72, heightScale * 0.72, weightFactor * 0.72] as [number, number, number];
   }, [gender, weight, measurements]);
 
   // Derived measurement values

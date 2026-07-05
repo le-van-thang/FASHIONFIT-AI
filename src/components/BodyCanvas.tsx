@@ -2079,18 +2079,18 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   const calfAnchor = rKnee && rAnkle ? { x: (rKnee.x + rAnkle.x) / 2, y: (rKnee.y + rAnkle.y) / 2 } : undefined;
 
                   items.push(
-                    // Left Column
-                    { side: 'left', cardX: 55, cardY: 90, anchor: neckAnchor, text: `Cổ: ${neckVal} cm` },
-                    { side: 'left', cardX: 55, cardY: 180, anchor: lWrist, text: `Dài tay: ${armVal} cm` },
-                    { side: 'left', cardX: 55, cardY: 280, anchor: waistAnchor, text: `Eo: ${waistVal} cm` },
-                    { side: 'left', cardX: 55, cardY: 460, anchor: thighAnchor, text: `Đùi phải: ${thighVal} cm` },
-                    { side: 'left', cardX: 55, cardY: 560, anchor: calfAnchor, text: `Bắp chân: ${calfVal} cm` },
+                    // Left Column (cardX = 90)
+                    { side: 'left', cardX: 90, cardY: 90, anchor: neckAnchor, text: `Cổ: ${neckVal} cm` },
+                    { side: 'left', cardX: 90, cardY: 180, anchor: chestAnchor, text: `Ngực: ${chestVal} cm` },
+                    { side: 'left', cardX: 90, cardY: 280, anchor: waistAnchor, text: `Eo: ${waistVal} cm` },
+                    { side: 'left', cardX: 90, cardY: 460, anchor: thighAnchor, text: `Đùi phải: ${thighVal} cm` },
+                    { side: 'left', cardX: 90, cardY: 560, anchor: calfAnchor, text: `Bắp chân: ${calfVal} cm` },
 
-                    // Right Column
-                    { side: 'right', cardX: 345, cardY: 120, anchor: rShoulder, text: `Vai: ${shoulderVal} cm` },
-                    { side: 'right', cardX: 345, cardY: 220, anchor: chestAnchor, text: `Ngực: ${chestVal} cm` },
-                    { side: 'right', cardX: 345, cardY: 360, anchor: midHip, text: `Mông: ${hipsVal} cm` },
-                    { side: 'right', cardX: 345, cardY: 510, anchor: midHip, text: `Dài chân: ${legVal} cm` }
+                    // Right Column (cardX = 310)
+                    { side: 'right', cardX: 310, cardY: 120, anchor: rShoulder, text: `Vai: ${shoulderVal} cm` },
+                    { side: 'right', cardX: 310, cardY: 220, anchor: lWrist, text: `Dài tay: ${armVal} cm` },
+                    { side: 'right', cardX: 310, cardY: 360, anchor: midHip, text: `Mông: ${hipsVal} cm` },
+                    { side: 'right', cardX: 310, cardY: 510, anchor: midHip, text: `Dài chân: ${legVal} cm` }
                   );
                 } else {
                   // Side view
@@ -2099,11 +2099,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
                   items.push(
                     // Left Column (pointing behind)
-                    { side: 'left', cardX: 55, cardY: 360, anchor: buttockDepth, text: `Sâu mông: ${(measurements.hipDepth || 0).toFixed(1)} cm` },
+                    { side: 'left', cardX: 90, cardY: 360, anchor: buttockDepth, text: `Sâu mông: ${(measurements.hipDepth || 0).toFixed(1)} cm` },
 
                     // Right Column (pointing forward)
-                    { side: 'right', cardX: 345, cardY: 220, anchor: chestDepth, text: `Sâu ngực: ${(measurements.chestDepth || 0).toFixed(1)} cm` },
-                    { side: 'right', cardX: 345, cardY: 290, anchor: waistDepthAnchor, text: `Sâu eo: ${(measurements.waistDepth || 0).toFixed(1)} cm` }
+                    { side: 'right', cardX: 310, cardY: 220, anchor: chestDepth, text: `Sâu ngực: ${(measurements.chestDepth || 0).toFixed(1)} cm` },
+                    { side: 'right', cardX: 310, cardY: 290, anchor: waistDepthAnchor, text: `Sâu eo: ${(measurements.waistDepth || 0).toFixed(1)} cm` }
                   );
                 }
 

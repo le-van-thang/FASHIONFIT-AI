@@ -222,19 +222,19 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   const shoulderPos = useMemo(() => [
     gender === 'female' ? 0.16 : 0.20,
-    gender === 'female' ? 1.28 : 1.48,
+    gender === 'female' ? 1.25 : 1.45,
     0
   ] as [number, number, number], [gender]);
 
   const chestPos = useMemo(() => [
-    gender === 'female' ? 0.15 : 0.17,
-    gender === 'female' ? 1.20 : 1.32,
+    gender === 'female' ? -0.15 : -0.17,
+    gender === 'female' ? 1.20 : 1.40,
     0
   ] as [number, number, number], [gender]);
 
   const armPos = useMemo(() => [
     gender === 'female' ? 0.65 : 0.76,
-    gender === 'female' ? 1.28 : 1.48,
+    gender === 'female' ? 1.15 : 1.35,
     0
   ] as [number, number, number], [gender]);
 
@@ -246,7 +246,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   const hipsPos = useMemo(() => [
     gender === 'female' ? 0.16 : 0.17,
-    gender === 'female' ? 0.82 : 0.95,
+    gender === 'female' ? 0.82 : 0.97,
     0
   ] as [number, number, number], [gender]);
 
@@ -258,13 +258,13 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   const calfPos = useMemo(() => [
     gender === 'female' ? -0.08 : -0.09,
-    gender === 'female' ? 0.35 : 0.45,
+    gender === 'female' ? 0.32 : 0.42,
     0
   ] as [number, number, number], [gender]);
 
   const legPos = useMemo(() => [
     gender === 'female' ? 0.08 : 0.09,
-    gender === 'female' ? 0.50 : 0.62,
+    gender === 'female' ? 0.50 : 0.60,
     0
   ] as [number, number, number], [gender]);
 
@@ -323,7 +323,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         {/* 9 Staggered HUD HTML Cards to prevent overlapping */}
         {measurements && showLabels && (
           <>
-            {/* 1. Cổ (Neck) - Left side, width: 48px */}
+            {/* 1. Cổ (Neck) - Left side, width: 20px */}
             <Html position={neckPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
@@ -345,7 +345,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                   Cổ: <span style={{ color: '#fff' }}>{neckVal} cm</span>
                 </div>
                 <div style={{
-                  width: '48px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -365,8 +365,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* 2. Dài tay (Arm Length) - Left side, width: 40px */}
-            <Html position={armPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
+            {/* 2. Ngực (Chest) - Left side, width: 20px */}
+            <Html position={chestPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -384,10 +384,10 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                   fontWeight: 700,
                   boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
                 }}>
-                  Dài tay: <span style={{ color: '#fff' }}>{armVal} cm</span>
+                  Ngực: <span style={{ color: '#fff' }}>{chestVal} cm</span>
                 </div>
                 <div style={{
-                  width: '40px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -407,7 +407,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* 3. Eo (Waist) - Left side, width: 60px */}
+            {/* 3. Eo (Waist) - Left side, width: 20px */}
             <Html position={waistPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
@@ -429,7 +429,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                   Eo: <span style={{ color: '#fff' }}>{waistVal} cm</span>
                 </div>
                 <div style={{
-                  width: '60px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -449,7 +449,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* 4. Đùi phải (Right Thigh) - Left side, width: 48px */}
+            {/* 4. Đùi phải (Right Thigh) - Left side, width: 20px */}
             <Html position={thighPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
@@ -471,7 +471,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                   Đùi phải: <span style={{ color: '#fff' }}>{thighVal} cm</span>
                 </div>
                 <div style={{
-                  width: '48px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -491,7 +491,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* 5. Bắp chân (Right Calf) - Left side, width: 56px */}
+            {/* 5. Bắp chân (Right Calf) - Left side, width: 20px */}
             <Html position={calfPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
@@ -513,7 +513,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                   Bắp chân: <span style={{ color: '#fff' }}>{calfVal} cm</span>
                 </div>
                 <div style={{
-                  width: '56px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -533,7 +533,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* 6. Vai (Shoulder Width) - Right side, width: 56px */}
+            {/* 6. Vai (Shoulder Width) - Right side, width: 20px */}
             <Html position={shoulderPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
@@ -542,7 +542,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
                 <div style={{
-                  width: '56px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -575,8 +575,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* 7. Ngực (Chest) - Right side, width: 64px */}
-            <Html position={chestPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
+            {/* 7. Dài tay (Arm Length) - Right side, width: 20px */}
+            <Html position={armPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -584,7 +584,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
                 <div style={{
-                  width: '64px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -612,12 +612,12 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                   fontWeight: 700,
                   boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
                 }}>
-                  Ngực: <span style={{ color: '#fff' }}>{chestVal} cm</span>
+                  Dài tay: <span style={{ color: '#fff' }}>{armVal} cm</span>
                 </div>
               </div>
             </Html>
 
-            {/* 8. Mông (Hips) - Right side, width: 60px */}
+            {/* 8. Mông (Hips) - Right side, width: 20px */}
             <Html position={hipsPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
@@ -626,7 +626,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
                 <div style={{
-                  width: '60px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',
@@ -659,7 +659,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
               </div>
             </Html>
 
-            {/* 9. Dài chân (Leg Length) - Right side, width: 56px */}
+            {/* 9. Dài chân (Leg Length) - Right side, width: 20px */}
             <Html position={legPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
               <div style={{
                 display: 'flex',
@@ -668,7 +668,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
                 fontFamily: 'system-ui, -apple-system, sans-serif'
               }}>
                 <div style={{
-                  width: '56px',
+                  width: '20px',
                   height: '1px',
                   background: 'rgba(0, 245, 255, 0.65)',
                   position: 'relative',

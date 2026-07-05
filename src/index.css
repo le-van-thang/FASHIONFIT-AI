@@ -3120,9 +3120,9 @@ body {
 
 @media (min-width: 1100px) {
   .canvas-main-horizontal-layout {
-    margin-left: -70px;
-    margin-right: -70px;
-    width: calc(100% + 140px);
+    margin-left: -45px;
+    margin-right: -45px;
+    width: calc(100% + 90px);
     flex-wrap: nowrap !important;
   }
 }

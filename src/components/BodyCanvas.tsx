@@ -1792,7 +1792,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       {/* Left Side Panel: 3D Live Preview or WebGL Status */}
       {!isMaximized && (
         <div className="canvas-side-panel left-panel" style={{
-          width: '150px',
+          width: '130px',
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',
@@ -1841,7 +1841,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   landmarks={landmarks}
                   rotationAngle={rotationAngle}
                   meshStyle={meshStyle}
-                  width={150}
+                  width={130}
                   height={200}
                   scanRange={scanRange}
                   measurements={measurements}
@@ -3188,7 +3188,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       {/* Right Side Panel: Diagnostics */}
       {!isMaximized && (
         <div className="canvas-side-panel right-panel" style={{
-          width: '150px',
+          width: '130px',
           flexShrink: 0,
           display: 'flex',
           flexDirection: 'column',

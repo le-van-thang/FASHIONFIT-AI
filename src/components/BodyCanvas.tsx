@@ -88,6 +88,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputVideoRef = useRef<HTMLInputElement | null>(null);
   const [activePointId, setActivePointId] = useState<string | null>(null);
+  const [hoveredPointId, setHoveredPointId] = useState<string | null>(null);
   const [showImageGuidance, setShowImageGuidance] = useState<boolean>(true);
   
   // 3D rotation angle in degrees
@@ -1391,7 +1392,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
 
   const hasMediaBackground = 
-    (inputSource === 'image' && !!uploadedImage) || 
+    (inputSource === 'image') || 
     (inputSource === 'webcam' && isWebcamActive) || 
     (inputSource === 'video' && !!uploadedVideo);
 
@@ -1896,16 +1897,19 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          {inputSource === 'image' && uploadedImage && (
+          {inputSource === 'image' && (
             <img
-              src={uploadedImage}
+              src={uploadedImage || (
+                gender === 'male'
+                  ? (view === 'front' ? '/sample_mannequin_male_front.png' : '/sample_mannequin_male_side.png')
+                  : (view === 'front' ? '/sample_mannequin_female_front.png' : '/sample_mannequin_female_side.png')
+              )}
               className="background-media uploaded-image-view"
               alt="Uploaded mannequin source"
             />
           )}
 
           {(inputSource === 'mannequin' ||
-            (inputSource === 'image' && !uploadedImage) ||
             (inputSource === 'video' && !uploadedVideo)) && (
             <Mannequin3DView
               gender={gender}
@@ -1980,16 +1984,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
               {/* Render interactive landmarks */}
               {hasMediaBackground && landmarks.map((point) => {
-                // Smart layout text offsets to prevent overlapping labels
-                const getTextOffset = (id: string) => {
-                  if (id.includes('left')) return { dx: -12, dy: 4, anchor: 'end' as const };
-                  if (id.includes('right')) return { dx: 12, dy: 4, anchor: 'start' as const };
-                  if (id === 'nasion') return { dx: 0, dy: -12, anchor: 'middle' as const };
-                  if (id === 'chest_depth') return { dx: 12, dy: 4, anchor: 'start' as const };
-                  if (id === 'buttock_depth') return { dx: -12, dy: 4, anchor: 'end' as const };
-                  return { dx: 12, dy: 4, anchor: 'start' as const };
-                };
-                const offset = getTextOffset(point.id);
+
                 const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
                 if (isLowerJoint && scanRange === 'half') {
                   return null;
@@ -2019,16 +2014,39 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                         e.stopPropagation();
                         handleMouseDown(point.id);
                       }}
+                      onMouseEnter={() => setHoveredPointId(point.id)}
+                      onMouseLeave={() => setHoveredPointId(null)}
                       className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
                     />
-                    <text
-                      x={point.x + offset.dx}
-                      y={point.y + offset.dy}
-                      textAnchor={offset.anchor}
-                      className="landmark-text"
-                    >
-                      {point.label}
-                    </text>
+                    
+                    {/* Premium glassmorphic neon tooltip badge on hover/drag */}
+                    {(hoveredPointId === point.id || activePointId === point.id) && (
+                      <g transform={`translate(${point.x}, ${point.y - 18})`} style={{ pointerEvents: 'none' }}>
+                        {/* Shadow/Glow Rect */}
+                        <rect
+                          x={-60}
+                          y={-9}
+                          width={120}
+                          height={18}
+                          rx={4}
+                          fill="rgba(9, 13, 22, 0.94)"
+                          stroke="#00f5ff"
+                          strokeWidth="1.2"
+                          style={{ filter: 'drop-shadow(0 0 8px rgba(0, 245, 255, 0.6))' }}
+                        />
+                        <text
+                          x={0}
+                          y={0}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize="9px"
+                          fontWeight="bold"
+                          fill="#ffffff"
+                        >
+                          {point.label}
+                        </text>
+                      </g>
+                    )}
                   </g>
                 );
               })}
@@ -2050,15 +2068,15 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 const buttockDepth = landmarks.find(l => l.id === 'buttock_depth');
 
                 // Derived measurement values
-                const neckVal = (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1);
+                const neckVal = measurements.neckCircumference.toFixed(1);
                 const shoulderVal = measurements.shoulderWidth.toFixed(1);
                 const chestVal = measurements.chestCircumference.toFixed(1);
                 const waistVal = measurements.waistCircumference.toFixed(1);
                 const hipsVal = measurements.hipCircumference.toFixed(1);
                 const armVal = measurements.armLength.toFixed(1);
                 const legVal = measurements.legLength.toFixed(1);
-                const thighVal = (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1);
-                const calfVal = (measurements.hipCircumference * 0.38).toFixed(1);
+                const thighVal = measurements.thighCircumference.toFixed(1);
+                const calfVal = measurements.calfCircumference.toFixed(1);
 
                 const items: {
                   side: 'left' | 'right';
@@ -2066,7 +2084,35 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   cardY: number;
                   anchor: { x: number; y: number } | undefined;
                   text: string;
+                  isFlipped: boolean;
                 }[] = [];
+
+                const addItem = (side: 'left' | 'right', cardY: number, anchor: { x: number; y: number } | undefined, text: string) => {
+                  if (!anchor) return;
+                  const cardWidth = 80;
+                  const margin = 10;
+                  const gap = 20;
+                  const width = 400;
+
+                  let cardX = 0;
+                  let isFlipped = false;
+
+                  if (side === 'left') {
+                    cardX = anchor.x - gap;
+                    if (cardX < margin + cardWidth) {
+                      cardX = anchor.x + gap;
+                      isFlipped = true;
+                    }
+                  } else {
+                    cardX = anchor.x + gap;
+                    if (cardX + cardWidth > width - margin) {
+                      cardX = anchor.x - gap;
+                      isFlipped = true;
+                    }
+                  }
+
+                  items.push({ side, cardX, cardY, anchor, text, isFlipped });
+                };
 
                 if (view === 'front') {
                   // Midpoints
@@ -2078,39 +2124,31 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   const thighAnchor = rHip && rKnee ? { x: (rHip.x + rKnee.x) / 2, y: (rHip.y + rKnee.y) / 2 } : undefined;
                   const calfAnchor = rKnee && rAnkle ? { x: (rKnee.x + rAnkle.x) / 2, y: (rKnee.y + rAnkle.y) / 2 } : undefined;
 
-                  items.push(
-                    // Left Column (cardX = 90)
-                    { side: 'left', cardX: 90, cardY: 90, anchor: neckAnchor, text: `Cổ: ${neckVal} cm` },
-                    { side: 'left', cardX: 90, cardY: 180, anchor: chestAnchor, text: `Ngực: ${chestVal} cm` },
-                    { side: 'left', cardX: 90, cardY: 280, anchor: waistAnchor, text: `Eo: ${waistVal} cm` },
-                    { side: 'left', cardX: 90, cardY: 460, anchor: thighAnchor, text: `Đùi phải: ${thighVal} cm` },
-                    { side: 'left', cardX: 90, cardY: 560, anchor: calfAnchor, text: `Bắp chân: ${calfVal} cm` },
+                  addItem('left', 90, neckAnchor, `Cổ: ${neckVal} cm`);
+                  addItem('left', 180, chestAnchor, `Ngực: ${chestVal} cm`);
+                  addItem('left', 280, waistAnchor, `Eo: ${waistVal} cm`);
+                  addItem('left', 460, thighAnchor, `Đùi phải: ${thighVal} cm`);
+                  addItem('left', 560, calfAnchor, `Bắp chân: ${calfVal} cm`);
 
-                    // Right Column (cardX = 310)
-                    { side: 'right', cardX: 310, cardY: 120, anchor: rShoulder, text: `Vai: ${shoulderVal} cm` },
-                    { side: 'right', cardX: 310, cardY: 220, anchor: lWrist, text: `Dài tay: ${armVal} cm` },
-                    { side: 'right', cardX: 310, cardY: 360, anchor: midHip, text: `Mông: ${hipsVal} cm` },
-                    { side: 'right', cardX: 310, cardY: 510, anchor: midHip, text: `Dài chân: ${legVal} cm` }
-                  );
+                  addItem('right', 120, rShoulder, `Vai: ${shoulderVal} cm`);
+                  addItem('right', 220, lWrist, `Dài tay: ${armVal} cm`);
+                  addItem('right', 360, midHip, `Mông: ${hipsVal} cm`);
+                  addItem('right', 510, midHip, `Dài chân: ${legVal} cm`);
                 } else {
                   // Side view
                   const waistDepthY = shoulder && hip ? shoulder.y + (hip.y - shoulder.y) * 0.75 : undefined;
                   const waistDepthAnchor = hip && waistDepthY ? { x: hip.x, y: waistDepthY } : undefined;
 
-                  items.push(
-                    // Left Column (pointing behind)
-                    { side: 'left', cardX: 90, cardY: 360, anchor: buttockDepth, text: `Sâu mông: ${(measurements.hipDepth || 0).toFixed(1)} cm` },
-
-                    // Right Column (pointing forward)
-                    { side: 'right', cardX: 310, cardY: 220, anchor: chestDepth, text: `Sâu ngực: ${(measurements.chestDepth || 0).toFixed(1)} cm` },
-                    { side: 'right', cardX: 310, cardY: 290, anchor: waistDepthAnchor, text: `Sâu eo: ${(measurements.waistDepth || 0).toFixed(1)} cm` }
-                  );
+                  addItem('left', 360, buttockDepth, `Sâu mông: ${(measurements.hipDepth || 0).toFixed(1)} cm`);
+                  addItem('right', 220, chestDepth, `Sâu ngực: ${(measurements.chestDepth || 0).toFixed(1)} cm`);
+                  addItem('right', 290, waistDepthAnchor, `Sâu eo: ${(measurements.waistDepth || 0).toFixed(1)} cm`);
                 }
 
                 return items.map((item, idx) => {
                   if (!item.anchor) return null;
                   const anchorDx = item.anchor.x - item.cardX;
                   const anchorDy = item.anchor.y - item.cardY;
+                  const boxOnLeft = (item.side === 'left' && !item.isFlipped) || (item.side === 'right' && item.isFlipped);
 
                   return (
                     <g key={`lbl2d-${idx}`} transform={`translate(${item.cardX}, ${item.cardY})`} style={{ pointerEvents: 'none' }}>
@@ -2141,7 +2179,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       {/* Card Label */}
                       <g>
                         <rect
-                          x={item.side === 'left' ? -80 : 0}
+                          x={boxOnLeft ? -80 : 0}
                           y={-9}
                           width={80}
                           height={18}
@@ -2152,7 +2190,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                           style={{ filter: 'drop-shadow(0 0 6px rgba(0, 245, 255, 0.15))' }}
                         />
                         <text
-                          x={item.side === 'left' ? -40 : 40}
+                          x={boxOnLeft ? -40 : 40}
                           y={0}
                           textAnchor="middle"
                           dominantBaseline="central"

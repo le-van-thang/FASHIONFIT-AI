@@ -278,6 +278,31 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
   const thighVal = measurements?.hipCircumference ? (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) : '55.0';
   const calfVal = measurements?.hipCircumference ? (measurements.hipCircumference * 0.38).toFixed(1) : '36.0';
+  // Side view positions
+  const chestDepthPos = useMemo(() => [
+    gender === 'female' ? 0.14 : 0.16,
+    gender === 'female' ? 1.20 : 1.40,
+    0
+  ] as [number, number, number], [gender]);
+
+  const waistDepthPos = useMemo(() => [
+    gender === 'female' ? 0.10 : 0.12,
+    gender === 'female' ? 1.00 : 1.18,
+    0
+  ] as [number, number, number], [gender]);
+
+  const hipsDepthPos = useMemo(() => [
+    gender === 'female' ? -0.16 : -0.17,
+    gender === 'female' ? 0.82 : 0.97,
+    0
+  ] as [number, number, number], [gender]);
+
+  // Derived side depth values
+  const chestDepthVal = measurements?.chestDepth ? measurements.chestDepth.toFixed(1) : '24.0';
+  const waistDepthVal = measurements?.waistDepth ? measurements.waistDepth.toFixed(1) : '20.0';
+  const hipsDepthVal = measurements?.hipDepth ? measurements.hipDepth.toFixed(1) : '28.0';
+
+  const isSideView = Math.abs((rotationAngle || 0) - 90) < 45;
 
   // Apply default rotation to primitive scene contents
   useEffect(() => {
@@ -322,385 +347,517 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
         {/* 9 Staggered HUD HTML Cards to prevent overlapping */}
         {measurements && showLabels && (
-          <>
-            {/* 1. Cổ (Neck) - Left side, width: 20px */}
-            <Html position={neckPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+          isSideView ? (
+            <>
+              {/* --- Side View Depth Cards (3 Cards) --- */}
+              {/* 1. Sâu mông (Hip Depth) - Left side, width: 20px */}
+              <Html position={hipsDepthPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Cổ: <span style={{ color: '#fff' }}>{neckVal} cm</span>
-                </div>
-                <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(-100%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Sâu mông: <span style={{ color: '#fff' }}>{hipsDepthVal} cm</span>
+                  </div>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      right: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
                 </div>
-              </div>
-            </Html>
+              </Html>
 
-            {/* 2. Ngực (Chest) - Left side, width: 20px */}
-            <Html position={chestPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 2. Sâu ngực (Chest Depth) - Right side, width: 20px */}
+              <Html position={chestDepthPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Ngực: <span style={{ color: '#fff' }}>{chestVal} cm</span>
-                </div>
-                <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(0%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      left: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
+                  <div style={{
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Sâu ngực: <span style={{ color: '#fff' }}>{chestDepthVal} cm</span>
+                  </div>
                 </div>
-              </div>
-            </Html>
+              </Html>
 
-            {/* 3. Eo (Waist) - Left side, width: 20px */}
-            <Html position={waistPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 3. Sâu eo (Waist Depth) - Right side, width: 20px */}
+              <Html position={waistDepthPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Eo: <span style={{ color: '#fff' }}>{waistVal} cm</span>
-                </div>
-                <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(0%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      left: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
+                  <div style={{
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Sâu eo: <span style={{ color: '#fff' }}>{waistDepthVal} cm</span>
+                  </div>
                 </div>
-              </div>
-            </Html>
+              </Html>
+            </>
+          ) : (
+            <>
+              {/* --- Front View Circumference/Length Cards (9 Cards) --- */}
+              {/* 1. Cổ (Neck) - Left side, width: 20px */}
+              <Html position={neckPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(-100%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                }}>
+                  <div style={{
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Cổ: <span style={{ color: '#fff' }}>{neckVal} cm</span>
+                  </div>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      right: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
+                </div>
+              </Html>
 
-            {/* 4. Đùi phải (Right Thigh) - Left side, width: 20px */}
-            <Html position={thighPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 2. Ngực (Chest) - Left side, width: 20px */}
+              <Html position={chestPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Đùi phải: <span style={{ color: '#fff' }}>{thighVal} cm</span>
-                </div>
-                <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(-100%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Ngực: <span style={{ color: '#fff' }}>{chestVal} cm</span>
+                  </div>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      right: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
                 </div>
-              </div>
-            </Html>
+              </Html>
 
-            {/* 5. Bắp chân (Right Calf) - Left side, width: 20px */}
-            <Html position={calfPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(-100%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 3. Eo (Waist) - Left side, width: 20px */}
+              <Html position={waistPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Bắp chân: <span style={{ color: '#fff' }}>{calfVal} cm</span>
-                </div>
-                <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(-100%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    right: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Eo: <span style={{ color: '#fff' }}>{waistVal} cm</span>
+                  </div>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      right: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
                 </div>
-              </div>
-            </Html>
+              </Html>
 
-            {/* 6. Vai (Shoulder Width) - Right side, width: 20px */}
-            <Html position={shoulderPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(0%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 4. Đùi phải (Right Thigh) - Left side, width: 20px */}
+              <Html position={thighPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(-100%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Đùi phải: <span style={{ color: '#fff' }}>{thighVal} cm</span>
+                  </div>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      right: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
                 </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Vai: <span style={{ color: '#fff' }}>{shoulderVal} cm</span>
-                </div>
-              </div>
-            </Html>
+              </Html>
 
-            {/* 7. Dài tay (Arm Length) - Right side, width: 20px */}
-            <Html position={armPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(0%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 5. Bắp chân (Right Calf) - Left side, width: 20px */}
+              <Html position={calfPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(-100%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Bắp chân: <span style={{ color: '#fff' }}>{calfVal} cm</span>
+                  </div>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      right: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
                 </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Dài tay: <span style={{ color: '#fff' }}>{armVal} cm</span>
-                </div>
-              </div>
-            </Html>
+              </Html>
 
-            {/* 8. Mông (Hips) - Right side, width: 20px */}
-            <Html position={hipsPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(0%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 6. Vai (Shoulder Width) - Right side, width: 20px */}
+              <Html position={shoulderPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(0%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      left: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
+                  <div style={{
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Vai: <span style={{ color: '#fff' }}>{shoulderVal} cm</span>
+                  </div>
                 </div>
-                <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
-                }}>
-                  Mông: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
-                </div>
-              </div>
-            </Html>
+              </Html>
 
-            {/* 9. Dài chân (Leg Length) - Right side, width: 20px */}
-            <Html position={legPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                transform: 'translate(0%, -50%)',
-                fontFamily: 'system-ui, -apple-system, sans-serif'
-              }}>
+              {/* 7. Dài tay (Arm Length) - Positioned on right hand, but translated LEFT into the gap to prevent screen edge overflow! */}
+              <Html position={armPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  width: '20px',
-                  height: '1px',
-                  background: 'rgba(0, 245, 255, 0.65)',
-                  position: 'relative',
-                  flexShrink: 0
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(-100%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
                   <div style={{
-                    width: '4px',
-                    height: '4px',
-                    background: '#00f5ff',
-                    borderRadius: '50%',
-                    position: 'absolute',
-                    left: 0,
-                    top: '-2px',
-                    boxShadow: '0 0 6px #00f5ff'
-                  }} />
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Dài tay: <span style={{ color: '#fff' }}>{armVal} cm</span>
+                  </div>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      right: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
                 </div>
+              </Html>
+
+              {/* 8. Mông (Hips) - Right side, width: 20px */}
+              <Html position={hipsPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
                 <div style={{
-                  background: 'rgba(9, 13, 22, 0.88)',
-                  border: '1px solid rgba(0, 245, 255, 0.45)',
-                  borderRadius: '4px',
-                  padding: '2px 5px',
-                  whiteSpace: 'nowrap',
-                  color: '#00f5ff',
-                  fontSize: '9px',
-                  fontWeight: 700,
-                  boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(0%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
                 }}>
-                  Dài chân: <span style={{ color: '#fff' }}>{legVal} cm</span>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      left: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
+                  <div style={{
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Mông: <span style={{ color: '#fff' }}>{hipsVal} cm</span>
+                  </div>
                 </div>
-              </div>
-            </Html>
-          </>
+              </Html>
+
+              {/* 9. Dài chân (Leg Length) - Right side, width: 20px */}
+              <Html position={legPos} style={{ pointerEvents: 'none' }} zIndexRange={[1, 5]}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  transform: 'translate(0%, -50%)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                }}>
+                  <div style={{
+                    width: '20px',
+                    height: '1px',
+                    background: 'rgba(0, 245, 255, 0.65)',
+                    position: 'relative',
+                    flexShrink: 0
+                  }}>
+                    <div style={{
+                      width: '4px',
+                      height: '4px',
+                      background: '#00f5ff',
+                      borderRadius: '50%',
+                      position: 'absolute',
+                      left: 0,
+                      top: '-2px',
+                      boxShadow: '0 0 6px #00f5ff'
+                    }} />
+                  </div>
+                  <div style={{
+                    background: 'rgba(9, 13, 22, 0.88)',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '4px',
+                    padding: '2px 5px',
+                    whiteSpace: 'nowrap',
+                    color: '#00f5ff',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    boxShadow: '0 0 10px rgba(0, 245, 255, 0.25)'
+                  }}>
+                    Dài chân: <span style={{ color: '#fff' }}>{legVal} cm</span>
+                  </div>
+                </div>
+              </Html>
+            </>
+          )
         )}
       </group>
     </group>

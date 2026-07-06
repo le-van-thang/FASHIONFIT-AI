@@ -17,15 +17,15 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
         { id: 'nasion', name: 'Gốc mũi', x: 200, y: 100, label: 'Gốc Mũi' },
         { id: 'left_shoulder', name: 'Vai trái', x: 142, y: 145, label: 'Vai Trái' },
         { id: 'right_shoulder', name: 'Vai phải', x: 258, y: 145, label: 'Vai Phải' },
-        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 130, y: 238, label: 'Khuỷu Trái' },
-        { id: 'left_wrist', name: 'Cổ tay trái', x: 118, y: 320, label: 'Cổ Trái' },
-        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 270, y: 238, label: 'Khuỷu Phải' },
-        { id: 'right_wrist', name: 'Cổ tay phải', x: 282, y: 320, label: 'Cổ Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 130, y: 238, label: 'Khuỷu Tay Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 118, y: 320, label: 'Cổ Tay Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 270, y: 238, label: 'Khuỷu Tay Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 282, y: 320, label: 'Cổ Tay Phải' },
         { id: 'left_hip', name: 'Hông trái', x: 165, y: 295, label: 'Hông Trái' },
         { id: 'right_hip', name: 'Hông phải', x: 235, y: 295, label: 'Hông Phải' },
-        { id: 'left_knee', name: 'Đầu gối trái', x: 170, y: 395, label: 'Gối Trái' },
+        { id: 'left_knee', name: 'Đầu gối trái', x: 170, y: 395, label: 'Đầu Gối Trái' },
         { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 495, label: 'Cổ Chân Trái' },
-        { id: 'right_knee', name: 'Đầu gối phải', x: 230, y: 395, label: 'Gối Phải' },
+        { id: 'right_knee', name: 'Đầu gối phải', x: 230, y: 395, label: 'Đầu Gối Phải' },
         { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 495, label: 'Cổ Chân Phải' }
       ];
     } else {
@@ -47,15 +47,15 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
         { id: 'nasion', name: 'Gốc mũi', x: 200, y: 110, label: 'Gốc Mũi' },
         { id: 'left_shoulder', name: 'Vai trái', x: 146, y: 152, label: 'Vai Trái' },
         { id: 'right_shoulder', name: 'Vai phải', x: 254, y: 152, label: 'Vai Phải' },
-        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 120, y: 248, label: 'Khuỷu Trái' },
-        { id: 'left_wrist', name: 'Cổ tay trái', x: 98, y: 328, label: 'Cổ Trái' },
-        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 280, y: 248, label: 'Khuỷu Phải' },
-        { id: 'right_wrist', name: 'Cổ tay phải', x: 302, y: 328, label: 'Cổ Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 120, y: 248, label: 'Khuỷu Tay Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 98, y: 328, label: 'Cổ Tay Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 280, y: 248, label: 'Khuỷu Tay Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 302, y: 328, label: 'Cổ Tay Phải' },
         { id: 'left_hip', name: 'Hông trái', x: 168, y: 305, label: 'Hông Trái' },
         { id: 'right_hip', name: 'Hông phải', x: 232, y: 305, label: 'Hông Phải' },
-        { id: 'left_knee', name: 'Đầu gối trái', x: 172, y: 405, label: 'Gối Trái' },
+        { id: 'left_knee', name: 'Đầu gối trái', x: 172, y: 405, label: 'Đầu Gối Trái' },
         { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 505, label: 'Cổ Chân Trái' },
-        { id: 'right_knee', name: 'Đầu gối phải', x: 228, y: 405, label: 'Gối Phải' },
+        { id: 'right_knee', name: 'Đầu gối phải', x: 228, y: 405, label: 'Đầu Gối Phải' },
         { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 505, label: 'Cổ Chân Phải' }
       ];
     } else {
@@ -222,18 +222,18 @@ function App() {
     localStorage.setItem('fashionfit_input_source', inputSource);
   }, [inputSource]);
 
-  // Synchronize gender changes to automatically load the corresponding template coordinates
-  useEffect(() => {
-    const hasFrontUploaded = (view === 'front' && uploadedImageFront);
-    const hasSideUploaded = (view === 'side' && uploadedImageSide);
-    if (!hasFrontUploaded && !hasSideUploaded) {
-      setLandmarksFront(getInitialLandmarks(input.gender, 'front'));
-      setLandmarksSide(getInitialLandmarks(input.gender, 'side'));
-    }
-  }, [input.gender, inputSource]);
-
   const [uploadedImageFront, setUploadedImageFront] = useState<string | null>(null);
   const [uploadedImageSide, setUploadedImageSide] = useState<string | null>(null);
+
+  // Synchronize gender changes to automatically load the corresponding template coordinates
+  useEffect(() => {
+    if (!uploadedImageFront) {
+      setLandmarksFront(getInitialLandmarks(input.gender, 'front'));
+    }
+    if (!uploadedImageSide) {
+      setLandmarksSide(getInitialLandmarks(input.gender, 'side'));
+    }
+  }, [input.gender, inputSource, uploadedImageFront, uploadedImageSide]);
 
   // Supabase history states & saving state
   const [history, setHistory] = useState<MeasurementSession[]>([]);
@@ -502,6 +502,10 @@ function App() {
     const baseWaistDepth = 2 * Math.sqrt(waistArea / (Math.PI * waistRatio));
     const waistDepth = baseWaistDepth * (0.85 + 0.08 * chestDepthFactor + 0.07 * hipDepthFactor) * (input.gender === 'female' ? 0.98 : 1.02);
 
+    const neckCircumference = chestCircumference * (input.gender === 'female' ? 0.38 : 0.41);
+    const thighCircumference = hipCircumference * (input.gender === 'female' ? 0.58 : 0.55);
+    const calfCircumference = hipCircumference * 0.38;
+
     return {
       height,
       shoulderWidth,
@@ -510,6 +514,9 @@ function App() {
       chestCircumference,
       waistCircumference,
       hipCircumference,
+      neckCircumference,
+      thighCircumference,
+      calfCircumference,
       chestDepth: hasSideProfile ? chestDepthCm : expectedChestDepth,
       waistDepth,
       hipDepth: hasSideProfile ? hipDepthCm : expectedHipDepth
@@ -886,6 +893,9 @@ function App() {
                           chestCircumference: sessionA.bust_cm,
                           waistCircumference: sessionA.waist_cm,
                           hipCircumference: sessionA.hip_cm,
+                          neckCircumference: sessionA.bust_cm * (sessionA.gender === 'female' ? 0.38 : 0.41),
+                          thighCircumference: sessionA.hip_cm * (sessionA.gender === 'female' ? 0.58 : 0.55),
+                          calfCircumference: sessionA.hip_cm * 0.38,
                           chestDepth: sessionA.bust_depth_cm,
                           waistDepth: sessionA.waist_depth_cm,
                           hipDepth: sessionA.hip_depth_cm
@@ -918,6 +928,9 @@ function App() {
                           chestCircumference: sessionB.bust_cm,
                           waistCircumference: sessionB.waist_cm,
                           hipCircumference: sessionB.hip_cm,
+                          neckCircumference: sessionB.bust_cm * (sessionB.gender === 'female' ? 0.38 : 0.41),
+                          thighCircumference: sessionB.hip_cm * (sessionB.gender === 'female' ? 0.58 : 0.55),
+                          calfCircumference: sessionB.hip_cm * 0.38,
                           chestDepth: sessionB.bust_depth_cm,
                           waistDepth: sessionB.waist_depth_cm,
                           hipDepth: sessionB.hip_depth_cm

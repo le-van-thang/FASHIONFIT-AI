@@ -2061,6 +2061,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 const rHip = landmarks.find(l => l.id === 'right_hip');
                 const rKnee = landmarks.find(l => l.id === 'right_knee');
                 const rAnkle = landmarks.find(l => l.id === 'right_ankle');
+                const lAnkle = landmarks.find(l => l.id === 'left_ankle');
 
                 const shoulder = landmarks.find(l => l.id === 'shoulder');
                 const hip = landmarks.find(l => l.id === 'hip');
@@ -2077,6 +2078,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 const legVal = measurements.legLength.toFixed(1);
                 const thighVal = measurements.thighCircumference.toFixed(1);
                 const calfVal = measurements.calfCircumference.toFixed(1);
+                const ankleVal = measurements.ankleCircumference.toFixed(1);
 
                 const items: {
                   side: 'left' | 'right';
@@ -2123,6 +2125,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   const waistAnchor = lShoulder && lHip && rHip ? { x: (lHip.x + rHip.x) / 2, y: lShoulder.y + (lHip.y - lShoulder.y) * 0.75 } : undefined;
                   const thighAnchor = rHip && rKnee ? { x: (rHip.x + rKnee.x) / 2, y: (rHip.y + rKnee.y) / 2 } : undefined;
                   const calfAnchor = rKnee && rAnkle ? { x: (rKnee.x + rAnkle.x) / 2, y: (rKnee.y + rAnkle.y) / 2 } : undefined;
+                  const ankleAnchor = lAnkle;
 
                   addItem('left', 90, neckAnchor, `Cổ: ${neckVal} cm`);
                   addItem('left', 180, chestAnchor, `Ngực: ${chestVal} cm`);
@@ -2134,6 +2137,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   addItem('right', 220, lWrist, `Dài tay: ${armVal} cm`);
                   addItem('right', 360, midHip, `Mông: ${hipsVal} cm`);
                   addItem('right', 510, midHip, `Dài chân: ${legVal} cm`);
+                  addItem('right', 600, ankleAnchor, `Cổ chân: ${ankleVal} cm`);
                 } else {
                   // Side view
                   const waistDepthY = shoulder && hip ? shoulder.y + (hip.y - shoulder.y) * 0.75 : undefined;

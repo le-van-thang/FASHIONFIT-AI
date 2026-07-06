@@ -22,6 +22,7 @@ export interface BodyMeasurements {
   neckCircumference: number;  // cm
   thighCircumference: number; // cm
   calfCircumference: number;  // cm
+  ankleCircumference: number; // cm
   chestDepth?: number;        // cm
   waistDepth?: number;        // cm
   hipDepth?: number;          // cm

@@ -24,9 +24,9 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
         { id: 'left_hip', name: 'Hông trái', x: 165, y: 295, label: 'Hông Trái' },
         { id: 'right_hip', name: 'Hông phải', x: 235, y: 295, label: 'Hông Phải' },
         { id: 'left_knee', name: 'Đầu gối trái', x: 170, y: 395, label: 'Đầu Gối Trái' },
-        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 495, label: 'Cổ Chân Trái' },
+        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 580, label: 'Cổ Chân Trái' },
         { id: 'right_knee', name: 'Đầu gối phải', x: 230, y: 395, label: 'Đầu Gối Phải' },
-        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 495, label: 'Cổ Chân Phải' }
+        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 580, label: 'Cổ Chân Phải' }
       ];
     } else {
       return [
@@ -36,7 +36,7 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
         { id: 'wrist', name: 'Cổ tay', x: 185, y: 320, label: 'Cổ Tay' },
         { id: 'hip', name: 'Khớp hông', x: 200, y: 295, label: 'Khớp Hông' },
         { id: 'knee', name: 'Khớp gối', x: 200, y: 395, label: 'Khớp Gối' },
-        { id: 'ankle', name: 'Cổ chân', x: 200, y: 495, label: 'Cổ Chân' },
+        { id: 'ankle', name: 'Cổ chân', x: 200, y: 580, label: 'Cổ Chân' },
         { id: 'chest_depth', name: 'Độ sâu ngực', x: 232, y: 195, label: 'Độ Sâu Ngực' },
         { id: 'buttock_depth', name: 'Độ sâu mông', x: 168, y: 305, label: 'Độ Sâu Mông' }
       ];
@@ -54,9 +54,9 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
         { id: 'left_hip', name: 'Hông trái', x: 168, y: 305, label: 'Hông Trái' },
         { id: 'right_hip', name: 'Hông phải', x: 232, y: 305, label: 'Hông Phải' },
         { id: 'left_knee', name: 'Đầu gối trái', x: 172, y: 405, label: 'Đầu Gối Trái' },
-        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 505, label: 'Cổ Chân Trái' },
+        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 580, label: 'Cổ Chân Trái' },
         { id: 'right_knee', name: 'Đầu gối phải', x: 228, y: 405, label: 'Đầu Gối Phải' },
-        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 505, label: 'Cổ Chân Phải' }
+        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 580, label: 'Cổ Chân Phải' }
       ];
     } else {
       return [
@@ -66,7 +66,7 @@ const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'):
         { id: 'wrist', name: 'Cổ tay', x: 180, y: 328, label: 'Cổ Tay' },
         { id: 'hip', name: 'Khớp hông', x: 200, y: 305, label: 'Khớp Hông' },
         { id: 'knee', name: 'Khớp gối', x: 200, y: 405, label: 'Khớp Gối' },
-        { id: 'ankle', name: 'Cổ chân', x: 200, y: 505, label: 'Cổ Chân' },
+        { id: 'ankle', name: 'Cổ chân', x: 200, y: 580, label: 'Cổ Chân' },
         { id: 'chest_depth', name: 'Độ sâu ngực', x: 232, y: 200, label: 'Độ Sâu Ngực' },
         { id: 'buttock_depth', name: 'Độ sâu mông', x: 168, y: 315, label: 'Độ Sâu Mông' }
       ];
@@ -505,6 +505,7 @@ function App() {
     const neckCircumference = chestCircumference * (input.gender === 'female' ? 0.38 : 0.41);
     const thighCircumference = hipCircumference * (input.gender === 'female' ? 0.58 : 0.55);
     const calfCircumference = hipCircumference * 0.38;
+    const ankleCircumference = hipCircumference * 0.22;
 
     return {
       height,
@@ -517,6 +518,7 @@ function App() {
       neckCircumference,
       thighCircumference,
       calfCircumference,
+      ankleCircumference,
       chestDepth: hasSideProfile ? chestDepthCm : expectedChestDepth,
       waistDepth,
       hipDepth: hasSideProfile ? hipDepthCm : expectedHipDepth
@@ -896,6 +898,7 @@ function App() {
                           neckCircumference: sessionA.bust_cm * (sessionA.gender === 'female' ? 0.38 : 0.41),
                           thighCircumference: sessionA.hip_cm * (sessionA.gender === 'female' ? 0.58 : 0.55),
                           calfCircumference: sessionA.hip_cm * 0.38,
+                          ankleCircumference: sessionA.hip_cm * 0.22,
                           chestDepth: sessionA.bust_depth_cm,
                           waistDepth: sessionA.waist_depth_cm,
                           hipDepth: sessionA.hip_depth_cm
@@ -931,6 +934,7 @@ function App() {
                           neckCircumference: sessionB.bust_cm * (sessionB.gender === 'female' ? 0.38 : 0.41),
                           thighCircumference: sessionB.hip_cm * (sessionB.gender === 'female' ? 0.58 : 0.55),
                           calfCircumference: sessionB.hip_cm * 0.38,
+                          ankleCircumference: sessionB.hip_cm * 0.22,
                           chestDepth: sessionB.bust_depth_cm,
                           waistDepth: sessionB.waist_depth_cm,
                           hipDepth: sessionB.hip_depth_cm

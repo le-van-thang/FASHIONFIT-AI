@@ -36,7 +36,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     { label: 'Chu vi Vòng mông', value: measurements.hipCircumference, unit: 'cm', desc: 'Đo quanh điểm mông lớn nhất', icon: Shirt, fullWidth: false },
     { label: 'Chu vi Vòng cổ', value: measurements.neckCircumference, unit: 'cm', desc: 'Đo quanh vòng cổ tại gốc cổ', icon: Shirt, fullWidth: false },
     { label: 'Chu vi Vòng đùi', value: measurements.thighCircumference, unit: 'cm', desc: 'Đo quanh vòng đùi tại vị trí lớn nhất', icon: Layers, fullWidth: false },
-    { label: 'Chu vi Vòng bắp chân', value: measurements.calfCircumference, unit: 'cm', desc: 'Đo quanh bắp chân tại vị trí lớn nhất', icon: Layers, fullWidth: true }
+    { label: 'Chu vi Vòng bắp chân', value: measurements.calfCircumference, unit: 'cm', desc: 'Đo quanh bắp chân tại vị trí lớn nhất', icon: Layers, fullWidth: false },
+    { label: 'Chu vi Vòng cổ chân', value: measurements.ankleCircumference, unit: 'cm', desc: 'Chu vi cổ chân tại khớp mắt cá', icon: Layers, fullWidth: true }
   ] : [
     { label: 'Chiều cao thực tế', value: `${measurements.height.toFixed(1)} cm (${formatHeightMeters(measurements.height)})`, unit: '', desc: 'Đo từ gốc mũi, triệt tiêu tóc phồng', icon: Ruler, fullWidth: true },
     { label: 'Độ sâu Ngực (Bust Depth)', value: measurements.chestDepth || 0, unit: 'cm', desc: 'Đo khoảng cách ngang từ khớp vai qua đỉnh ngực', icon: Layers, fullWidth: false },

@@ -2091,27 +2091,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
                 const addItem = (side: 'left' | 'right', cardY: number, anchor: { x: number; y: number } | undefined, text: string) => {
                   if (!anchor) return;
-                  const cardWidth = 80;
-                  const margin = 10;
-                  const gap = 20;
-                  const width = 400;
-
-                  let cardX = 0;
-                  let isFlipped = false;
-
-                  if (side === 'left') {
-                    cardX = anchor.x - gap;
-                    if (cardX < margin + cardWidth) {
-                      cardX = anchor.x + gap;
-                      isFlipped = true;
-                    }
-                  } else {
-                    cardX = anchor.x + gap;
-                    if (cardX + cardWidth > width - margin) {
-                      cardX = anchor.x - gap;
-                      isFlipped = true;
-                    }
-                  }
+                  const cardX = side === 'left' ? 90 : 310;
+                  const isFlipped = false;
 
                   items.push({ side, cardX, cardY, anchor, text, isFlipped });
                 };

@@ -1991,7 +1991,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </p>
               <button
                 type="button"
-                onClick={startWebcam}
+                onClick={() => startWebcam()}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -2090,8 +2090,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 className="laser-beam"
               />
 
-              {/* Render connecting bone lines & interactive landmarks when scanned or scanning */}
-              {hasMediaBackground && (inputSource !== 'webcam' || isScanned || isScanning || scanStatus === 'success') && (
+              {/* Render connecting bone lines & interactive landmarks live on media background */}
+              {hasMediaBackground && (
                 <>
                   {getBones()}
                   {landmarks.map((point) => {
@@ -2526,42 +2526,43 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* Countdown timer overlay with ticking animation */}
+          {/* Compact Non-Blocking Countdown Timer Badge (Camera stays 100% UNBLURRED and fully visible) */}
           {countdown !== null && (
             <div style={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(9, 13, 22, 0.65)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
+              top: '14px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'rgba(9, 13, 22, 0.85)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid rgba(0, 245, 255, 0.5)',
+              borderRadius: '30px',
+              padding: '0.4rem 1.1rem',
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              justifyContent: 'center',
+              gap: '0.65rem',
               zIndex: 100,
-              color: '#00f5ff',
-              fontFamily: 'system-ui, sans-serif'
+              boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+              pointerEvents: 'none'
             }}>
               <div style={{
-                width: '80px',
-                height: '80px',
+                width: '32px',
+                height: '32px',
                 borderRadius: '50%',
-                border: '4px solid #00f5ff',
-                boxShadow: '0 0 20px rgba(0, 245, 255, 0.4)',
+                background: 'linear-gradient(135deg, #0055ff, #00f5ff)',
+                boxShadow: '0 0 12px rgba(0, 245, 255, 0.6)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '2.5rem',
+                fontSize: '1.15rem',
                 fontWeight: 800,
-                marginBottom: '0.75rem'
+                color: '#fff'
               }}>
                 {countdown}
               </div>
-              <span style={{ fontSize: '0.75rem', letterSpacing: '1px', textTransform: 'uppercase', color: '#fff', fontWeight: 600 }}>
-                Chuẩn bị đứng thẳng trước camera...
+              <span style={{ fontSize: '0.75rem', letterSpacing: '0.5px', color: '#fff', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                ⏱️ Chuẩn bị đứng thẳng trước camera ({countdown}s)...
               </span>
             </div>
           )}

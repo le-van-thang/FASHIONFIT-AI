@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  # MongoDB Database Service
+  mongodb:
+    image: mongo:latest
+    container_name: fashionfit_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+  # Backend REST API Service
+  backend:
+    build:
+      context: ./server
+    container_name: fashionfit_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGO_URI=mongodb://mongodb:27017/fashionfit_db
+    depends_on:
+      - mongodb
+    restart: always
+
+  # Frontend Web App Service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fashionfit_frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  mongo_data:

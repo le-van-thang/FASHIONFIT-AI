@@ -3186,9 +3186,35 @@ body {
     left: 8px !important;
     right: 8px !important;
   }
-  .camera-success-overlay {
-    padding: 1.2rem 1rem !important;
+/* Printable A4 Spec Sheet Styles for Tailors & PDF Export */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
   }
+  .app-header, .history-drawer-backdrop, .history-drawer, .print-report-btn, .canvas-header, .compact-guide-toggle-btn, .history-toggle-btn, button {
+    display: none !important;
+  }
+  .app-container {
+    padding: 0 !important;
+  }
+  .main-content {
+    display: block !important;
+  }
+  .result-panel-card {
+    border: 2px solid #000000 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    padding: 1.5rem !important;
+  }
+  .measure-card {
+    border: 1px solid #666666 !important;
+    background: #ffffff !important;
+  }
+  .measure-value {
+    color: #000000 !important;
+  }
+}
   .camera-success-overlay h3 {
     font-size: 1rem !important;
   }

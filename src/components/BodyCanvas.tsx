@@ -95,6 +95,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
 
   // Handle countdown ticks and beep audio feedback
   useEffect(() => {
@@ -296,13 +297,15 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     }
   };
 
-  const startWebcam = async () => {
+  const startWebcam = async (overrideMode?: 'user' | 'environment') => {
+    const targetMode = overrideMode || facingMode;
     setIsModelLoading(true);
     try {
       await loadMediaPipeScripts();
+      stopWebcam();
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' }
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: targetMode }
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -355,12 +358,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       setIsWebcamActive(true);
       setIsScanning(false); // Wait for user to click scan button to start countdown
     } catch (err) {
-      console.error(err);
-      alert("Không thể kết nối Camera. Vui lòng kiểm tra quyền truy cập webcam.");
-      onInputSourceChange('mannequin');
+      console.error("Camera error:", err);
+      setIsWebcamActive(false); // Show clean camera permission placeholder overlay with retry button
     } finally {
       setIsModelLoading(false);
     }
+  };
+
+  const toggleFacingMode = () => {
+    const nextMode = facingMode === 'user' ? 'environment' : 'user';
+    setFacingMode(nextMode);
+    startWebcam(nextMode);
   };
 
   const stopWebcam = () => {
@@ -1756,7 +1764,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </div>
             )}
 
-          {/* Maximize Button */}
+          {/* Maximize & Camera Flip Buttons */}
           <div style={{
             position: 'absolute',
             top: '12px',
@@ -1765,6 +1773,41 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             gap: '6px',
             zIndex: 50
           }}>
+            {inputSource === 'webcam' && isWebcamActive && (
+              <button
+                type="button"
+                onClick={toggleFacingMode}
+                title={`Lật camera (Đang dùng: ${facingMode === 'user' ? 'Trước' : 'Sau'})`}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  border: '1px solid rgba(34, 211, 238, 0.45)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: '#22d3ee',
+                  padding: '0.4rem 0.65rem',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
+                  e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.75)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)';
+                  e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.45)';
+                }}
+              >
+                <RefreshCw size={11} />
+                <span>Lật Cam ({facingMode === 'user' ? 'Trước' : 'Sau'})</span>
+              </button>
+            )}
+
             {hasMediaBackground && (
               <button
                 type="button"
@@ -2193,43 +2236,34 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </svg>
           )}
 
-          {/* Floating AI Scanning Controls Overlay */}
-          {inputSource === 'webcam' && isWebcamActive && !isModelLoading && (
-            <div className="ai-controls-overlay">
-              <button
-                type="button"
-                className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
-                onClick={() => {
-                  if (isScanning) {
-                    setIsScanning(false);
-                  } else {
-                    if (scanStatus === 'success') {
-                      setScanProgress(0);
-                      setScanStatus('idle');
-                    }
-                    setCountdown(5);
-                  }
-                }}
-              >
-                {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
-                <span>{isScanning ? 'Tạm Dừng Quét AI' : (scanStatus === 'success' ? 'Quét Lại (Rescan)' : 'Bắt Đầu Quét AI')}</span>
-              </button>
-              <span className={`ai-scanning-badge ${isScanning ? 'active' : ''}`}>
-                {isScanning ? '⚡ AI đang quét khớp xương...' : '⏸️ Đã ghim số đo'}
-              </span>
-            </div>
+          {/* Futuristic Laser Beam animation during active scanning */}
+          {inputSource === 'webcam' && isScanning && (
+            <div className="webcam-scanner-laser-line" />
           )}
 
           {/* Guided Scanning Progress HUD overlay */}
           {scanStatus === 'scanning' && (
             <div className="camera-scanning-hud">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <div className="scanning-pulse-circle"></div>
-                <strong>AI đang khóa khớp xương & phân tích: {scanProgress}%</strong>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.3rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <div className="scanning-pulse-circle"></div>
+                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px' }}>
+                    {view === 'front' ? 'BƯỚC 1/2: QUÉT MẶT TRƯỚC' : 'BƯỚC 2/2: QUÉT MẶT NGHIÊNG'} ({scanProgress}%)
+                  </strong>
+                </div>
+                <span style={{ fontSize: '0.65rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
+                  LIVE AI TRACKING
+                </span>
               </div>
-              <div className="scanning-progress-bar-bg">
-                <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%` }}></div>
+              <div className="scanning-progress-bar-bg" style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%`, height: '100%', background: 'linear-gradient(90deg, #0055ff, #00f5ff)', boxShadow: '0 0 10px #00f5ff' }}></div>
               </div>
+              <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.7rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
+                {scanProgress < 35 && '🔍 AI đang định vị 14 điểm khớp xương (Đầu, Vai, Tay)...'}
+                {scanProgress >= 35 && scanProgress < 70 && '⚡ Đang dựng thể tích & đo chu vi Ngực, Eo, Hông...'}
+                {scanProgress >= 70 && scanProgress < 95 && '📐 Đang tính chiều dài chân, chu vi Đùi, Bắp chân & Cổ chân...'}
+                {scanProgress >= 95 && '✨ Hoàn tất khóa khớp & lưu số đo trắc học!'}
+              </p>
             </div>
           )}
 
@@ -2237,11 +2271,13 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {scanStatus === 'success' && (
             <div className="camera-success-overlay">
               <div className="success-icon">✓</div>
-              <h3>Quét {view === 'front' ? 'Mặt Trước' : 'Mặt Nghiêng'} Thành Công!</h3>
+              <h3>
+                {view === 'front' ? '🎉 BƯỚC 1: QUÉT MẶT TRƯỚC THÀNH CÔNG!' : '🏆 HOÀN THÀNH TOÀN BỘ ĐO ĐẠC HÌNH THỂ 3D!'}
+              </h3>
               <p>
                 {view === 'front' 
-                  ? "Đã ghi nhận số đo mặt trước. Vui lòng quay nghiêng người và bấm nút dưới để quét độ sâu." 
-                  : "Đã hoàn thành toàn bộ đo đạc nhân trắc học cơ thể."
+                  ? "Đã ghi nhận số đo mặt trước. Vui lòng quay nghiêng người 90° để đo độ sâu Ngực - Eo - Mông." 
+                  : "Hệ thống đã phân tích toàn bộ số đo 2D/3D & dựng mô hình nhân trắc học hoàn chỉnh."
                 }
               </p>
               <div className="success-actions">
@@ -2251,9 +2287,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     className="view-change-cta-btn"
                     onClick={() => {
                       onViewChange('side');
+                      setScanProgress(0);
+                      setScanStatus('idle');
+                      setCountdown(3);
                     }}
                   >
-                    👉 Chuyển Sang Mặt Nghiêng
+                    👉 TIẾP TỤC BƯỚC 2: QUÉT MẶT NGHIÊNG
                   </button>
                 ) : (
                   <button
@@ -2273,7 +2312,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       }, 120);
                     }}
                   >
-                    🎉 Xem Báo Cáo Chi Tiết
+                    🎉 XEM MÔ HÌNH 3D & BÁO CÁO CHI TIẾT
                   </button>
                 )}
                 <button
@@ -2291,7 +2330,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* Start Scan Button Overlay (Webcam active, scan idle, not scanning/counting down) */}
+          {/* Unified Center Start Card (Webcam active, scan idle, not scanning/counting down) */}
           {inputSource === 'webcam' && isWebcamActive && scanStatus === 'idle' && !isScanning && countdown === null && (
             <div style={{
               position: 'absolute',
@@ -2299,13 +2338,32 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               left: 0,
               right: 0,
               bottom: 0,
-              background: 'rgba(0, 0, 0, 0.45)',
+              background: 'rgba(9, 13, 22, 0.55)',
+              backdropFilter: 'blur(3px)',
+              WebkitBackdropFilter: 'blur(3px)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 50
+              zIndex: 50,
+              padding: '1.5rem',
+              textAlign: 'center'
             }}>
+              <div style={{
+                background: 'rgba(0, 245, 255, 0.08)',
+                border: '1px solid rgba(0, 245, 255, 0.3)',
+                borderRadius: '30px',
+                padding: '0.35rem 1rem',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                color: '#00f5ff',
+                marginBottom: '1rem',
+                letterSpacing: '1px',
+                textTransform: 'uppercase'
+              }}>
+                {view === 'front' ? '📍 BƯỚC 1/2: QUÉT MẶT TRƯỚC (FRONT POSE)' : '📍 BƯỚC 2/2: QUÉT MẶT NGHIÊNG (SIDE POSE)'}
+              </div>
+
               <button
                 type="button"
                 onClick={() => setCountdown(5)}
@@ -2314,39 +2372,43 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   border: 'none',
                   borderRadius: '50px',
                   color: '#fff',
-                  padding: '0.85rem 1.75rem',
-                  fontSize: '0.92rem',
-                  fontWeight: 700,
+                  padding: '0.9rem 2rem',
+                  fontSize: '0.95rem',
+                  fontWeight: 800,
                   cursor: 'pointer',
-                  boxShadow: '0 0 20px rgba(0, 245, 255, 0.45)',
+                  boxShadow: '0 0 25px rgba(0, 245, 255, 0.5)',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem',
-                  transition: 'all 0.2s ease',
+                  gap: '0.6rem',
+                  transition: 'all 0.25s ease',
                   textTransform: 'uppercase',
                   letterSpacing: '1px'
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 245, 255, 0.65)';
+                  e.currentTarget.style.boxShadow = '0 0 35px rgba(0, 245, 255, 0.75)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 245, 255, 0.45)';
+                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 245, 255, 0.5)';
                 }}
               >
-                ⏱️ Bắt đầu quét AI (5s)
+                ⚡ BẮT ĐẦU QUÉT AI (5S)
               </button>
+
               <p style={{
-                marginTop: '1rem',
-                color: 'rgba(255, 255, 255, 0.85)',
-                fontSize: '0.75rem',
+                marginTop: '1.25rem',
+                color: 'rgba(255, 255, 255, 0.9)',
+                fontSize: '0.78rem',
                 textAlign: 'center',
-                maxWidth: '82%',
-                lineHeight: 1.45,
+                maxWidth: '320px',
+                lineHeight: 1.5,
                 fontFamily: 'system-ui, sans-serif'
               }}>
-                Vui lòng đặt máy cố định, đứng lùi ra xa khoảng 2.2m - 2.5m để camera thu trọn vẹn từ đầu đến chân trước khi đếm ngược kết thúc.
+                {view === 'front' 
+                  ? 'Vui lòng đặt máy cố định, đứng lùi ra xa khoảng 2.2m - 2.5m để camera thu trọn vẹn từ đầu đến chân.'
+                  : 'Đứng xoay người 90° sang mặt nghiêng để AI đo chiều sâu Ngực, Eo và Mông.'
+                }
               </p>
             </div>
           )}

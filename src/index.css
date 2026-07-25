@@ -3150,4 +3150,41 @@ body {
   pointer-events: none;
 }
 
+/* Webcam AI Laser Scanner Line */
+.webcam-scanner-laser-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3.5px;
+  background: linear-gradient(90deg, transparent, #00f5ff, #ffffff, #00f5ff, transparent);
+  box-shadow: 0 0 15px #00f5ff, 0 0 30px #00f5ff;
+  animation: laserSweep 3s infinite ease-in-out;
+  z-index: 35;
+  pointer-events: none;
+}
+
+/* Mobile Responsiveness for Webcam & Scanner UI */
+@media (max-width: 768px) {
+  .canvas-main-horizontal-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+  .camera-scanning-hud {
+    padding: 0.65rem 0.85rem !important;
+    left: 8px !important;
+    right: 8px !important;
+  }
+  .camera-success-overlay {
+    padding: 1.2rem 1rem !important;
+  }
+  .camera-success-overlay h3 {
+    font-size: 1rem !important;
+  }
+  .view-change-cta-btn {
+    padding: 0.75rem 1.1rem !important;
+    font-size: 0.82rem !important;
+  }
+}
+
 

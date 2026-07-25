@@ -96,6 +96,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
+  const [poseWarning, setPoseWarning] = useState<string | null>(null);
 
   // Handle countdown ticks and beep audio feedback
   useEffect(() => {
@@ -190,9 +192,60 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   };
 
   const updateLandmarksFromMediaPipe = (results: any) => {
-    if (!results.poseLandmarks) return;
+    if (!results.poseLandmarks) {
+      if (trackingParamsRef.current.inputSource === 'webcam') {
+        setIsPoseValid(false);
+        setPoseWarning("Không tìm thấy cơ thể trong camera");
+      }
+      return;
+    }
     const mp = results.poseLandmarks;
     const { view, landmarks, onLandmarkChange, inputSource, scanRange } = trackingParamsRef.current;
+
+    // Validate standing posture for webcam
+    if (inputSource === 'webcam') {
+      const nose = mp[0];
+      const lShoulder = mp[11];
+      const rShoulder = mp[12];
+
+      const lShoulderVis = lShoulder?.visibility ?? 0;
+      const rShoulderVis = rShoulder?.visibility ?? 0;
+
+      // 1. Check if upper body / shoulders are visible with confidence
+      if (lShoulderVis < 0.4 && rShoulderVis < 0.4) {
+        setIsPoseValid(false);
+        setPoseWarning("Vui lòng đứng lùi xa khoảng 2.2m để camera thấy rõ vai & toàn thân");
+        return;
+      }
+
+      // 2. Check if user is lying down or tilted horizontally
+      if (lShoulder && rShoulder) {
+        const dx = Math.abs(lShoulder.x - rShoulder.x);
+        const dy = Math.abs(lShoulder.y - rShoulder.y);
+        if (dy > dx * 1.1) {
+          setIsPoseValid(false);
+          setPoseWarning("Phát hiện tư thế nằm! Vui lòng đứng thẳng trước camera");
+          return;
+        }
+      }
+
+      // 3. Check if nose is below shoulder level (lying down facing camera)
+      if (nose && lShoulder && rShoulder) {
+        const avgShoulderY = (lShoulder.y + rShoulder.y) / 2;
+        if (nose.y > avgShoulderY) {
+          setIsPoseValid(false);
+          setPoseWarning("Đang nằm hoặc cúi đầu! Vui lòng đứng thẳng");
+          return;
+        }
+      }
+
+      // Valid standing posture detected
+      setIsPoseValid(true);
+      setPoseWarning(null);
+    } else {
+      setIsPoseValid(true);
+      setPoseWarning(null);
+    }
 
     if (view === 'front') {
       const newLandmarks = landmarks.map(l => {
@@ -214,6 +267,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         }
 
         if (mpIndex !== -1 && mp[mpIndex]) {
+          const jointVis = mp[mpIndex].visibility ?? 1;
+          if (inputSource === 'webcam' && jointVis < 0.35) {
+            return l; // Keep current landmark position without placing random dot in space
+          }
           // Mirrored if webcam
           const normalizedX = inputSource === 'webcam' ? (1 - mp[mpIndex].x) : mp[mpIndex].x;
           const xVal = normalizedX * 400;
@@ -626,6 +683,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     if (isScanning) {
       setScanStatus('scanning');
       interval = setInterval(() => {
+        // Pause scan progress if webcam pose is invalid (e.g. user is lying down or out of frame)
+        if (inputSource === 'webcam' && !isPoseValid) {
+          return;
+        }
+
         setScanProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval!);
@@ -647,7 +709,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isScanning]);
+  }, [isScanning, isPoseValid, inputSource]);
 
   // Reset scan state on view change
   useEffect(() => {
@@ -2236,33 +2298,97 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </svg>
           )}
 
+          {/* Top Camera Status & Pose Validation Bar */}
+          {inputSource === 'webcam' && isWebcamActive && !isModelLoading && (
+            <div style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              right: '125px', // Leave space for camera flip & maximize buttons on right
+              zIndex: 55,
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              {!isPoseValid ? (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.9)',
+                  color: '#fff',
+                  padding: '0.3rem 0.65rem',
+                  borderRadius: '20px',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
+                  backdropFilter: 'blur(6px)',
+                  letterSpacing: '0.3px'
+                }}>
+                  <span>⚠️</span>
+                  <span>{poseWarning || "Chưa phát hiện tư thế đứng chuẩn"}</span>
+                </div>
+              ) : (
+                <div style={{
+                  background: 'rgba(15, 23, 42, 0.75)',
+                  border: '1px solid rgba(34, 211, 238, 0.35)',
+                  color: '#22d3ee',
+                  padding: '0.3rem 0.65rem',
+                  borderRadius: '20px',
+                  fontSize: '0.62rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  backdropFilter: 'blur(6px)'
+                }}>
+                  <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
+                  <span>ĐÃ KHÓA THÂN NGƯỜI (LIVE AI)</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Futuristic Laser Beam animation during active scanning */}
           {inputSource === 'webcam' && isScanning && (
             <div className="webcam-scanner-laser-line" />
           )}
 
-          {/* Guided Scanning Progress HUD overlay */}
+          {/* Compact Non-Blocking Scanning Progress HUD overlay */}
           {scanStatus === 'scanning' && (
-            <div className="camera-scanning-hud">
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.3rem' }}>
+            <div className="camera-scanning-hud" style={{
+              position: 'absolute',
+              top: '46px',
+              left: '12px',
+              right: '12px',
+              background: 'rgba(9, 13, 22, 0.85)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(0, 245, 255, 0.4)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.5rem 0.75rem',
+              zIndex: 50,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                   <div className="scanning-pulse-circle"></div>
-                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px' }}>
+                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px', fontSize: '0.75rem' }}>
                     {view === 'front' ? 'BƯỚC 1/2: QUÉT MẶT TRƯỚC' : 'BƯỚC 2/2: QUÉT MẶT NGHIÊNG'} ({scanProgress}%)
                   </strong>
                 </div>
-                <span style={{ fontSize: '0.65rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.15rem 0.45rem', borderRadius: '10px' }}>
-                  LIVE AI TRACKING
+                <span style={{ fontSize: '0.6rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.1rem 0.4rem', borderRadius: '10px' }}>
+                  {!isPoseValid ? 'PAUSED' : 'SCANNING'}
                 </span>
               </div>
-              <div className="scanning-progress-bar-bg" style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+              <div className="scanning-progress-bar-bg" style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
                 <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%`, height: '100%', background: 'linear-gradient(90deg, #0055ff, #00f5ff)', boxShadow: '0 0 10px #00f5ff' }}></div>
               </div>
-              <p style={{ margin: '0.4rem 0 0 0', fontSize: '0.7rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
-                {scanProgress < 35 && '🔍 AI đang định vị 14 điểm khớp xương (Đầu, Vai, Tay)...'}
-                {scanProgress >= 35 && scanProgress < 70 && '⚡ Đang dựng thể tích & đo chu vi Ngực, Eo, Hông...'}
-                {scanProgress >= 70 && scanProgress < 95 && '📐 Đang tính chiều dài chân, chu vi Đùi, Bắp chân & Cổ chân...'}
-                {scanProgress >= 95 && '✨ Hoàn tất khóa khớp & lưu số đo trắc học!'}
+              <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.68rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
+                {!isPoseValid 
+                  ? '⚠️ Vui lòng đứng thẳng toàn thân trước camera để tiếp tục...'
+                  : (scanProgress < 35 ? '🔍 AI đang định vị 14 điểm khớp xương...' : (scanProgress < 70 ? '⚡ Đang dựng thể tích & đo chu vi Ngực, Eo, Hông...' : '📐 Đang tính chiều dài chân, đùi & cổ chân...'))
+                }
               </p>
             </div>
           )}
@@ -2330,86 +2456,67 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* Unified Center Start Card (Webcam active, scan idle, not scanning/counting down) */}
+          {/* Compact Non-Blocking Bottom Start Controls (Webcam active, scan idle, not scanning/counting down) */}
           {inputSource === 'webcam' && isWebcamActive && scanStatus === 'idle' && !isScanning && countdown === null && (
             <div style={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'rgba(9, 13, 22, 0.55)',
-              backdropFilter: 'blur(3px)',
-              WebkitBackdropFilter: 'blur(3px)',
+              bottom: '12px',
+              left: '12px',
+              right: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 50,
-              padding: '1.5rem',
-              textAlign: 'center'
+              pointerEvents: 'none'
             }}>
               <div style={{
-                background: 'rgba(0, 245, 255, 0.08)',
-                border: '1px solid rgba(0, 245, 255, 0.3)',
+                background: 'rgba(9, 13, 22, 0.82)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '1px solid rgba(0, 245, 255, 0.35)',
                 borderRadius: '30px',
-                padding: '0.35rem 1rem',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                color: '#00f5ff',
-                marginBottom: '1rem',
-                letterSpacing: '1px',
-                textTransform: 'uppercase'
+                padding: '0.4rem 1.25rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                pointerEvents: 'auto'
               }}>
-                {view === 'front' ? '📍 BƯỚC 1/2: QUÉT MẶT TRƯỚC (FRONT POSE)' : '📍 BƯỚC 2/2: QUÉT MẶT NGHIÊNG (SIDE POSE)'}
+                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#00f5ff', letterSpacing: '0.5px' }}>
+                  {view === 'front' ? '📍 BƯỚC 1/2: MẶT TRƯỚC' : '📍 BƯỚC 2/2: MẶT NGHIÊNG'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCountdown(5)}
+                  style={{
+                    background: 'linear-gradient(135deg, #0055ff, #00f5ff)',
+                    border: 'none',
+                    borderRadius: '20px',
+                    color: '#fff',
+                    padding: '0.45rem 1.1rem',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                    boxShadow: '0 0 15px rgba(0, 245, 255, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    transition: 'all 0.2s ease',
+                    textTransform: 'uppercase'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.transform = 'scale(1.04)';
+                    e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 245, 255, 0.65)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 245, 255, 0.4)';
+                  }}
+                >
+                  ⚡ BẮT ĐẦU QUÉT AI (5S)
+                </button>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setCountdown(5)}
-                style={{
-                  background: 'linear-gradient(135deg, #0055ff, #00f5ff)',
-                  border: 'none',
-                  borderRadius: '50px',
-                  color: '#fff',
-                  padding: '0.9rem 2rem',
-                  fontSize: '0.95rem',
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                  boxShadow: '0 0 25px rgba(0, 245, 255, 0.5)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem',
-                  transition: 'all 0.25s ease',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 0 35px rgba(0, 245, 255, 0.75)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 245, 255, 0.5)';
-                }}
-              >
-                ⚡ BẮT ĐẦU QUÉT AI (5S)
-              </button>
-
-              <p style={{
-                marginTop: '1.25rem',
-                color: 'rgba(255, 255, 255, 0.9)',
-                fontSize: '0.78rem',
-                textAlign: 'center',
-                maxWidth: '320px',
-                lineHeight: 1.5,
-                fontFamily: 'system-ui, sans-serif'
-              }}>
-                {view === 'front' 
-                  ? 'Vui lòng đặt máy cố định, đứng lùi ra xa khoảng 2.2m - 2.5m để camera thu trọn vẹn từ đầu đến chân.'
-                  : 'Đứng xoay người 90° sang mặt nghiêng để AI đo chiều sâu Ngực, Eo và Mông.'
-                }
-              </p>
             </div>
           )}
 
@@ -2421,7 +2528,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               left: 0,
               right: 0,
               bottom: 0,
-              background: 'rgba(9, 13, 22, 0.75)',
+              background: 'rgba(9, 13, 22, 0.65)',
               backdropFilter: 'blur(4px)',
               WebkitBackdropFilter: 'blur(4px)',
               display: 'flex',
@@ -2433,28 +2540,28 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               fontFamily: 'system-ui, sans-serif'
             }}>
               <div style={{
-                width: '90px',
-                height: '90px',
+                width: '80px',
+                height: '80px',
                 borderRadius: '50%',
                 border: '4px solid #00f5ff',
                 boxShadow: '0 0 20px rgba(0, 245, 255, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '2.8rem',
+                fontSize: '2.5rem',
                 fontWeight: 800,
-                marginBottom: '1rem'
+                marginBottom: '0.75rem'
               }}>
                 {countdown}
               </div>
-              <span style={{ fontSize: '0.78rem', letterSpacing: '1px', textTransform: 'uppercase', color: '#fff', fontWeight: 600 }}>
-                Chuẩn bị tạo dáng đứng...
+              <span style={{ fontSize: '0.75rem', letterSpacing: '1px', textTransform: 'uppercase', color: '#fff', fontWeight: 600 }}>
+                Chuẩn bị đứng thẳng trước camera...
               </span>
             </div>
           )}
 
-          {/* Floating AI Scanning Guidance Tooltip */}
-          {hasMediaBackground && showImageGuidance && (
+          {/* Floating Image Calibration Guidance Tooltip (ONLY for uploaded image mode) */}
+          {inputSource === 'image' && showImageGuidance && (
             <div style={{
               position: 'absolute',
               bottom: '12px',

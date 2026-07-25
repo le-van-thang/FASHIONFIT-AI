@@ -2798,44 +2798,53 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         ) : (
           <div className="canvas-footer">
             {inputSource === 'webcam' && (
-              <div className="webcam-instruction-card">
-                <div className="instruction-icon">🎯</div>
-                <div className="instruction-body">
-                  <strong>Hướng dẫn căn chỉnh camera:</strong>
-                  {scanRange === 'half' ? (
-                    <p>Di chuyển đứng gần sao cho <strong>Đỉnh đầu</strong> và <strong>Hông</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
-                  ) : (
-                    <p>Di chuyển đứng lùi xa sao cho <strong>Đỉnh đầu</strong> và <strong>Gót chân</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {inputSource === 'webcam' && (
-              <div className="webcam-tilt-guide-card">
+              <div style={{ width: '100%', marginBottom: '0.35rem' }}>
                 <button
                   type="button"
-                  className="tilt-guide-header"
                   onClick={() => setShowTiltTips(!showTiltTips)}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'rgba(37, 99, 235, 0.06)',
+                    border: '1px solid rgba(37, 99, 235, 0.25)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.4rem 0.75rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    color: '#2563eb',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
                 >
-                  <span>💡 Mẹo đặt Camera Laptop & Đứng Đo Chuẩn</span>
-                  <span className="tilt-guide-arrow">{showTiltTips ? '▲' : '▼'}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <span>❓</span> Hướng dẫn & Mẹo căn chỉnh camera
+                  </span>
+                  <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{showTiltTips ? '▲ Thu gọn' : '▼ Mở rộng'}</span>
                 </button>
+
                 {showTiltTips && (
-                  <div className="tilt-guide-content">
-                    <div className="tilt-step">
-                      <strong>1. Độ nghiêng màn hình:</strong> Gập màn hình laptop ở góc khoảng 95°-100° (nghiêng nhẹ ra sau), đặt máy trên bàn cao 70cm - 90cm.
-                    </div>
-                    <div className="tilt-step">
-                      <strong>2. Khoảng cách đứng:</strong>
-                      <ul>
-                        <li><em>Chế độ Toàn thân:</em> Đứng lùi xa 2.2m - 2.5m, đảm bảo thấy rõ cả đầu và gót chân.</li>
-                        <li><em>Chế độ Nửa người:</em> Đứng gần 1.0m - 1.2m (hoặc ngồi thẳng), chỉ cần thấy rõ từ đầu đến hông.</li>
-                      </ul>
-                    </div>
-                    <div className="tilt-step">
-                      <strong>3. Điện thoại di động:</strong> Nếu phòng hẹp hoặc webcam quá mờ, bấm <strong>"Dùng Điện Thoại"</strong> ở góc trái, quét QR để mở camera điện thoại góc rộng tiện lợi hơn rất nhiều!
-                    </div>
+                  <div style={{
+                    marginTop: '0.35rem',
+                    background: '#f8fafc',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.7rem 0.8rem',
+                    fontSize: '0.71rem',
+                    color: '#334155',
+                    lineHeight: 1.5,
+                    boxShadow: 'var(--shadow-sm)'
+                  }}>
+                    <p style={{ margin: '0 0 0.35rem 0' }}>
+                      🎯 <strong>Căn chỉnh thân người:</strong> {scanRange === 'half' ? 'Đứng gần (1m - 1.2m) sao cho Đỉnh đầu và Hông nằm trọn trong camera.' : 'Đứng lùi xa (2.2m - 2.5m) sao cho Đỉnh đầu và Gót chân nằm trọn trong camera.'}
+                    </p>
+                    <p style={{ margin: '0 0 0.35rem 0' }}>
+                      📐 <strong>Góc nghiêng màn hình:</strong> Gập màn hình laptop nhẹ ra sau (góc 95°-100°), đặt máy cao khoảng 70cm - 90cm.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      📱 <strong>Mẹo dùng Điện thoại:</strong> Bấm nút <strong>"Dùng Điện Thoại"</strong> ở góc trái để mở camera điện thoại góc rộng tiện lợi hơn.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2848,7 +2857,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             )}
             <div className="canvas-helper-text">
               <RefreshCw size={12} className="spin-hover" />
-              <span>Kéo thả các chấm đỏ để căn chỉnh chính xác mốc giải phẫu. Vuốt/kéo trên khung để xoay Mannequin 3D.</span>
+              <span>Kéo thả các chấm đỏ để căn chỉnh mốc giải phẫu.</span>
             </div>
           </div>
         )}

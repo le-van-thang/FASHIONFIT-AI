@@ -222,6 +222,33 @@ function App() {
     localStorage.setItem('fashionfit_input_source', inputSource);
   }, [inputSource]);
 
+  const [scannedSources, setScannedSources] = useState<{
+    mannequin: boolean;
+    image: boolean;
+    webcam: boolean;
+    video: boolean;
+  }>({
+    mannequin: true,
+    image: false,
+    webcam: false,
+    video: false,
+  });
+
+  const handleScanComplete = (source: string) => {
+    setScannedSources(prev => ({
+      ...prev,
+      [source]: true
+    }));
+  };
+
+  const handleResetScan = (source?: string) => {
+    const targetSource = source || inputSource;
+    setScannedSources(prev => ({
+      ...prev,
+      [targetSource]: false
+    }));
+  };
+
   const [uploadedImageFront, setUploadedImageFront] = useState<string | null>(null);
   const [uploadedImageSide, setUploadedImageSide] = useState<string | null>(null);
 
@@ -380,6 +407,7 @@ function App() {
         } else {
           setUploadedImageSide(event.target.result as string);
         }
+        setScannedSources(prev => ({ ...prev, image: true }));
       }
       e.target.value = ''; // Reset value to allow re-uploading same file!
     };
@@ -392,6 +420,7 @@ function App() {
     } else {
       setUploadedImageSide(null);
     }
+    setScannedSources(prev => ({ ...prev, image: false }));
   };
 
   const scale = useMemo(() => {
@@ -684,6 +713,9 @@ function App() {
             inputSource={inputSource}
             onInputSourceChange={handleInputSourceChange}
             scanRange={input.scanRange}
+            isScanned={scannedSources[inputSource] ?? true}
+            onScanComplete={handleScanComplete}
+            onResetScan={handleResetScan}
           />
         </div>
 
@@ -698,6 +730,8 @@ function App() {
             syncState={syncState}
             savedAt={savedAt}
             sizeSystem={input.sizeSystem}
+            isScanned={scannedSources[inputSource] ?? true}
+            inputSource={inputSource}
           />
         </div>
       </main>

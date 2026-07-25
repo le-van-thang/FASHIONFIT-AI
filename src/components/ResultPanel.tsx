@@ -12,6 +12,8 @@ interface ResultPanelProps {
   syncState: 'idle' | 'pending' | 'saving' | 'saved' | 'error';
   savedAt: string;
   sizeSystem: 'vietnam' | 'international';
+  isScanned?: boolean;
+  inputSource?: 'mannequin' | 'image' | 'webcam' | 'video';
 }
 
 export const ResultPanel: React.FC<ResultPanelProps> = ({
@@ -23,26 +25,28 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   view,
   syncState,
   savedAt,
-  sizeSystem
+  sizeSystem,
+  isScanned = true,
+  inputSource = 'mannequin'
 }) => {
 
   const measurementItems = view === 'front' ? [
-    { label: 'Chiều cao thực tế', value: `${measurements.height.toFixed(1)} cm (${formatHeightMeters(measurements.height)})`, unit: '', desc: 'Đo từ gốc mũi, triệt tiêu tóc phồng', icon: Ruler, fullWidth: true },
-    { label: 'Rộng vai', value: measurements.shoulderWidth, unit: 'cm', desc: 'Chiều ngang qua các điểm Acromion', icon: MoveHorizontal, fullWidth: false },
-    { label: 'Dài tay', value: measurements.armLength, unit: 'cm', desc: 'Đo từ vai đến xương cổ tay', icon: Scissors, fullWidth: false },
-    { label: 'Dài chân (Inseam)', value: measurements.legLength, unit: 'cm', desc: 'Đo từ hông dọc xuống mắt cá', icon: Layers, fullWidth: false },
-    { label: 'Chu vi Vòng ngực', value: measurements.chestCircumference, unit: 'cm', desc: 'Đo qua điểm ngực lớn nhất', icon: Shirt, fullWidth: false },
-    { label: 'Chu vi Vòng eo', value: measurements.waistCircumference, unit: 'cm', desc: 'Đo quanh điểm eo thắt nhỏ nhất', icon: Shirt, fullWidth: false },
-    { label: 'Chu vi Vòng mông', value: measurements.hipCircumference, unit: 'cm', desc: 'Đo quanh điểm mông lớn nhất', icon: Shirt, fullWidth: false },
-    { label: 'Chu vi Vòng cổ', value: measurements.neckCircumference, unit: 'cm', desc: 'Đo quanh vòng cổ tại gốc cổ', icon: Shirt, fullWidth: false },
-    { label: 'Chu vi Vòng đùi', value: measurements.thighCircumference, unit: 'cm', desc: 'Đo quanh vòng đùi tại vị trí lớn nhất', icon: Layers, fullWidth: false },
-    { label: 'Chu vi Vòng bắp chân', value: measurements.calfCircumference, unit: 'cm', desc: 'Đo quanh bắp chân tại vị trí lớn nhất', icon: Layers, fullWidth: false },
-    { label: 'Chu vi Vòng cổ chân', value: measurements.ankleCircumference, unit: 'cm', desc: 'Chu vi cổ chân tại khớp mắt cá', icon: Layers, fullWidth: true }
+    { label: 'Chiều cao thực tế', value: isScanned ? `${measurements.height.toFixed(1)} cm (${formatHeightMeters(measurements.height)})` : '-- cm', unit: '', desc: 'Đo từ gốc mũi, triệt tiêu tóc phồng', icon: Ruler, fullWidth: true },
+    { label: 'Rộng vai', value: isScanned ? measurements.shoulderWidth.toFixed(1) : '--', unit: 'cm', desc: 'Chiều ngang qua các điểm Acromion', icon: MoveHorizontal, fullWidth: false },
+    { label: 'Dài tay', value: isScanned ? measurements.armLength.toFixed(1) : '--', unit: 'cm', desc: 'Đo từ vai đến xương cổ tay', icon: Scissors, fullWidth: false },
+    { label: 'Dài chân (Inseam)', value: isScanned ? measurements.legLength.toFixed(1) : '--', unit: 'cm', desc: 'Đo từ hông dọc xuống mắt cá', icon: Layers, fullWidth: false },
+    { label: 'Chu vi Vòng ngực', value: isScanned ? measurements.chestCircumference.toFixed(1) : '--', unit: 'cm', desc: 'Đo qua điểm ngực lớn nhất', icon: Shirt, fullWidth: false },
+    { label: 'Chu vi Vòng eo', value: isScanned ? measurements.waistCircumference.toFixed(1) : '--', unit: 'cm', desc: 'Đo quanh điểm eo thắt nhỏ nhất', icon: Shirt, fullWidth: false },
+    { label: 'Chu vi Vòng mông', value: isScanned ? measurements.hipCircumference.toFixed(1) : '--', unit: 'cm', desc: 'Đo quanh điểm mông lớn nhất', icon: Shirt, fullWidth: false },
+    { label: 'Chu vi Vòng cổ', value: isScanned ? measurements.neckCircumference.toFixed(1) : '--', unit: 'cm', desc: 'Đo quanh vòng cổ tại gốc cổ', icon: Shirt, fullWidth: false },
+    { label: 'Chu vi Vòng đùi', value: isScanned ? measurements.thighCircumference.toFixed(1) : '--', unit: 'cm', desc: 'Đo quanh vòng đùi tại vị trí lớn nhất', icon: Layers, fullWidth: false },
+    { label: 'Chu vi Vòng bắp chân', value: isScanned ? measurements.calfCircumference.toFixed(1) : '--', unit: 'cm', desc: 'Đo quanh bắp chân tại vị trí lớn nhất', icon: Layers, fullWidth: false },
+    { label: 'Chu vi Vòng cổ chân', value: isScanned ? measurements.ankleCircumference.toFixed(1) : '--', unit: 'cm', desc: 'Chu vi cổ chân tại khớp mắt cá', icon: Layers, fullWidth: true }
   ] : [
-    { label: 'Chiều cao thực tế', value: `${measurements.height.toFixed(1)} cm (${formatHeightMeters(measurements.height)})`, unit: '', desc: 'Đo từ gốc mũi, triệt tiêu tóc phồng', icon: Ruler, fullWidth: true },
-    { label: 'Độ sâu Ngực (Bust Depth)', value: measurements.chestDepth || 0, unit: 'cm', desc: 'Đo khoảng cách ngang từ khớp vai qua đỉnh ngực', icon: Layers, fullWidth: false },
-    { label: 'Độ sâu Eo (Waist Depth)', value: measurements.waistDepth || 0, unit: 'cm', desc: 'Đo khoảng cách ngang từ cột sống qua bụng', icon: Layers, fullWidth: false },
-    { label: 'Độ sâu Mông (Hips Depth)', value: measurements.hipDepth || 0, unit: 'cm', desc: 'Đo khoảng cách ngang từ khớp hông qua đỉnh mông', icon: Layers, fullWidth: true }
+    { label: 'Chiều cao thực tế', value: isScanned ? `${measurements.height.toFixed(1)} cm (${formatHeightMeters(measurements.height)})` : '-- cm', unit: '', desc: 'Đo từ gốc mũi, triệt tiêu tóc phồng', icon: Ruler, fullWidth: true },
+    { label: 'Độ sâu Ngực (Bust Depth)', value: isScanned ? (measurements.chestDepth || 0).toFixed(1) : '--', unit: 'cm', desc: 'Đo khoảng cách ngang từ khớp vai qua đỉnh ngực', icon: Layers, fullWidth: false },
+    { label: 'Độ sâu Eo (Waist Depth)', value: isScanned ? (measurements.waistDepth || 0).toFixed(1) : '--', unit: 'cm', desc: 'Đo khoảng cách ngang từ cột sống qua bụng', icon: Layers, fullWidth: false },
+    { label: 'Độ sâu Mông (Hips Depth)', value: isScanned ? (measurements.hipDepth || 0).toFixed(1) : '--', unit: 'cm', desc: 'Đo khoảng cách ngang từ khớp hông qua đỉnh mông', icon: Layers, fullWidth: true }
   ];
 
   const getFitLabel = (fit: 'tight' | 'fit' | 'loose') => {
@@ -132,6 +136,30 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         </button>
       </div>
 
+      {!isScanned && (
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.85)',
+          border: '1px solid rgba(234, 179, 8, 0.45)',
+          borderRadius: 'var(--radius-md)',
+          padding: '0.75rem 1rem',
+          marginBottom: '1rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.6rem',
+          color: '#fef08a',
+          fontSize: '0.75rem',
+          lineHeight: 1.45,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+        }}>
+          <AlertCircle size={20} style={{ color: '#eab308', flexShrink: 0 }} />
+          <span>
+            {inputSource === 'webcam' && 'Chưa thực hiện quét Webcam AI. Nhấn "⚡ BẮT ĐẦU QUÉT AI (5S)" trên camera để đo và lấy số đo thực tế của bạn.'}
+            {inputSource === 'image' && 'Chưa tải ảnh mẫu. Vui lòng chọn tệp ảnh để AI tự động trích xuất số đo.'}
+            {inputSource === 'video' && 'Chưa tải video AI. Vui lòng chọn tệp video để AI quét số đo.'}
+          </span>
+        </div>
+      )}
+
       <div className="measurements-grid">
         {measurementItems.map((item, index) => (
           <div key={index} className={`measure-card ${item.fullWidth ? 'full-width' : ''}`}>
@@ -157,8 +185,8 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         <div className="size-header">
           <span className="box-title">Gợi ý cỡ thương mại ({sizeSystem === 'vietnam' ? 'Hệ Việt Nam - Savani' : 'Hệ Quốc Tế - US/EU'})</span>
           <div className="size-badge-wrapper">
-            <span className="size-badge">{recommendation.size}</span>
-            <span className="match-pct">Độ tin cậy: {recommendation.matchPercentage}%</span>
+            <span className="size-badge">{isScanned ? recommendation.size : '--'}</span>
+            <span className="match-pct">Độ tin cậy: {isScanned ? `${recommendation.matchPercentage}%` : '--%'}</span>
           </div>
         </div>
 

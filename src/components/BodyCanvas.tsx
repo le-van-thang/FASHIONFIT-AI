@@ -62,6 +62,9 @@ interface BodyCanvasProps {
   inputSource: 'mannequin' | 'image' | 'webcam' | 'video';
   onInputSourceChange: (source: 'mannequin' | 'image' | 'webcam' | 'video') => void;
   scanRange?: 'full' | 'half';
+  isScanned?: boolean;
+  onScanComplete?: (source: string) => void;
+  onResetScan?: () => void;
 }
 
 export const BodyCanvas: React.FC<BodyCanvasProps> = ({
@@ -82,7 +85,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   recommendation,
   inputSource,
   onInputSourceChange,
-  scanRange = 'full'
+  scanRange = 'full',
+  isScanned = true,
+  onScanComplete,
+  onResetScan
 }) => {
   const containerRef = useRef<SVGSVGElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -694,6 +700,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             setIsScanning(false);
             setScanStatus('success');
             playAudioBeep('double');
+            if (onScanComplete) {
+              onScanComplete(inputSource);
+            }
             return 100;
           }
           return prev + 5; // takes 4 seconds (20 * 200ms)
@@ -1755,27 +1764,50 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               Reset mô hình & camera
             </button>
           ) : (
-            onResetLandmarks && (
-              <button
-                type="button"
-                onClick={onResetLandmarks}
-                title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.25rem',
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                  color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap', flexShrink: 0
-                }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-              >
-                <RefreshCw size={11} />
-                Reset chấm
-              </button>
-            )
+            <>
+              {onResetScan && (
+                <button
+                  type="button"
+                  onClick={onResetScan}
+                  title="Đặt lại số đo của tab hiện tại về trạng thái chưa quét (-- cm)"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                    color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap', flexShrink: 0
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+                >
+                  <RefreshCw size={11} />
+                  Reset số đo
+                </button>
+              )}
+              {onResetLandmarks && (
+                <button
+                  type="button"
+                  onClick={onResetLandmarks}
+                  title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                    background: 'rgba(6, 182, 212, 0.08)',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                    color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap', flexShrink: 0
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
+                >
+                  <RefreshCw size={11} />
+                  Reset chấm
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -2058,106 +2090,80 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 className="laser-beam"
               />
 
-              {/* Render webcam guide silhouette to help user align their body */}
-              {hasMediaBackground && inputSource === 'webcam' && (
-                <g className="webcam-guide-group">
-                  {gender === 'male' ? (
-                    <path
-                      d="M 200 45 C 212 45, 216 70, 216 82 C 216 90, 204 98, 200 98 C 196 98, 184 90, 184 82 C 184 70, 188 45, 200 45 Z
-                         M 200 98 C 205 98, 215 106, 228 116 C 255 136, 266 148, 270 185 C 274 220, 268 255, 262 290 C 258 310, 253 320, 248 335 C 242 355, 242 390, 242 450 C 242 510, 245 560, 240 595 C 238 610, 232 615, 222 615 C 212 615, 208 605, 206 575 C 204 545, 202 480, 200 470 C 198 480, 196 545, 194 575 C 192 605, 188 615, 178 615 C 168 615, 162 610, 160 595 C 155 560, 158 510, 158 450 C 158 390, 158 355, 152 335 C 147 320, 142 310, 138 290 C 132 255, 126 220, 130 185 C 134 148, 145 136, 172 116 C 185 106, 195 98, 200 98 Z"
-                      className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
-                    />
-                  ) : (
-                    <path
-                      d="M 200 48 C 210 48, 214 70, 214 82 C 214 90, 204 96, 200 96 C 196 96, 186 90, 186 82 C 186 70, 190 48, 200 48 Z
-                         M 200 96 C 204 96, 211 104, 222 114 C 245 132, 258 145, 262 178 C 266 210, 256 242, 248 275 C 242 295, 248 312, 250 335 C 252 358, 242 395, 240 450 C 238 505, 241 555, 236 585 C 233 600, 227 605, 220 605 C 212 605, 209 595, 207 565 C 205 535, 202 480, 200 470 C 198 470, 195 535, 193 565 C 191 595, 188 605, 180 605 C 173 605, 167 600, 164 585 C 159 555, 162 505, 160 450 C 158 395, 148 358, 150 335 C 152 312, 158 295, 152 275 C 144 242, 134 210, 138 178 C 142 132, 155 132, 178 114 C 189 104, 196 96, 200 96 Z"
-                      className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
-                    />
-                  )}
-                  {/* Dotted lines pointing to head and ankles/hips */}
-                  <line x1="0" y1="45" x2="400" y2="45" className="webcam-guide-line limit" />
-                  <line x1="0" y1={scanRange === 'half' ? 350 : 615} x2="400" y2={scanRange === 'half' ? 350 : 615} className="webcam-guide-line limit" />
-                  <text x="200" y="35" className="webcam-guide-text">Đỉnh đầu (Align Head)</text>
-                  <text x="200" y={scanRange === 'half' ? 370 : 635} className="webcam-guide-text">{scanRange === 'half' ? 'Hông (Align Hips)' : 'Gót chân (Align Heels)'}</text>
-                </g>
+              {/* Render connecting bone lines & interactive landmarks when scanned or scanning */}
+              {hasMediaBackground && (inputSource !== 'webcam' || isScanned || isScanning || scanStatus === 'success') && (
+                <>
+                  {getBones()}
+                  {landmarks.map((point) => {
+                    const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
+                    if (isLowerJoint && scanRange === 'half') {
+                      return null;
+                    }
+
+                    return (
+                      <g key={point.id} className="landmark-group">
+                        {/* Glowing outer HUD pulse target ring */}
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={activePointId === point.id ? 10 : 8}
+                          className="landmark-pulse"
+                          style={{
+                            fill: 'none',
+                            stroke: activePointId === point.id ? '#22d3ee' : '#0891b2',
+                            strokeWidth: 1.2,
+                            pointerEvents: 'none'
+                          }}
+                        />
+                        <circle
+                          cx={point.x}
+                          cy={point.y}
+                          r={activePointId === point.id ? 6 : 4.5}
+                          onMouseDown={() => handleMouseDown(point.id)}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            handleMouseDown(point.id);
+                          }}
+                          onMouseEnter={() => setHoveredPointId(point.id)}
+                          onMouseLeave={() => setHoveredPointId(null)}
+                          className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
+                        />
+                        
+                        {/* Premium glassmorphic neon tooltip badge on hover/drag */}
+                        {(hoveredPointId === point.id || activePointId === point.id) && (
+                          <g transform={`translate(${point.x}, ${point.y - 18})`} style={{ pointerEvents: 'none' }}>
+                            <rect
+                              x={-60}
+                              y={-9}
+                              width={120}
+                              height={18}
+                              rx={4}
+                              fill="rgba(9, 13, 22, 0.94)"
+                              stroke="#00f5ff"
+                              strokeWidth="1.2"
+                              style={{ filter: 'drop-shadow(0 0 8px rgba(0, 245, 255, 0.6))' }}
+                            />
+                            <text
+                              x={0}
+                              y={0}
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontSize="9px"
+                              fontWeight="bold"
+                              fill="#ffffff"
+                            >
+                              {point.label}
+                            </text>
+                          </g>
+                        )}
+                      </g>
+                    );
+                  })}
+                </>
               )}
 
-
-
-              {/* Render connecting bone lines in 2D calibration editing mode */}
-              {hasMediaBackground && getBones()}
-
-              {/* Render interactive landmarks */}
-              {hasMediaBackground && landmarks.map((point) => {
-
-                const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
-                if (isLowerJoint && scanRange === 'half') {
-                  return null;
-                }
-
-                return (
-                  <g key={point.id} className="landmark-group">
-                    {/* Glowing outer HUD pulse target ring */}
-                    <circle
-                      cx={point.x}
-                      cy={point.y}
-                      r={activePointId === point.id ? 10 : 8}
-                      className="landmark-pulse"
-                      style={{
-                        fill: 'none',
-                        stroke: activePointId === point.id ? '#22d3ee' : '#0891b2',
-                        strokeWidth: 1.2,
-                        pointerEvents: 'none'
-                      }}
-                    />
-                    <circle
-                      cx={point.x}
-                      cy={point.y}
-                      r={activePointId === point.id ? 6 : 4.5}
-                      onMouseDown={() => handleMouseDown(point.id)}
-                      onTouchStart={(e) => {
-                        e.stopPropagation();
-                        handleMouseDown(point.id);
-                      }}
-                      onMouseEnter={() => setHoveredPointId(point.id)}
-                      onMouseLeave={() => setHoveredPointId(null)}
-                      className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
-                    />
-                    
-                    {/* Premium glassmorphic neon tooltip badge on hover/drag */}
-                    {(hoveredPointId === point.id || activePointId === point.id) && (
-                      <g transform={`translate(${point.x}, ${point.y - 18})`} style={{ pointerEvents: 'none' }}>
-                        {/* Shadow/Glow Rect */}
-                        <rect
-                          x={-60}
-                          y={-9}
-                          width={120}
-                          height={18}
-                          rx={4}
-                          fill="rgba(9, 13, 22, 0.94)"
-                          stroke="#00f5ff"
-                          strokeWidth="1.2"
-                          style={{ filter: 'drop-shadow(0 0 8px rgba(0, 245, 255, 0.6))' }}
-                        />
-                        <text
-                          x={0}
-                          y={0}
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          fontSize="9px"
-                          fontWeight="bold"
-                          fill="#ffffff"
-                        >
-                          {point.label}
-                        </text>
-                      </g>
-                    )}
-                  </g>
-                );
-              })}
-
-              {/* Floating Measurements Labels on Photo/Video View */}
-              {measurements && hasMediaBackground && (() => {
+              {/* Floating Measurements Labels on Photo/Video/Webcam View (Only when scanned or scanning) */}
+              {measurements && hasMediaBackground && (inputSource !== 'webcam' || isScanned || scanStatus === 'success') && (() => {
                 const nasion = landmarks.find(l => l.id === 'nasion');
                 const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
                 const rShoulder = landmarks.find(l => l.id === 'right_shoulder');

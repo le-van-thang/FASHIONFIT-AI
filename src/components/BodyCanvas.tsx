@@ -281,9 +281,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           const normalizedX = inputSource === 'webcam' ? (1 - mp[mpIndex].x) : mp[mpIndex].x;
           const xVal = normalizedX * 400;
           const yVal = mp[mpIndex].y * 650;
-          return { ...l, x: Math.round(xVal), y: Math.round(yVal) };
+          return { ...l, x: Math.round(xVal), y: Math.round(yVal), visibility: jointVis };
         }
-        return l;
+        return { ...l, visibility: 0 };
       });
 
       newLandmarks.forEach(l => {
@@ -823,8 +823,13 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     const lines: React.ReactNode[] = [];
     let idx = 0;
 
-    const drawLine = (p1: { x: number; y: number } | undefined, p2: { x: number; y: number } | undefined) => {
+    const drawLine = (p1: (Landmark & { visibility?: number }) | { x: number; y: number; visibility?: number } | undefined, p2: (Landmark & { visibility?: number }) | { x: number; y: number; visibility?: number } | undefined) => {
       if (!p1 || !p2) return;
+      if (inputSource === 'webcam') {
+        const vis1 = p1.visibility ?? 1;
+        const vis2 = p2.visibility ?? 1;
+        if (vis1 < 0.45 || vis2 < 0.45) return;
+      }
       lines.push(
         <line
           key={`bone-${idx++}`}
@@ -2099,6 +2104,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     if (isLowerJoint && scanRange === 'half') {
                       return null;
                     }
+                    const vis = (point as any).visibility ?? 1;
+                    if (inputSource === 'webcam' && vis < 0.45) {
+                      return null; // Do not render joint dot when occluded/outside frame!
+                    }
 
                     return (
                       <g key={point.id} className="landmark-group">
@@ -2337,10 +2346,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 </div>
               ) : (
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.75)',
+                  background: 'rgba(15, 23, 42, 0.8)',
                   border: '1px solid rgba(34, 211, 238, 0.35)',
                   color: '#22d3ee',
-                  padding: '0.3rem 0.65rem',
+                  padding: '0.25rem 0.6rem',
                   borderRadius: '20px',
                   fontSize: '0.62rem',
                   fontWeight: 700,
@@ -2350,7 +2359,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   backdropFilter: 'blur(6px)'
                 }}>
                   <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
-                  <span>ĐÃ KHÓA THÂN NGƯỜI (LIVE AI)</span>
+                  <span>LIVE AI TRACKING</span>
                 </div>
               )}
             </div>
@@ -2863,89 +2872,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         )}
       </div> {/* Closes canvas-container */}
       </div> {/* Closes main canvas card wrapper */}
-
-      {/* Right Side Panel: Diagnostics */}
-      {!isMaximized && (
-        <div className="canvas-side-panel right-panel" style={{
-          width: '130px',
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem',
-          marginTop: '6.5rem' // Align with main viewport box height
-        }}>
-          <div style={{
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-            padding: '0.75rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            height: '240px',
-            fontFamily: 'system-ui, sans-serif'
-          }}>
-            {hasMediaBackground ? (
-              <>
-                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#fbbf24', letterSpacing: '0.5px' }}>
-                  ⚡ CHẨN ĐOÁN AI
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
-                  {view === 'front' ? (
-                    <>
-                      <div>🟢 <strong>Khớp vai:</strong> Cân đối (98%)</div>
-                      <div>🟢 <strong>Vòng ngực:</strong> Ổn định (95%)</div>
-                      <div>🟢 <strong>Vòng eo:</strong> Cân đối (97%)</div>
-                      <div>🟢 <strong>Khớp hông:</strong> Đã khóa (94%)</div>
-                      <div>🟢 <strong>Khớp gối:</strong> Song song (96%)</div>
-                      <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
-                        TỶ LỆ VÀNG: ĐẠT
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div>🟢 <strong>Đỉnh đầu:</strong> Khớp nasion</div>
-                      <div>🟢 <strong>Sâu ngực:</strong> Trực diện tốt</div>
-                      <div>🟢 <strong>Sâu eo:</strong> Điểm lõm tốt</div>
-                      <div>🟢 <strong>Sâu mông:</strong> Điểm lồi tốt</div>
-                      <div>🟢 <strong>Trục dọc:</strong> Thẳng đứng (99%)</div>
-                      <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
-                        ĐỘ SÂU 3D: KHỚP
-                      </div>
-                    </>
-                  )}
-                </div>
-              </>
-            ) : (
-              <>
-                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#10b981', letterSpacing: '0.5px' }}>
-                  🤖 MẪU 3D MẶC ĐỊNH
-                </span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
-                  <div>🧘 <strong>Tư thế:</strong> T-Pose (Chuẩn)</div>
-                  <div>👤 <strong>Giới tính:</strong> {gender === 'male' ? 'Nam giới' : 'Nữ giới'}</div>
-                  <div>⚖️ <strong>Thể trạng:</strong> {weight && measurements?.height ? (
-                    (() => {
-                      const bmi = weight / ((measurements.height / 100) * (measurements.height / 100));
-                      if (bmi < 18.5) return 'Mảnh khảnh';
-                      if (bmi < 24.9) return 'Cân đối';
-                      return 'Tròn trịa';
-                    })()
-                  ) : 'Cân đối'}</div>
-                  <div>🟢 <strong>Mốc đo:</strong> Khởi tạo chuẩn</div>
-                  <div>⚙️ <strong>Vật liệu:</strong> Neon Wireframe</div>
-                  <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '4px', color: '#10b981', textAlign: 'center' }}>
-                    CHƯA CÓ ẢNH ĐO
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       <input
         type="file"

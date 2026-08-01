@@ -4,10 +4,10 @@ import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
-import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
+import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
-import { saveBackendSession, fetchBackendSessions } from './lib/api';
+import { saveBackendSession, fetchBackendSessions, deleteBackendSession } from './lib/api';
 
 // Helper function to get initial landmarks based on gender and view
 const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'): Landmark[] => {
@@ -307,8 +307,35 @@ function App() {
   const isFirstRender = useRef(true);
   const skipSaveRef = useRef(false);
 
-  // Fetch recent sessions from database
+  // Fetch recent sessions from Express MongoDB database with fallback
   const loadHistory = async () => {
+    const backendRes = await fetchBackendSessions();
+    if (!backendRes.error && backendRes.data && backendRes.data.length > 0) {
+      const formattedSessions = backendRes.data.map(item => ({
+        id: item._id || Math.random().toString(),
+        created_at: item.created_at || new Date().toISOString(),
+        gender: item.gender,
+        weight_kg: item.weight_kg,
+        height_cm: item.height_cm,
+        shoulder_width_cm: item.shoulder_width_cm,
+        arm_length_cm: item.arm_length_cm,
+        bust_cm: item.bust_cm,
+        waist_cm: item.waist_cm,
+        hip_cm: item.hip_cm,
+        inseam_cm: item.inseam_cm,
+        bust_depth_cm: item.bust_depth_cm || 0,
+        waist_depth_cm: item.waist_depth_cm || 0,
+        hip_depth_cm: item.hip_depth_cm || 0,
+        recommended_size: item.recommended_size,
+        confidence_pct: item.confidence_pct,
+        calibration_type: item.calibration_type,
+        reference_pixels: item.reference_pixels,
+        landmarks_front: item.landmarks_front,
+        landmarks_side: item.landmarks_side
+      }));
+      setHistory(formattedSessions as any);
+      return;
+    }
     const { data, error } = await fetchRecentSessions();
     if (!error) {
       setHistory(data);
@@ -321,12 +348,14 @@ function App() {
 
   // Delete session from history
   const handleDeleteSession = async (id: string) => {
+    await deleteBackendSession(id);
     const { error } = await deleteSession(id);
     if (!error) {
       loadHistory();
       setDeletingSessionId(null);
     } else {
-      alert("Lỗi khi xóa phiên đo: " + error);
+      loadHistory();
+      setDeletingSessionId(null);
     }
   };
 
@@ -678,7 +707,7 @@ function App() {
           className="history-toggle-btn"
           onClick={() => setIsHistoryOpen(true)}
         >
-          <History size={16} />
+          <HistoryIcon size={16} />
           <span>Lịch Sử Đo ({history.length})</span>
         </button>
       </header>
@@ -743,7 +772,7 @@ function App() {
       <div className={`history-drawer ${isHistoryOpen ? 'open' : ''}`}>
         <div className="drawer-header">
           <div className="drawer-title-group">
-            <History size={18} />
+            <HistoryIcon size={18} />
             <h3>Lịch Sử Phiên Đo</h3>
           </div>
           <button className="drawer-close-btn" onClick={() => setIsHistoryOpen(false)}>

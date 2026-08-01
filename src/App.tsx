@@ -3,6 +3,7 @@ import type { UserInput, Landmark, BodyMeasurements, SizeRecommendation } from '
 import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
+import { Mannequin3DView } from './components/Mannequin3DView';
 import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
 import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';

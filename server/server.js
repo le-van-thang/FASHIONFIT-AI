@@ -33,10 +33,34 @@ const MeasurementSchema = new mongoose.Schema({
 
 const Measurement = mongoose.model('Measurement', MeasurementSchema);
 
-// Connect to MongoDB
+// Connect to MongoDB and seed initial sample if empty
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ Connected to MongoDB database successfully!'))
-  .catch(err => console.error('⚠️ MongoDB Connection Note: Operating in memory/fallback mode:', err.message));
+  .then(async () => {
+    console.log('✅ Connected to MongoDB database successfully!');
+    const count = await Measurement.countDocuments();
+    if (count === 0) {
+      await Measurement.create({
+        gender: 'male',
+        weight_kg: 75,
+        calibration_type: 'height',
+        reference_pixels: 120,
+        height_cm: 180.0,
+        shoulder_width_cm: 45.2,
+        arm_length_cm: 62.5,
+        bust_cm: 98.0,
+        waist_cm: 82.0,
+        hip_cm: 96.0,
+        inseam_cm: 78.0,
+        bust_depth_cm: 21.6,
+        waist_depth_cm: 23.4,
+        hip_depth_cm: 25.2,
+        recommended_size: 'L (Savani Vietnam)',
+        confidence_pct: 95
+      });
+      console.log('📦 Created initial sample document in fashionfit_db database!');
+    }
+  })
+  .catch(err => console.error('⚠️ MongoDB Connection Note:', err.message));
 
 // Health Check API
 app.get('/api/health', (req, res) => {

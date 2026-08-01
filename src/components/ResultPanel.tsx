@@ -170,7 +170,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               </div>
               <div className="measure-value-group">
                 <span className="measure-value">
-                  {typeof item.value === 'number' ? item.value.toFixed(1) : item.value}
+                  {item.value}
                 </span>
                 <span className="measure-unit">{item.unit}</span>
               </div>

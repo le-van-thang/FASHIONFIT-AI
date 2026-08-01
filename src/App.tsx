@@ -5,9 +5,9 @@ import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
 import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
-import { Activity, History, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
+import { saveBackendSession, fetchBackendSessions } from './lib/api';
 
 // Helper function to get initial landmarks based on gender and view
 const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'): Landmark[] => {
@@ -638,6 +638,9 @@ function App() {
 
     debounceRef.current = setTimeout(async () => {
       setSyncState('saving');
+      // Save to MongoDB Express Backend API first
+      await saveBackendSession(savePayload as any);
+      
       const { error } = await saveMeasurementSession(savePayload);
       if (error) {
         setSyncState('error');

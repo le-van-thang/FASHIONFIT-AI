@@ -183,7 +183,10 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
       {/* Sizing recommendation block */}
       <div className="sizing-recommendation-box">
         <div className="size-header">
-          <span className="box-title">Gợi ý cỡ thương mại ({sizeSystem === 'vietnam' ? 'Hệ Việt Nam - Savani' : 'Hệ Quốc Tế - US/EU'})</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+            <span className="box-title">Gợi ý cỡ thương mại ({sizeSystem === 'vietnam' ? 'Hệ Việt Nam - Savani / Routine / Coolmate' : 'Hệ Quốc Tế - US/EU / Zara / Uniqlo'})</span>
+            <span style={{ fontSize: '0.66rem', color: '#64748b' }}>Đã tích hợp bảng size chuẩn các thương hiệu phổ biến</span>
+          </div>
           <div className="size-badge-wrapper">
             <span className="size-badge">{isScanned ? recommendation.size : '--'}</span>
             <span className="match-pct">Độ tin cậy: {isScanned ? `${recommendation.matchPercentage}%` : '--%'}</span>

@@ -104,11 +104,26 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
+  const isPoseValidRef = useRef<boolean>(true);
+
+  const updatePoseState = (valid: boolean, warningMsg: string | null = null) => {
+    isPoseValidRef.current = valid;
+    setIsPoseValid(valid);
+    setPoseWarning(warningMsg);
+  };
 
   // Handle countdown ticks and beep audio feedback
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
+      if (inputSource === 'webcam' && !isPoseValidRef.current) {
+        setCountdown(null);
+        setIsScanning(false);
+        setScanStatus('idle');
+        setScanProgress(0);
+        alert("⚠️ THÔNG BÁO TỪ THỆ THỐNG AI FASHIONFIT:\n\nPhát hiện tư thế KHÔNG HỢP LỆ (Đang nằm hoặc cúi đầu trước camera)!\n\nVui lòng đứng thẳng toàn thân trước camera để AI kích hoạt tính năng quét số đo.");
+        return;
+      }
       setCountdown(null);
       setIsScanning(true);
       playAudioBeep('success'); // High beep to signal scanning start
@@ -219,8 +234,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
       // 1. Check if upper body / shoulders are visible with confidence
       if (lShoulderVis < 0.4 && rShoulderVis < 0.4) {
-        setIsPoseValid(false);
-        setPoseWarning("Vui lòng đứng lùi xa khoảng 2.2m để camera thấy rõ vai & toàn thân");
+        updatePoseState(false, "Vui lòng đứng lùi xa khoảng 2.2m để camera thấy rõ vai & toàn thân");
         return;
       }
 
@@ -229,8 +243,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         const dx = Math.abs(lShoulder.x - rShoulder.x);
         const dy = Math.abs(lShoulder.y - rShoulder.y);
         if (dy > dx * 1.1) {
-          setIsPoseValid(false);
-          setPoseWarning("Phát hiện tư thế nằm! Vui lòng đứng thẳng trước camera");
+          updatePoseState(false, "Phát hiện tư thế nằm! Vui lòng đứng thẳng trước camera");
           return;
         }
       }
@@ -239,18 +252,15 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       if (nose && lShoulder && rShoulder) {
         const avgShoulderY = (lShoulder.y + rShoulder.y) / 2;
         if (nose.y > avgShoulderY) {
-          setIsPoseValid(false);
-          setPoseWarning("Đang nằm hoặc cúi đầu! Vui lòng đứng thẳng");
+          updatePoseState(false, "Đang nằm hoặc cúi đầu! Vui lòng đứng thẳng");
           return;
         }
       }
 
       // Valid standing posture detected
-      setIsPoseValid(true);
-      setPoseWarning(null);
+      updatePoseState(true, null);
     } else {
-      setIsPoseValid(true);
-      setPoseWarning(null);
+      updatePoseState(true, null);
     }
 
     // Helper function for aspect-ratio crop compensation (object-fit: cover)
@@ -720,7 +730,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       setScanStatus('scanning');
       interval = setInterval(() => {
         // Pause scan progress if webcam pose is invalid (e.g. user is lying down or out of frame)
-        if (inputSource === 'webcam' && !isPoseValid) {
+        if (inputSource === 'webcam' && !isPoseValidRef.current) {
           return;
         }
 

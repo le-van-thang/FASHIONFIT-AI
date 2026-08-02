@@ -253,6 +253,41 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       setPoseWarning(null);
     }
 
+    // Helper function for aspect-ratio crop compensation (object-fit: cover)
+    const mapMediaPipePoint = (rawX: number, rawY: number) => {
+      const normX = inputSource === 'webcam' ? (1 - rawX) : rawX;
+      let normY = rawY;
+
+      const vid = videoRef.current;
+      if (inputSource === 'webcam' && vid && vid.videoWidth > 0 && vid.videoHeight > 0) {
+        const videoAspect = vid.videoWidth / vid.videoHeight;
+        const containerAspect = 400 / 650; // Viewport 400x650
+
+        if (videoAspect > containerAspect) {
+          // Video is wider than 400x650 viewport -> Horizontal crop
+          const renderWidthRatio = videoAspect / containerAspect;
+          const correctedX = (normX - 0.5) * renderWidthRatio + 0.5;
+          return {
+            x: Math.round(correctedX * 400),
+            y: Math.round(normY * 650)
+          };
+        } else {
+          // Video is taller than 400x650 viewport -> Vertical crop
+          const renderHeightRatio = containerAspect / videoAspect;
+          const correctedY = (normY - 0.5) * renderHeightRatio + 0.5;
+          return {
+            x: Math.round(normX * 400),
+            y: Math.round(correctedY * 650)
+          };
+        }
+      }
+
+      return {
+        x: Math.round(normX * 400),
+        y: Math.round(normY * 650)
+      };
+    };
+
     if (view === 'front') {
       const newLandmarks = landmarks.map(l => {
         let mpIndex = -1;
@@ -275,20 +310,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         if (mpIndex !== -1 && mp[mpIndex]) {
           const jointVis = mp[mpIndex].visibility ?? 1;
           if (inputSource === 'webcam' && jointVis < 0.35) {
-            return l; // Keep current landmark position without placing random dot in space
+            return l;
           }
-          // Mirrored if webcam
-          const normalizedX = inputSource === 'webcam' ? (1 - mp[mpIndex].x) : mp[mpIndex].x;
-          const xVal = normalizedX * 400;
-          const yVal = mp[mpIndex].y * 650;
-          return { ...l, x: Math.round(xVal), y: Math.round(yVal), visibility: jointVis };
+          const pt = mapMediaPipePoint(mp[mpIndex].x, mp[mpIndex].y);
+          return { ...l, x: pt.x, y: pt.y, visibility: jointVis };
         }
         return { ...l, visibility: 0 };
       });
 
       newLandmarks.forEach(l => {
         if (l.id.includes('knee') || l.id.includes('ankle')) {
-          if (scanRange === 'half') return; // Skip updating lower joints state in half mode
+          if (scanRange === 'half') return;
         }
         onLandmarkChange(l.id, l.x, l.y);
       });
@@ -325,10 +357,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         }
 
         if (mpPt) {
-          const normalizedX = inputSource === 'webcam' ? (1 - mpPt.x) : mpPt.x;
-          const xVal = normalizedX * 400;
-          const yVal = mpPt.y * 650;
-          return { ...l, x: Math.round(xVal), y: Math.round(yVal) };
+          const pt = mapMediaPipePoint(mpPt.x, mpPt.y);
+          return { ...l, x: pt.x, y: pt.y };
         }
         return l;
       });

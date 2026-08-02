@@ -396,11 +396,39 @@ export const InputForm: React.FC<InputFormProps> = ({
                 Nửa người (Half Body)
               </button>
             </div>
-            <p className="field-hint">
-              {input.scanRange === 'half'
-                ? '* Chế độ Nửa Người: Phù hợp khi ngồi gần webcam laptop. AI sẽ tự ước lượng khớp chân và khóa chiều cao để tránh đo sai.'
-                : '* Chế độ Toàn Thân: Yêu cầu đứng lùi xa khoảng 2.2m - 2.5m để camera thu trọn vẹn từ đầu đến chân.'}
-            </p>
+            <div style={{
+              marginTop: '0.45rem',
+              background: 'rgba(15, 23, 42, 0.6)',
+              border: '1px solid rgba(6, 182, 212, 0.25)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.65rem 0.8rem',
+              fontSize: '0.71rem',
+              color: '#cbd5e1',
+              lineHeight: 1.5
+            }}>
+              {input.scanRange === 'half' ? (
+                <>
+                  <p style={{ margin: '0 0 0.35rem 0', color: '#38bdf8', fontWeight: 600 }}>
+                    📏 <strong>Khoảng cách đặt camera:</strong> 1.0m – 1.2m (Khung hình từ Đỉnh đầu tới Hông).
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    💻 <strong>Tư thế:</strong> Phù hợp khi ngồi làm việc trước webcam laptop. AI sẽ ước lượng phần dưới theo tỷ lệ nhân trắc.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p style={{ margin: '0 0 0.35rem 0', color: '#38bdf8', fontWeight: 600 }}>
+                    📏 <strong>Khoảng cách đặt camera:</strong> 2.2m – 2.5m (Khung hình thấy trọn từ Đỉnh đầu tới Gót chân).
+                  </p>
+                  <p style={{ margin: '0 0 0.35rem 0' }}>
+                    📐 <strong>Góc nghiêng máy:</strong> Đặt máy cao 80cm – 90cm, gập màn hình laptop ngửa ra sau 95° – 100°.
+                  </p>
+                  <p style={{ margin: 0, color: '#34d399', fontWeight: 600 }}>
+                    ✨ Khuyên dùng cho xưởng may & đo đạc may đo chính xác nhất.
+                  </p>
+                </>
+              )}
+            </div>
           </div>
         )}
 

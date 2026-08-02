@@ -182,12 +182,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
       {/* Sizing recommendation block */}
       <div className="sizing-recommendation-box">
-        <div className="size-header">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <span className="box-title">Gợi ý cỡ thương mại ({sizeSystem === 'vietnam' ? 'Hệ Việt Nam - Savani / Routine / Coolmate' : 'Hệ Quốc Tế - US/EU / Zara / Uniqlo'})</span>
-            <span style={{ fontSize: '0.66rem', color: '#64748b' }}>Đã tích hợp bảng size chuẩn các thương hiệu phổ biến</span>
+        <div className="size-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: '1 1 220px', minWidth: 0 }}>
+            <span className="box-title" style={{ wordBreak: 'break-word' }}>Gợi ý cỡ ({sizeSystem === 'vietnam' ? 'Việt Nam' : 'Quốc Tế - US/EU'})</span>
+            <span style={{ fontSize: '0.66rem', color: '#64748b' }}>Savani, Routine, Coolmate, Uniqlo, Zara</span>
           </div>
-          <div className="size-badge-wrapper">
+          <div className="size-badge-wrapper" style={{ flexShrink: 0 }}>
             <span className="size-badge">{isScanned ? recommendation.size : '--'}</span>
             <span className="match-pct">Độ tin cậy: {isScanned ? `${recommendation.matchPercentage}%` : '--%'}</span>
           </div>

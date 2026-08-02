@@ -104,6 +104,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
+  const [showSnapshotModal, setShowSnapshotModal] = useState<boolean>(false);
   const isPoseValidRef = useRef<boolean>(true);
 
   const updatePoseState = (valid: boolean, warningMsg: string | null = null) => {
@@ -2503,6 +2504,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 <button
                   type="button"
                   className="rescan-btn"
+                  onClick={() => setShowSnapshotModal(true)}
+                  style={{ background: 'rgba(34, 211, 238, 0.15)', borderColor: '#22d3ee', color: '#22d3ee' }}
+                >
+                  📷 Xem Ảnh Quét AI ({view === 'front' ? 'Mặt Trước' : 'Mặt Nghiêng'})
+                </button>
+                <button
+                  type="button"
+                  className="rescan-btn"
                   onClick={() => {
                     setScanProgress(0);
                     setScanStatus('idle');
@@ -2932,6 +2941,67 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         accept="video/*"
         style={{ display: 'none' }}
       />
+      {/* Snapshot Review Modal */}
+      {showSnapshotModal && (
+        <div 
+          className="calib-modal-overlay" 
+          onClick={() => setShowSnapshotModal(false)}
+          style={{ zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(9, 13, 22, 0.9)' }}
+        >
+          <div 
+            className="calib-modal" 
+            onClick={e => e.stopPropagation()}
+            style={{ maxWidth: '540px', width: '92%', background: '#0f172a', border: '1px solid rgba(0, 245, 255, 0.4)', borderRadius: '16px', padding: '1.25rem' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#00f5ff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                📷 Kiểm Tra Khung Xương AI Đã Quét ({view === 'front' ? 'Mặt Trước' : 'Mặt Nghiêng'})
+              </h3>
+              <button 
+                onClick={() => setShowSnapshotModal(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '400 / 650', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)', background: '#020617' }}>
+              {inputSource === 'image' && uploadedImage && (
+                <img src={uploadedImage} alt="Snapshot review" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+              {inputSource === 'webcam' && (
+                <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#090d16', color: '#38bdf8' }}>
+                  <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.85rem' }}>
+                    ✅ AI đã kiểm tra định vị thành công 14 mốc giải phẫu trên cơ thể bạn!
+                  </p>
+                </div>
+              )}
+              <svg viewBox="0 0 400 650" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                {getBones()}
+                {landmarks.map((point) => (
+                  <g key={`rev-${point.id}`}>
+                    <circle cx={point.x} cy={point.y} r="8" fill="none" stroke="#00f5ff" strokeWidth="1.5" />
+                    <circle cx={point.x} cy={point.y} r="4" fill="#00f5ff" />
+                    <text x={point.x} y={point.y - 12} textAnchor="middle" fontSize="9px" fontWeight="bold" fill="#ffffff">
+                      {point.label}
+                    </text>
+                  </g>
+                ))}
+              </svg>
+            </div>
+
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowSnapshotModal(false)}
+                style={{ background: 'linear-gradient(135deg, #0055ff, #00f5ff)', border: 'none', borderRadius: '20px', color: '#fff', padding: '0.5rem 1.25rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Đóng & Tiếp Tục
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

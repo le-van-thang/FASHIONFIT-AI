@@ -1907,11 +1907,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {/* Maximize & Camera Flip Buttons */}
           <div style={{
             position: 'absolute',
-            top: '12px',
-            right: '12px',
+            top: '8px',
+            right: '8px',
             display: 'flex',
-            gap: '6px',
-            zIndex: 50
+            gap: '4px',
+            zIndex: 60
           }}>
             {inputSource === 'webcam' && isWebcamActive && (
               <button
@@ -1919,32 +1919,33 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 onClick={toggleFacingMode}
                 title={`Lật camera (Đang dùng: ${facingMode === 'user' ? 'Trước' : 'Sau'})`}
                 style={{
-                  background: 'rgba(15, 23, 42, 0.85)',
+                  background: 'rgba(15, 23, 42, 0.88)',
                   border: '1px solid rgba(34, 211, 238, 0.45)',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: '16px',
                   color: '#22d3ee',
-                  padding: '0.4rem 0.65rem',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
+                  gap: '3px',
                   backdropFilter: 'blur(6px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                  transition: 'all 0.15s ease'
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
                   e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.75)';
                 }}
                 onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)';
+                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.88)';
                   e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.45)';
                 }}
               >
                 <RefreshCw size={11} />
-                <span>Lật Cam ({facingMode === 'user' ? 'Trước' : 'Sau'})</span>
+                <span>Lật Cam</span>
               </button>
             )}
 
@@ -1954,20 +1955,21 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 onClick={() => setIsMaximized(!isMaximized)}
                 title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
                 style={{
-                  background: 'rgba(15, 23, 42, 0.85)',
+                  background: 'rgba(15, 23, 42, 0.88)',
                   border: '1px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: 'var(--radius-sm)',
+                  borderRadius: '16px',
                   color: '#fff',
-                  padding: '0.4rem 0.65rem',
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px',
+                  gap: '3px',
                   backdropFilter: 'blur(6px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-                  transition: 'all 0.15s ease'
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';

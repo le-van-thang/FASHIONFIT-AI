@@ -2355,7 +2355,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           )}
 
           {/* Top Camera Status & Pose Validation Bar */}
-          {inputSource === 'webcam' && isWebcamActive && !isModelLoading && (
+          {inputSource === 'webcam' && isWebcamActive && !isModelLoading && scanStatus !== 'scanning' && (
             <div style={{
               position: 'absolute',
               top: '12px',
@@ -2419,15 +2419,15 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {scanStatus === 'scanning' && (
             <div className="camera-scanning-hud" style={{
               position: 'absolute',
-              top: '52px',
+              top: '12px',
               left: '12px',
-              right: '12px',
+              right: '160px',
               background: 'rgba(9, 13, 22, 0.88)',
               backdropFilter: 'blur(8px)',
               border: '1px solid rgba(0, 245, 255, 0.4)',
               borderRadius: 'var(--radius-md)',
               padding: '0.5rem 0.75rem',
-              zIndex: 50,
+              zIndex: 55,
               boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.25rem' }}>

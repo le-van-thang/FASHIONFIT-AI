@@ -476,8 +476,10 @@ function App() {
         return { x: (lAnkle.x + rAnkle.x) / 2, y: (lAnkle.y + rAnkle.y) / 2 };
       })();
 
-      const heightPixels = Math.max(100, anklePt.y - nasionPt.y);
-      return Math.max(0.05, Math.min(1.0, (heightVal - 9.5) / heightPixels));
+      const heightPixels = Math.max(180, anklePt.y - nasionPt.y);
+      const rawScale = (heightVal - 9.5) / heightPixels;
+      // Clamp scale to safe physical limits (0.16 to 0.36 cm/pixel for standard webcams)
+      return Math.max(0.16, Math.min(0.36, rawScale));
     }
     return calculateScaleFactor(referencePixels, input.calibrationType);
   }, [referencePixels, input.calibrationType, input.customHeight, input.scanRange, processedFrontLandmarks, inputSource]);
@@ -510,18 +512,24 @@ function App() {
       ? (input.customHeight || 165)
       : Math.max(50, Math.min(220, heightPixels * scale + 9.5));
 
-    // Shoulder Width (Bi-acromial diameter)
-    const shoulderWidth = dist(lShoulder, rShoulder) * scale;
-
-    // Arm Length
+    // Raw calculated physical lengths in cm
+    const rawShoulderWidth = dist(lShoulder, rShoulder) * scale;
     const leftArm = dist(lShoulder, lElbow) + dist(lElbow, lWrist);
     const rightArm = dist(rShoulder, rElbow) + dist(rElbow, rWrist);
-    const armLength = ((leftArm + rightArm) / 2) * scale;
-
-    // Leg Length (Inseam)
+    const rawArmLength = ((leftArm + rightArm) / 2) * scale;
     const leftLeg = dist(lHip, lKnee) + dist(lKnee, lAnkle);
     const rightLeg = dist(rHip, rKnee) + dist(rKnee, rAnkle);
-    const legLength = ((leftLeg + rightLeg) / 2) * scale;
+    const rawLegLength = ((leftLeg + rightLeg) / 2) * scale;
+
+    // ANATOMICAL SAFETY CLAMPING (Prevents runaway values like 289cm shoulders when sitting close to camera)
+    const expectedShoulder = height * (input.gender === 'male' ? 0.25 : 0.23);
+    const shoulderWidth = Math.max(30.0, Math.min(58.0, isNaN(rawShoulderWidth) || rawShoulderWidth > 65 || rawShoulderWidth < 15 ? expectedShoulder : rawShoulderWidth));
+
+    const expectedArm = height * 0.41;
+    const armLength = Math.max(40.0, Math.min(85.0, isNaN(rawArmLength) || rawArmLength > 90 || rawArmLength < 20 ? expectedArm : rawArmLength));
+
+    const expectedLeg = height * 0.44;
+    const legLength = Math.max(45.0, Math.min(112.0, isNaN(rawLegLength) || rawLegLength > 115 || rawLegLength < 25 ? expectedLeg : rawLegLength));
 
     // 3. Torso circumference estimation using volume constraints
     const baseCircs = estimateCircumferences(input.gender, input.weight, height);

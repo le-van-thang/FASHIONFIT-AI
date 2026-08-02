@@ -105,6 +105,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [videoDeviceCount, setVideoDeviceCount] = useState<number>(1);
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
+  const [cameraErrorMsg, setCameraErrorMsg] = useState<string | null>(null);
   const [showSnapshotModal, setShowSnapshotModal] = useState<boolean>(false);
   const isPoseValidRef = useRef<boolean>(true);
 
@@ -483,10 +484,18 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
 
       setIsWebcamActive(true);
+      setCameraErrorMsg(null);
       setIsScanning(false); // Wait for user to click scan button to start countdown
-    } catch (err) {
+    } catch (err: any) {
       console.error("Camera error:", err);
       setIsWebcamActive(false); // Show clean camera permission placeholder overlay with retry button
+      if (err?.name === 'NotReadableError' || err?.name === 'TrackStartError') {
+        setCameraErrorMsg("⚠️ Camera đang được sử dụng bởi ứng dụng khác (Chrome / Zoom / Zalo). Vui lòng đóng tab Chrome hoặc ứng dụng đang chiếm webcam rồi bấm 'Kích Hoạt Lại'.");
+      } else if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        setCameraErrorMsg("🚫 Quyền Camera bị từ chối trên Microsoft Edge. Bấm vào biểu tượng 🔒 hoặc 📹 trên thanh địa chỉ Edge, chọn 'Allow' (Cho phép) rồi bấm 'Kích Hoạt Lại'.");
+      } else {
+        setCameraErrorMsg("⚠️ Không thể kết nối với Webcam. Vui lòng kiểm tra thiết bị và bấm 'Kích Hoạt Lại'.");
+      }
     } finally {
       setIsModelLoading(false);
     }
@@ -2054,11 +2063,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               }}>
                 <CameraOff size={40} style={{ color: '#60a5fa' }} />
               </div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
-                Webcam AI Chưa Khởi Động
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: cameraErrorMsg ? '#f87171' : '#f8fafc' }}>
+                {cameraErrorMsg ? 'Chưa Thể Mở Camera' : 'Webcam AI Chưa Khởi Động'}
               </h3>
-              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '300px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
-                Bấm nút bên dưới để cấp quyền camera và bắt đầu phân tích hình thể 3D thời gian thực.
+              <p style={{ fontSize: '0.78rem', color: cameraErrorMsg ? '#cbd5e1' : '#94a3b8', maxWidth: '320px', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+                {cameraErrorMsg || 'Bấm nút bên dưới để cấp quyền camera và bắt đầu phân tích hình thể 3D thời gian thực.'}
               </p>
               <button
                 type="button"

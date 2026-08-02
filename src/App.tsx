@@ -93,7 +93,7 @@ function App() {
             calibrationType: ['a4', 'card', 'ipd', 'height'].includes(parsed.calibrationType) ? parsed.calibrationType : 'height',
             customHeight: typeof parsed.customHeight === 'number' ? parsed.customHeight : undefined,
             sizeSystem: parsed.sizeSystem === 'international' ? 'international' : 'vietnam',
-            scanRange: savedSource === 'webcam' ? 'half' : (['full', 'half'].includes(parsed.scanRange) ? parsed.scanRange : 'full')
+            scanRange: ['full', 'half'].includes(parsed.scanRange) ? parsed.scanRange : 'full'
           };
         }
       } catch (e) {

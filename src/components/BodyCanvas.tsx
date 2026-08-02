@@ -2349,7 +2349,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               position: 'absolute',
               top: '12px',
               left: '12px',
-              right: '125px', // Leave space for camera flip & maximize buttons on right
+              right: '160px', // Leave ample space for top right camera control buttons
               zIndex: 55,
               pointerEvents: 'none',
               display: 'flex',
@@ -2358,25 +2358,28 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             }}>
               {!isPoseValid ? (
                 <div style={{
-                  background: 'rgba(239, 68, 68, 0.9)',
+                  background: 'rgba(239, 68, 68, 0.92)',
                   color: '#fff',
                   padding: '0.3rem 0.65rem',
                   borderRadius: '20px',
-                  fontSize: '0.65rem',
+                  fontSize: '0.62rem',
                   fontWeight: 700,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '4px',
                   boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
                   backdropFilter: 'blur(6px)',
-                  letterSpacing: '0.3px'
+                  letterSpacing: '0.3px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}>
                   <span>⚠️</span>
-                  <span>{poseWarning || "Chưa phát hiện tư thế đứng chuẩn"}</span>
+                  <span>{poseWarning || "Hãy đứng thẳng trước camera"}</span>
                 </div>
               ) : (
                 <div style={{
-                  background: 'rgba(15, 23, 42, 0.8)',
+                  background: 'rgba(15, 23, 42, 0.82)',
                   border: '1px solid rgba(34, 211, 238, 0.35)',
                   color: '#22d3ee',
                   padding: '0.25rem 0.6rem',
@@ -2386,7 +2389,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  backdropFilter: 'blur(6px)'
+                  backdropFilter: 'blur(6px)',
+                  whiteSpace: 'nowrap'
                 }}>
                   <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
                   <span>LIVE AI TRACKING</span>
@@ -2404,10 +2408,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {scanStatus === 'scanning' && (
             <div className="camera-scanning-hud" style={{
               position: 'absolute',
-              top: '46px',
+              top: '52px',
               left: '12px',
               right: '12px',
-              background: 'rgba(9, 13, 22, 0.85)',
+              background: 'rgba(9, 13, 22, 0.88)',
               backdropFilter: 'blur(8px)',
               border: '1px solid rgba(0, 245, 255, 0.4)',
               borderRadius: 'var(--radius-md)',
@@ -2418,21 +2422,21 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                   <div className="scanning-pulse-circle"></div>
-                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px', fontSize: '0.75rem' }}>
-                    {view === 'front' ? 'BƯỚC 1/2: QUÉT MẶT TRƯỚC' : 'BƯỚC 2/2: QUÉT MẶT NGHIÊNG'} ({scanProgress}%)
+                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px', fontSize: '0.72rem' }}>
+                    {view === 'front' ? 'QUÉT MẶT TRƯỚC' : 'QUÉT MẶT NGHIÊNG'} ({scanProgress}%)
                   </strong>
                 </div>
-                <span style={{ fontSize: '0.6rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.1rem 0.4rem', borderRadius: '10px' }}>
+                <span style={{ fontSize: '0.58rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.1rem 0.4rem', borderRadius: '10px' }}>
                   {!isPoseValid ? 'PAUSED' : 'SCANNING'}
                 </span>
               </div>
               <div className="scanning-progress-bar-bg" style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
                 <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%`, height: '100%', background: 'linear-gradient(90deg, #0055ff, #00f5ff)', boxShadow: '0 0 10px #00f5ff' }}></div>
               </div>
-              <p style={{ margin: '0.3rem 0 0 0', fontSize: '0.68rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
+              <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.66rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
                 {!isPoseValid 
-                  ? '⚠️ Vui lòng đứng thẳng toàn thân trước camera để tiếp tục...'
-                  : (scanProgress < 35 ? '🔍 AI đang định vị 14 điểm khớp xương...' : (scanProgress < 70 ? '⚡ Đang dựng thể tích & đo chu vi Ngực, Eo, Hông...' : '📐 Đang tính chiều dài chân, đùi & cổ chân...'))
+                  ? '⚠️ Vui lòng đứng thẳng trước camera...'
+                  : (scanProgress < 35 ? '🔍 AI đang định vị 14 mốc khớp xương...' : (scanProgress < 70 ? '⚡ Đang đo chu vi Ngực, Eo, Hông...' : '📐 Đang tính chiều dài chân & cổ chân...'))
                 }
               </p>
             </div>

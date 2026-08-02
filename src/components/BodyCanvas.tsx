@@ -102,10 +102,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [videoDeviceCount, setVideoDeviceCount] = useState<number>(1);
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
   const [showSnapshotModal, setShowSnapshotModal] = useState<boolean>(false);
   const isPoseValidRef = useRef<boolean>(true);
+
+  // Detect number of camera devices available on system
+  useEffect(() => {
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        const videoDevs = devices.filter(d => d.kind === 'videoinput');
+        setVideoDeviceCount(videoDevs.length || 1);
+      }).catch(() => {
+        setVideoDeviceCount(1);
+      });
+    }
+  }, []);
 
   const updatePoseState = (valid: boolean, warningMsg: string | null = null) => {
     isPoseValidRef.current = valid;
@@ -408,9 +421,19 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       await loadMediaPipeScripts();
       stopWebcam();
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: targetMode }
-      });
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: targetMode }
+        });
+      } catch (modeErr) {
+        console.warn(`Camera mode '${targetMode}' not supported, falling back to default camera:`, modeErr);
+        setFacingMode('user');
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+      }
+
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;

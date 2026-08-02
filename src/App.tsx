@@ -137,11 +137,14 @@ function App() {
   });
 
   const processedFrontLandmarks = useMemo(() => {
+    if (!Array.isArray(landmarksFront) || landmarksFront.length === 0) return initialFrontLandmarks;
     if (input.scanRange !== 'half') return landmarksFront;
-    const lHip = landmarksFront.find(l => l.id === 'left_hip')!;
-    const rHip = landmarksFront.find(l => l.id === 'right_hip')!;
-    const lShoulder = landmarksFront.find(l => l.id === 'left_shoulder')!;
-    const rShoulder = landmarksFront.find(l => l.id === 'right_shoulder')!;
+    const lHip = landmarksFront.find(l => l.id === 'left_hip');
+    const rHip = landmarksFront.find(l => l.id === 'right_hip');
+    const lShoulder = landmarksFront.find(l => l.id === 'left_shoulder');
+    const rShoulder = landmarksFront.find(l => l.id === 'right_shoulder');
+
+    if (!lHip || !rHip || !lShoulder || !rShoulder) return landmarksFront;
     
     const midShoulderY = (lShoulder.y + rShoulder.y) / 2;
     const midHipY = (lHip.y + rHip.y) / 2;
@@ -165,9 +168,11 @@ function App() {
   }, [landmarksFront, input.scanRange]);
 
   const processedSideLandmarks = useMemo(() => {
+    if (!Array.isArray(landmarksSide) || landmarksSide.length === 0) return initialSideLandmarks;
     if (input.scanRange !== 'half') return landmarksSide;
-    const hip = landmarksSide.find(l => l.id === 'hip')!;
-    const shoulder = landmarksSide.find(l => l.id === 'shoulder')!;
+    const hip = landmarksSide.find(l => l.id === 'hip');
+    const shoulder = landmarksSide.find(l => l.id === 'shoulder');
+    if (!hip || !shoulder) return landmarksSide;
     const torsoH = Math.max(50, hip.y - shoulder.y);
 
     return landmarksSide.map(l => {
@@ -486,20 +491,20 @@ function App() {
 
   // Human Anthropometric Computations
   const measurements = useMemo<BodyMeasurements>(() => {
-    // 2. Extract keypoints
-    const nasionF = processedFrontLandmarks.find(l => l.id === 'nasion')!;
-    const lShoulder = processedFrontLandmarks.find(l => l.id === 'left_shoulder')!;
-    const rShoulder = processedFrontLandmarks.find(l => l.id === 'right_shoulder')!;
-    const lElbow = processedFrontLandmarks.find(l => l.id === 'left_elbow')!;
-    const lWrist = processedFrontLandmarks.find(l => l.id === 'left_wrist')!;
-    const rElbow = processedFrontLandmarks.find(l => l.id === 'right_elbow')!;
-    const rWrist = processedFrontLandmarks.find(l => l.id === 'right_wrist')!;
-    const lHip = processedFrontLandmarks.find(l => l.id === 'left_hip')!;
-    const rHip = processedFrontLandmarks.find(l => l.id === 'right_hip')!;
-    const lKnee = processedFrontLandmarks.find(l => l.id === 'left_knee')!;
-    const rKnee = processedFrontLandmarks.find(l => l.id === 'right_knee')!;
-    const lAnkle = processedFrontLandmarks.find(l => l.id === 'left_ankle')!;
-    const rAnkle = processedFrontLandmarks.find(l => l.id === 'right_ankle')!;
+    // 2. Extract keypoints with safe fallbacks to initial landmarks
+    const nasionF = processedFrontLandmarks.find(l => l.id === 'nasion') || initialFrontLandmarks[0];
+    const lShoulder = processedFrontLandmarks.find(l => l.id === 'left_shoulder') || initialFrontLandmarks[1];
+    const rShoulder = processedFrontLandmarks.find(l => l.id === 'right_shoulder') || initialFrontLandmarks[2];
+    const lElbow = processedFrontLandmarks.find(l => l.id === 'left_elbow') || initialFrontLandmarks[3];
+    const lWrist = processedFrontLandmarks.find(l => l.id === 'left_wrist') || initialFrontLandmarks[4];
+    const rElbow = processedFrontLandmarks.find(l => l.id === 'right_elbow') || initialFrontLandmarks[5];
+    const rWrist = processedFrontLandmarks.find(l => l.id === 'right_wrist') || initialFrontLandmarks[6];
+    const lHip = processedFrontLandmarks.find(l => l.id === 'left_hip') || initialFrontLandmarks[7];
+    const rHip = processedFrontLandmarks.find(l => l.id === 'right_hip') || initialFrontLandmarks[8];
+    const lKnee = processedFrontLandmarks.find(l => l.id === 'left_knee') || initialFrontLandmarks[9];
+    const rKnee = processedFrontLandmarks.find(l => l.id === 'right_knee') || initialFrontLandmarks[10];
+    const lAnkle = processedFrontLandmarks.find(l => l.id === 'left_ankle') || initialFrontLandmarks[11];
+    const rAnkle = processedFrontLandmarks.find(l => l.id === 'right_ankle') || initialFrontLandmarks[12];
 
     const dist = (p1: Landmark, p2: Landmark) =>
       Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
@@ -535,10 +540,10 @@ function App() {
     const baseCircs = estimateCircumferences(input.gender, input.weight, height);
 
     // 4. Refine estimates based on side-view profile depths if available
-    const shoulderS = processedSideLandmarks.find(l => l.id === 'shoulder')!;
-    const chestDepthPt = processedSideLandmarks.find(l => l.id === 'chest_depth')!;
-    const hipS = processedSideLandmarks.find(l => l.id === 'hip')!;
-    const buttockDepthPt = processedSideLandmarks.find(l => l.id === 'buttock_depth')!;
+    const shoulderS = processedSideLandmarks.find(l => l.id === 'shoulder') || initialSideLandmarks[0];
+    const chestDepthPt = processedSideLandmarks.find(l => l.id === 'chest_depth') || initialSideLandmarks[1];
+    const hipS = processedSideLandmarks.find(l => l.id === 'hip') || initialSideLandmarks[2];
+    const buttockDepthPt = processedSideLandmarks.find(l => l.id === 'buttock_depth') || initialSideLandmarks[3];
 
     // Horizontal depth in pixels
     const chestDepthCm = Math.abs(chestDepthPt.x - shoulderS.x) * scale;

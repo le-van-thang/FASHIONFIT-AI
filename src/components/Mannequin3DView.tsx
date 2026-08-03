@@ -192,16 +192,23 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     }
   });
 
-  // Scale model height by height factor (cm), and width/depth by weight
+  // Scale model height by height factor (cm), and width/depth by weight with proportional silhouette protection
   const scale = useMemo(() => {
     const baseWeight = gender === 'female' ? 52 : 65;
+    const baseHeight = gender === 'female' ? 165 : 180;
+    
+    // Clamp height for 3D mannequin rendering to guard against extreme midget/flat compression
+    const rawHeight = measurements?.height || baseHeight;
+    const heightVal = Math.max(130, Math.min(220, rawHeight));
+    
+    const heightScale = heightVal / baseHeight;
     const weightFactor = Math.max(0.75, Math.min(1.45, weight / baseWeight));
     
-    // Scale height based on physical height in cm (relative to baseline 165cm)
-    const heightVal = measurements?.height || 165;
-    const heightScale = heightVal / 165;
+    // Scale X, Y, Z proportionally so body silhouette never flattens into a pancake
+    const xzScale = weightFactor * (0.5 + 0.5 * heightScale) * 0.95;
+    const yScale = heightScale * 0.95;
     
-    return [weightFactor * 0.95, heightScale * 0.95, weightFactor * 0.95] as [number, number, number];
+    return [xzScale, yScale, xzScale] as [number, number, number];
   }, [gender, weight, measurements]);
 
   // 5 key measurement ring heights on the body (Y coordinates relative to model origin)

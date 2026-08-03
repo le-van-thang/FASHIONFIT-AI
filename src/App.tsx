@@ -87,11 +87,17 @@ function App() {
       try {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object') {
+          const g = parsed.gender === 'male' ? 'male' : 'female';
+          const defaultH = g === 'female' ? 165 : 180;
+          const h = (typeof parsed.customHeight === 'number' && parsed.customHeight >= 130 && parsed.customHeight <= 230)
+            ? parsed.customHeight 
+            : defaultH;
+
           return {
-            gender: parsed.gender === 'male' ? 'male' : 'female',
-            weight: typeof parsed.weight === 'number' ? parsed.weight : 55,
+            gender: g,
+            weight: (typeof parsed.weight === 'number' && parsed.weight >= 30) ? parsed.weight : (g === 'female' ? 55 : 75),
             calibrationType: ['a4', 'card', 'ipd', 'height'].includes(parsed.calibrationType) ? parsed.calibrationType : 'height',
-            customHeight: typeof parsed.customHeight === 'number' ? parsed.customHeight : undefined,
+            customHeight: h,
             sizeSystem: parsed.sizeSystem === 'international' ? 'international' : 'vietnam',
             scanRange: ['full', 'half'].includes(parsed.scanRange) ? parsed.scanRange : 'full'
           };
@@ -104,6 +110,7 @@ function App() {
       gender: 'female',
       weight: 55,
       calibrationType: 'height',
+      customHeight: 165,
       sizeSystem: 'vietnam',
       scanRange: savedSource === 'webcam' ? 'half' : 'full'
     };

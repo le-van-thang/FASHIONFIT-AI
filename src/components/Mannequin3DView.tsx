@@ -96,8 +96,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z
-    const offset = new THREE.Vector3(-center.x, -center.y + 0.05, -center.z);
+    // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z, shifted down slightly to show head
+    const offset = new THREE.Vector3(-center.x, -center.y - 0.25, -center.z);
     
     return {
       bounds: { min: -size.y / 2, max: size.y / 2 },
@@ -1035,7 +1035,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         <color attach="background" args={['#090d16']} />
         
         {/* Camera */}
-        <PerspectiveCamera makeDefault position={[0, 0, 4.3]} fov={36} />
+        <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 

@@ -989,18 +989,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
-  // Refs for camera focus target interpolation (default slightly lower at Y = -0.15 to shift model up)
+  // Refs for camera focus target interpolation (default centered at Y = 0)
   const controlsRef = useRef<any>(null);
-  const targetPoint = useRef(new THREE.Vector3(0, -0.15, 0));
+  const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
 
   // Reset camera view when counter changes
   useEffect(() => {
     if (cameraResetCounter > 0) {
       if (controlsRef.current) {
         controlsRef.current.reset();
-        controlsRef.current.target.set(0, -0.15, 0);
+        controlsRef.current.target.set(0, 0, 0);
       }
-      targetPoint.current.set(0, -0.15, 0);
+      targetPoint.current.set(0, 0, 0);
     }
   }, [cameraResetCounter]);
 
@@ -1016,7 +1016,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         position: 'relative', 
         backgroundColor: '#090d16',
         borderRadius: 'var(--radius-md)',
-        overflow: 'visible',
+        overflow: 'hidden',
         border: '1px solid rgba(0, 85, 255, 0.15)'
       }}
     >
@@ -1025,21 +1025,21 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onPointerMissed={() => {
-          targetPoint.current.set(0, -0.15, 0);
+          targetPoint.current.set(0, 0, 0);
         }}
       >
         <color attach="background" args={['#090d16']} />
         
         {/* Camera */}
-        <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
+        <PerspectiveCamera makeDefault position={[0, 0, 4.3]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 
         {/* Futuristic Grid and Lighting */}
         <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -1.05, 0]} />
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[10, 10, 5]} intensity={0.8} />
-        <directionalLight position={[-10, -10, -5]} intensity={0.3} />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[10, 10, 5]} intensity={0.9} />
+        <directionalLight position={[-10, -10, -5]} intensity={0.4} />
 
         <group>
           <React.Suspense fallback={null}>
@@ -1071,7 +1071,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {interactive && (
           <OrbitControls 
             ref={controlsRef}
-            target={[0, -0.15, 0]}
+            target={[0, 0, 0]}
             enablePan={false}
             minDistance={2.5}
             maxDistance={8.0}

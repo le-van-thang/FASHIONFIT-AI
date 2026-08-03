@@ -10,6 +10,10 @@ interface InputFormProps {
   onReferencePixelsChange: (pixels: number) => void;
   inputSource: 'mannequin' | 'image' | 'webcam' | 'video';
   onResetModel?: () => void;
+  customerName?: string;
+  onCustomerNameChange?: (name: string) => void;
+  customerPhone?: string;
+  onCustomerPhoneChange?: (phone: string) => void;
 }
 
 export const InputForm: React.FC<InputFormProps> = ({
@@ -18,7 +22,11 @@ export const InputForm: React.FC<InputFormProps> = ({
   referencePixels,
   onReferencePixelsChange,
   inputSource,
-  onResetModel
+  onResetModel,
+  customerName = '',
+  onCustomerNameChange,
+  customerPhone = '',
+  onCustomerPhoneChange
 }) => {
   const [weightInputVal, setWeightInputVal] = useState<string>(input.weight.toString());
   const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
@@ -323,6 +331,29 @@ export const InputForm: React.FC<InputFormProps> = ({
           <div className="form-card-note">
             <Info size={13} />
             <span>Tỷ lệ <strong>Nasion</strong> + khóa thể tích theo cân nặng/giới tính để loại nhiễu từ quần áo rộng</span>
+          </div>
+        </div>
+
+        {/* Customer Info (Tailor CRM) */}
+        <div className="form-group" style={{ background: 'rgba(15, 23, 42, 0.3)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '1rem' }}>
+          <label className="form-label" style={{ marginBottom: '0.4rem', fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700 }}>
+            👤 Ghi Chú Hồ Sơ Khách Hàng (Tùy Chọn Thợ May)
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+            <input
+              type="text"
+              placeholder="Tên khách hàng (VD: Anh Hoàng)"
+              value={customerName}
+              onChange={(e) => onCustomerNameChange && onCustomerNameChange(e.target.value)}
+              style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.72rem', outline: 'none' }}
+            />
+            <input
+              type="text"
+              placeholder="Số điện thoại / Mã đơn"
+              value={customerPhone}
+              onChange={(e) => onCustomerPhoneChange && onCustomerPhoneChange(e.target.value)}
+              style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.72rem', outline: 'none' }}
+            />
           </div>
         </div>
 

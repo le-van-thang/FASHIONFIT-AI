@@ -753,6 +753,10 @@ function App() {
             onReferencePixelsChange={setReferencePixels}
             inputSource={inputSource}
             onResetModel={handleResetModel}
+            customerName={customerName}
+            onCustomerNameChange={setCustomerName}
+            customerPhone={customerPhone}
+            onCustomerPhoneChange={setCustomerPhone}
           />
         </div>
 

@@ -4,7 +4,7 @@ import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
-import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
+import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
 import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession, clearAllSessions } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
@@ -900,7 +900,7 @@ function App() {
             borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
             display: 'flex',
             alignItems: 'center',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             gap: '0.5rem'
           }}>
             <span style={{ fontSize: '0.72rem', color: '#fca5a5', fontWeight: 600 }}>

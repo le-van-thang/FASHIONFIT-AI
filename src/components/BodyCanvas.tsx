@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
-import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2, Sun, Sparkles } from 'lucide-react';
+import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2, Sun, Moon, Sparkles } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
 
 
@@ -699,7 +699,24 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [meshStyle, setMeshStyle] = useState<'solid' | 'neon' | 'heatmap'>('solid');
   const [isWebcamActive, setIsWebcamActive] = useState<boolean>(false);
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
-  const [isAutoLighting, setIsAutoLighting] = useState<boolean>(true);
+  const [lightingMode, setLightingMode] = useState<'auto' | 'bright' | 'dark' | 'normal'>('auto');
+
+  // Real-time Adaptive Lighting & Anti-Overexposure / Anti-Underexposed Filter
+  const getVideoFilterStyle = () => {
+    switch (lightingMode) {
+      case 'auto':
+        return 'contrast(1.22) brightness(1.05) saturate(1.04)';
+      case 'bright':
+        // Anti-Overexposure: Dìm ánh sáng chói lóa (brightness 0.78), tăng tương phản viền bờ vai & eo (contrast 1.35)
+        return 'contrast(1.35) brightness(0.78) saturate(0.90)';
+      case 'dark':
+        // Anti-Dark: Bù sáng mạnh (brightness 1.20), tăng nổi bật khung hình thể (contrast 1.25)
+        return 'contrast(1.25) brightness(1.20) saturate(1.08)';
+      case 'normal':
+      default:
+        return 'none';
+    }
+  };
 
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [showInlineGuide, setShowInlineGuide] = useState<boolean>(false);
@@ -1965,13 +1982,34 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             {inputSource === 'webcam' && isWebcamActive && (
               <button
                 type="button"
-                onClick={() => setIsAutoLighting(!isAutoLighting)}
-                title={isAutoLighting ? "Tắt chế độ tự động bù sáng AI" : "Bật chế độ tự động bù sáng & tăng độ tương phản AI trong môi trường thiếu sáng"}
+                onClick={() => {
+                  setLightingMode(prev => {
+                    if (prev === 'auto') return 'bright';
+                    if (prev === 'bright') return 'dark';
+                    if (prev === 'dark') return 'normal';
+                    return 'auto';
+                  });
+                }}
+                title={
+                  lightingMode === 'auto' ? "AI Tự động căn chỉnh độ sáng & độ tương phản" :
+                  lightingMode === 'bright' ? "Chế độ Chống Cháy Sáng / Chống Nắng Lóa: Dìm ánh sáng chói & tăng viền sắc nét" :
+                  lightingMode === 'dark' ? "Chế độ Khử Tối AI: Bù sáng & tách nổi khung hình thể" :
+                  "Mặc định (Tắt lọc AI)"
+                }
                 style={{
-                  background: isAutoLighting ? 'rgba(234, 179, 8, 0.22)' : 'rgba(15, 23, 42, 0.88)',
-                  border: isAutoLighting ? '1px solid rgba(234, 179, 8, 0.6)' : '1px solid rgba(255, 255, 255, 0.25)',
+                  background: 
+                    lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.22)' :
+                    lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.25)' :
+                    lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(15, 23, 42, 0.88)',
+                  border: 
+                    lightingMode === 'auto' ? '1px solid rgba(234, 179, 8, 0.6)' :
+                    lightingMode === 'bright' ? '1px solid rgba(56, 189, 248, 0.6)' :
+                    lightingMode === 'dark' ? '1px solid rgba(245, 158, 11, 0.6)' : '1px solid rgba(255, 255, 255, 0.25)',
                   borderRadius: '16px',
-                  color: isAutoLighting ? '#fde047' : '#94a3b8',
+                  color: 
+                    lightingMode === 'auto' ? '#fde047' :
+                    lightingMode === 'bright' ? '#38bdf8' :
+                    lightingMode === 'dark' ? '#fbbf24' : '#94a3b8',
                   padding: '0.3rem 0.55rem',
                   fontSize: '0.65rem',
                   fontWeight: 700,
@@ -1985,8 +2023,16 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   whiteSpace: 'nowrap'
                 }}
               >
-                <Sun size={12} />
-                <span>{isAutoLighting ? "Bù Sáng: BẬT" : "Bù Sáng: TẮT"}</span>
+                {lightingMode === 'auto' && <Sparkles size={12} />}
+                {lightingMode === 'bright' && <Sun size={12} />}
+                {lightingMode === 'dark' && <Moon size={12} />}
+                {lightingMode === 'normal' && <Sun size={12} />}
+                <span>
+                  {lightingMode === 'auto' && "💡 Auto AI Bù Sáng"}
+                  {lightingMode === 'bright' && "☀️ Chống Cháy Sáng"}
+                  {lightingMode === 'dark' && "🌙 Khử Tối AI"}
+                  {lightingMode === 'normal' && "☀️ Cam Gốc (Tắt AI)"}
+                </span>
               </button>
             )}
 
@@ -2078,7 +2124,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               muted
               style={{ 
                 transform: 'scaleX(-1)', // Mirror webcam
-                filter: isAutoLighting ? 'contrast(1.18) brightness(1.08) saturate(1.05)' : 'none',
+                filter: getVideoFilterStyle(),
                 display: isModelLoading ? 'none' : 'block'
               }}
             />

@@ -76,6 +76,8 @@ interface ModelProps {
 }
 
 const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel, showLabels = true }) => {
+  const { scene } = useGLTF(path);
+  
   // Deep clone scene objects so wireframe overlay traversal never mutates solid body mesh visibility
   const baseScene = useMemo(() => {
     return scene.clone(true);
@@ -314,9 +316,9 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Apply default rotation to primitive scene contents
   useEffect(() => {
-    if (scene) scene.rotation.set(0, 0, 0);
+    if (baseScene) baseScene.rotation.set(0, 0, 0);
     if (wireframeScene) wireframeScene.rotation.set(0, 0, 0);
-  }, [scene, wireframeScene]);
+  }, [baseScene, wireframeScene]);
 
   return (
     <group ref={meshRef} scale={scale}>

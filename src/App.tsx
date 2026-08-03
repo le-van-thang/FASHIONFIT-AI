@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { UserInput, Landmark, BodyMeasurements, SizeRecommendation } from './types';
 import { InputForm } from './components/InputForm';
 import { BodyCanvas } from './components/BodyCanvas';
@@ -377,7 +377,6 @@ function App() {
 
   // Load a session's parameters back into current state
   const handleLoadSession = (session: MeasurementSession) => {
-    skipSaveRef.current = true; // Tell auto-save effect to skip this state update
     setInput({
       gender: session.gender,
       weight: session.weight_kg,

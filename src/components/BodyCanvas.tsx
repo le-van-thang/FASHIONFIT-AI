@@ -1826,12 +1826,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           )}
         </div>
 
-        <div className="canvas-header-row2">
-          <div className="view-toggle-tabs">
+        <div className="canvas-header-row2" style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '6px',
+          padding: '0.35rem 0.5rem',
+          background: 'rgba(15, 23, 42, 0.6)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: 'var(--radius-md)',
+          width: '100%'
+        }}>
+          <div className="view-toggle-tabs" style={{ display: 'flex', gap: '4px' }}>
             <button
               type="button"
               className={`tab-btn ${view === 'front' ? 'active' : ''}`}
               onClick={() => onViewChange('front')}
+              style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem' }}
             >
               Mặt trước
             </button>
@@ -1839,89 +1850,85 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               type="button"
               className={`tab-btn ${view === 'side' ? 'active' : ''}`}
               onClick={() => onViewChange('side')}
+              style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem' }}
             >
               Mặt nghiêng
             </button>
           </div>
-          {/* Reset button always sits on Row 2 */}
-          {inputSource === 'mannequin' ? (
-            <button
-              type="button"
-              onClick={() => {
-                setCameraResetCounter(c => c + 1);
-                if (onResetModel) {
-                  onResetModel();
-                }
-              }}
-              title="Đặt lại toàn bộ số đo mô hình và góc camera về mặc định chuẩn"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                background: 'rgba(6, 182, 212, 0.08)',
-                border: '1px solid rgba(6, 182, 212, 0.3)',
-                borderRadius: 'var(--radius-sm)',
-                padding: '0.3rem 0.55rem',
-                fontSize: '0.68rem',
-                fontWeight: 600,
-                color: '#06b6d4',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
-            >
-              <RefreshCw size={11} />
-              Reset mô hình & camera
-            </button>
-          ) : (
-            <>
-              {onResetScan && (
-                <button
-                  type="button"
-                  onClick={onResetScan}
-                  title="Đặt lại số đo của tab hiện tại về trạng thái chưa quét (-- cm)"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-                >
-                  <RefreshCw size={11} />
-                  Reset số đo
-                </button>
-              )}
-              {onResetLandmarks && (
-                <button
-                  type="button"
-                  onClick={onResetLandmarks}
-                  title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(6, 182, 212, 0.08)',
-                    border: '1px solid rgba(6, 182, 212, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
-                >
-                  <RefreshCw size={11} />
-                  Reset chấm
-                </button>
-              )}
-            </>
-          )}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            {inputSource === 'mannequin' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setCameraResetCounter(c => c + 1);
+                  if (onResetModel) {
+                    onResetModel();
+                  }
+                }}
+                title="Đặt lại toàn bộ số đo mô hình và góc camera về mặc định chuẩn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  background: 'rgba(6, 182, 212, 0.1)',
+                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  color: '#06b6d4',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <RefreshCw size={11} />
+                Reset mô hình
+              </button>
+            ) : (
+              <>
+                {onResetScan && (
+                  <button
+                    type="button"
+                    onClick={onResetScan}
+                    title="Đặt lại số đo của tab hiện tại về trạng thái chưa quét (-- cm)"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.25rem',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                      color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <RefreshCw size={11} />
+                    Reset số đo
+                  </button>
+                )}
+                {onResetLandmarks && (
+                  <button
+                    type="button"
+                    onClick={onResetLandmarks}
+                    title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.25rem',
+                      background: 'rgba(6, 182, 212, 0.1)',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                      color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <RefreshCw size={11} />
+                    Reset chấm
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 

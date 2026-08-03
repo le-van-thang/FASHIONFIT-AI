@@ -415,6 +415,15 @@ function App() {
     }
   };
 
+  // High-performance batch landmark update for 60FPS real-time webcam tracking
+  const handleLandmarksBatchChange = (updatedLandmarks: Landmark[]) => {
+    if (view === 'front') {
+      setLandmarksFront(updatedLandmarks);
+    } else {
+      setLandmarksSide(updatedLandmarks);
+    }
+  };
+
   // Reset landmarks to anatomically correct default positions
   const handleResetLandmarks = () => {
     if (view === 'front') {
@@ -781,6 +790,7 @@ function App() {
             scaleFactor={scale}
             landmarks={view === 'front' ? processedFrontLandmarks : processedSideLandmarks}
             onLandmarkChange={handleLandmarkChange}
+            onLandmarksBatchChange={handleLandmarksBatchChange}
             onResetLandmarks={handleResetLandmarks}
             onResetModel={handleResetModel}
             view={view}

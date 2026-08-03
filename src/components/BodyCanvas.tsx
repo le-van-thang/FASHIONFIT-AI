@@ -49,6 +49,7 @@ interface BodyCanvasProps {
   scaleFactor: number;
   landmarks: Landmark[];
   onLandmarkChange: (id: string, x: number, y: number) => void;
+  onLandmarksBatchChange?: (landmarks: Landmark[]) => void;
   onResetLandmarks?: () => void;
   onResetModel?: () => void;
   view: 'front' | 'side';
@@ -73,6 +74,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   scaleFactor,
   landmarks,
   onLandmarkChange,
+  onLandmarksBatchChange,
   onResetLandmarks,
   onResetModel,
   view,
@@ -171,11 +173,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const poseInstanceRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const prevLandmarksMapRef = useRef<Record<string, { x: number; y: number }>>({});
+
   // Ref to store the latest values of props/states to avoid stale closures in MediaPipe callbacks
   const trackingParamsRef = useRef({
     view,
     landmarks,
     onLandmarkChange,
+    onLandmarksBatchChange,
     inputSource,
     scanRange
   });
@@ -185,6 +190,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       view,
       landmarks,
       onLandmarkChange,
+      onLandmarksBatchChange,
       inputSource,
       scanRange
     };
@@ -338,17 +344,30 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             return l;
           }
           const pt = mapMediaPipePoint(mp[mpIndex].x, mp[mpIndex].y);
-          return { ...l, x: pt.x, y: pt.y, visibility: jointVis };
+          
+          // Exponential Moving Average (EMA) filter for 60FPS smooth tracking without lag or jitter
+          const prevPt = prevLandmarksMapRef.current[l.id];
+          const alpha = 0.72; // Ultra-responsive tracking weight
+          const smoothedX = prevPt ? Math.round(alpha * pt.x + (1 - alpha) * prevPt.x) : pt.x;
+          const smoothedY = prevPt ? Math.round(alpha * pt.y + (1 - alpha) * prevPt.y) : pt.y;
+
+          prevLandmarksMapRef.current[l.id] = { x: smoothedX, y: smoothedY };
+          return { ...l, x: smoothedX, y: smoothedY, visibility: jointVis };
         }
         return { ...l, visibility: 0 };
       });
 
-      newLandmarks.forEach(l => {
-        if (l.id.includes('knee') || l.id.includes('ankle')) {
-          if (scanRange === 'half') return;
-        }
-        onLandmarkChange(l.id, l.x, l.y);
-      });
+      const { onLandmarksBatchChange } = trackingParamsRef.current;
+      if (onLandmarksBatchChange) {
+        onLandmarksBatchChange(newLandmarks);
+      } else {
+        newLandmarks.forEach(l => {
+          if (l.id.includes('knee') || l.id.includes('ankle')) {
+            if (scanRange === 'half') return;
+          }
+          onLandmarkChange(l.id, l.x, l.y);
+        });
+      }
     } else {
       const leftVisible = (mp[11]?.visibility || 0) + (mp[13]?.visibility || 0) + (mp[15]?.visibility || 0);
       const rightVisible = (mp[12]?.visibility || 0) + (mp[14]?.visibility || 0) + (mp[16]?.visibility || 0);
@@ -383,7 +402,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
         if (mpPt) {
           const pt = mapMediaPipePoint(mpPt.x, mpPt.y);
-          return { ...l, x: pt.x, y: pt.y };
+          const prevPt = prevLandmarksMapRef.current[l.id];
+          const alpha = 0.72;
+          const smoothedX = prevPt ? Math.round(alpha * pt.x + (1 - alpha) * prevPt.x) : pt.x;
+          const smoothedY = prevPt ? Math.round(alpha * pt.y + (1 - alpha) * prevPt.y) : pt.y;
+          prevLandmarksMapRef.current[l.id] = { x: smoothedX, y: smoothedY };
+          return { ...l, x: smoothedX, y: smoothedY };
         }
         return l;
       });
@@ -406,12 +430,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         buttockDepthPt.y = Math.round(hipPt.y + 20);
       }
 
-      newLandmarks.forEach(l => {
-        if (l.id === 'knee' || l.id === 'ankle') {
-          if (scanRange === 'half') return; // Skip updating lower joints state in half mode
-        }
-        onLandmarkChange(l.id, l.x, l.y);
-      });
+      const { onLandmarksBatchChange } = trackingParamsRef.current;
+      if (onLandmarksBatchChange) {
+        onLandmarksBatchChange(newLandmarks);
+      } else {
+        newLandmarks.forEach(l => {
+          if (l.id === 'knee' || l.id === 'ankle') {
+            if (scanRange === 'half') return;
+          }
+          onLandmarkChange(l.id, l.x, l.y);
+        });
+      }
     }
   };
 
@@ -448,11 +477,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         });
 
         pose.setOptions({
-          modelComplexity: 1,
+          modelComplexity: 0,
           smoothLandmarks: true,
           enableSegmentation: false,
-          minDetectionConfidence: 0.5,
-          minTrackingConfidence: 0.5
+          minDetectionConfidence: 0.4,
+          minTrackingConfidence: 0.4
         });
 
         pose.onResults((results: any) => {

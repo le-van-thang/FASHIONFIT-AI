@@ -14,6 +14,7 @@ interface InputFormProps {
   onCustomerNameChange?: (name: string) => void;
   customerPhone?: string;
   onCustomerPhoneChange?: (phone: string) => void;
+  onNewCustomer?: () => void;
 }
 
 export const InputForm: React.FC<InputFormProps> = ({
@@ -26,7 +27,8 @@ export const InputForm: React.FC<InputFormProps> = ({
   customerName = '',
   onCustomerNameChange,
   customerPhone = '',
-  onCustomerPhoneChange
+  onCustomerPhoneChange,
+  onNewCustomer
 }) => {
   const [weightInputVal, setWeightInputVal] = useState<string>(input.weight.toString());
   const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
@@ -335,25 +337,83 @@ export const InputForm: React.FC<InputFormProps> = ({
         </div>
 
         {/* Customer Info (Tailor CRM) */}
-        <div className="form-group" style={{ background: 'rgba(15, 23, 42, 0.3)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '1rem' }}>
-          <label className="form-label" style={{ marginBottom: '0.4rem', fontSize: '0.78rem', color: '#38bdf8', fontWeight: 700 }}>
-            👤 Ghi Chú Hồ Sơ Khách Hàng (Tùy Chọn Thợ May)
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-            <input
-              type="text"
-              placeholder="Tên khách hàng (VD: Anh Hoàng)"
-              value={customerName}
-              onChange={(e) => onCustomerNameChange && onCustomerNameChange(e.target.value)}
-              style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.72rem', outline: 'none' }}
-            />
-            <input
-              type="text"
-              placeholder="Số điện thoại / Mã đơn"
-              value={customerPhone}
-              onChange={(e) => onCustomerPhoneChange && onCustomerPhoneChange(e.target.value)}
-              style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', padding: '0.4rem 0.6rem', borderRadius: '6px', fontSize: '0.72rem', outline: 'none' }}
-            />
+        <div className="form-group" style={{
+          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+          padding: '0.85rem',
+          borderRadius: 'var(--radius-md)',
+          border: '1.5px solid #cbd5e1',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+          marginBottom: '1.25rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+            <label style={{ fontSize: '0.8rem', color: '#1e40af', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
+              <User size={15} style={{ color: '#2563eb' }} />
+              <span>Ghi Chú Khách Hàng (Tùy Chọn Thợ May)</span>
+            </label>
+            {onNewCustomer && (
+              <button
+                type="button"
+                onClick={onNewCustomer}
+                style={{
+                  background: '#2563eb',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '0.2rem 0.5rem',
+                  fontSize: '0.66rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+                title="Bắt đầu đo phiên mới cho khách tiếp theo"
+              >
+                ➕ Khách Mới
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ width: '100%', boxSizing: 'border-box' }}>
+              <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '2px' }}>Tên Khách Hàng / Mã Đơn:</span>
+              <input
+                type="text"
+                placeholder="Ví dụ: Anh Hoàng (Vest Nam)"
+                value={customerName}
+                onChange={(e) => onCustomerNameChange && onCustomerNameChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  color: '#0f172a',
+                  padding: '0.45rem 0.65rem',
+                  borderRadius: '6px',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  outline: 'none'
+                }}
+              />
+            </div>
+            <div style={{ width: '100%', boxSizing: 'border-box' }}>
+              <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '2px' }}>Số Điện Thoại Liên Hệ:</span>
+              <input
+                type="text"
+                placeholder="Ví dụ: 0905123456"
+                value={customerPhone}
+                onChange={(e) => onCustomerPhoneChange && onCustomerPhoneChange(e.target.value)}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
+                  color: '#0f172a',
+                  padding: '0.45rem 0.65rem',
+                  borderRadius: '6px',
+                  fontSize: '0.76rem',
+                  fontWeight: 600,
+                  outline: 'none'
+                }}
+              />
+            </div>
           </div>
         </div>
 

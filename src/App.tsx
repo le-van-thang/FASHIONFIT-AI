@@ -5,7 +5,7 @@ import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
 import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
-import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen } from 'lucide-react';
+import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen, UserPlus } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession, clearAllSessions } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
 import { saveBackendSession, fetchBackendSessions, deleteBackendSession, clearAllBackendSessions } from './lib/api';
@@ -722,6 +722,17 @@ function App() {
     window.print();
   };
 
+  const handleNewCustomer = () => {
+    setCustomerName('');
+    setCustomerPhone('');
+    if (inputSource === 'webcam') {
+      handleResetScan();
+    } else if (inputSource === 'mannequin') {
+      handleResetModel();
+    }
+    setSyncState('idle');
+  };
+
   return (
     <div className="app-container">
       {/* Header */}
@@ -733,14 +744,39 @@ function App() {
             <p className="subtitle">Hệ Thống Đo Đạc Hình Thể Tự Động Nhân Trắc Học 3D</p>
           </div>
         </div>
-        <button
-          type="button"
-          className="history-toggle-btn"
-          onClick={() => setIsHistoryOpen(true)}
-        >
-          <HistoryIcon size={16} />
-          <span>Lịch Sử Đo ({history.length})</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <button
+            type="button"
+            onClick={handleNewCustomer}
+            style={{
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.45rem 0.85rem',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.35)'
+            }}
+            title="Tạo phiên đo mới cho khách hàng tiếp theo"
+          >
+            <UserPlus size={16} />
+            <span>➕ Đo Khách Hàng Mới</span>
+          </button>
+
+          <button
+            type="button"
+            className="history-toggle-btn"
+            onClick={() => setIsHistoryOpen(true)}
+          >
+            <HistoryIcon size={16} />
+            <span>Lịch Sử Đo ({history.length})</span>
+          </button>
+        </div>
       </header>
 
       {/* Main layout */}
@@ -757,6 +793,7 @@ function App() {
             onCustomerNameChange={setCustomerName}
             customerPhone={customerPhone}
             onCustomerPhoneChange={setCustomerPhone}
+            onNewCustomer={handleNewCustomer}
           />
         </div>
 

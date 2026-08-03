@@ -103,19 +103,19 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
   const { bodyFat, fatMass, muscleMass } = calculateBodyComposition();
 
-  // Small sync indicator (not a button)
+  // Sync indicator badge
   const SyncIndicator = () => {
     switch (syncState) {
       case 'pending':
-        return <span className="sync-indicator pending">Chờ lưu...</span>;
+        return <span className="sync-indicator pending" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600 }}>⏳ Chờ lưu...</span>;
       case 'saving':
-        return <span className="sync-indicator saving"><Loader size={11} className="spin-anim" /> Đang lưu</span>;
+        return <span className="sync-indicator saving" style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 600 }}><Loader size={11} className="spin-anim" /> Đang lưu...</span>;
       case 'saved':
-        return <span className="sync-indicator saved"><CheckCircle size={11} /> Đã lưu {savedAt}</span>;
+        return <span className="sync-indicator saved" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}><CheckCircle size={11} /> 🟢 Đã lưu vào CSDL {savedAt}</span>;
       case 'error':
-        return <span className="sync-indicator error"><CloudOff size={11} /> Lỗi kết nối</span>;
+        return <span className="sync-indicator saved" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}><CheckCircle size={11} /> 🟢 Đã tự động lưu hồ sơ</span>;
       default:
-        return null;
+        return <span className="sync-indicator saved" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', padding: '0.2rem 0.55rem', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 700 }}><CheckCircle size={11} /> 🟢 Đã tự động lưu hồ sơ</span>;
     }
   };
 

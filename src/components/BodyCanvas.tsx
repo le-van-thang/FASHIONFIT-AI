@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
-import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2, Sun, Moon, Sparkles } from 'lucide-react';
+import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2 } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
 
 
@@ -49,7 +49,6 @@ interface BodyCanvasProps {
   scaleFactor: number;
   landmarks: Landmark[];
   onLandmarkChange: (id: string, x: number, y: number) => void;
-  onLandmarksBatchChange?: (landmarks: Landmark[]) => void;
   onResetLandmarks?: () => void;
   onResetModel?: () => void;
   view: 'front' | 'side';
@@ -63,9 +62,6 @@ interface BodyCanvasProps {
   inputSource: 'mannequin' | 'image' | 'webcam' | 'video';
   onInputSourceChange: (source: 'mannequin' | 'image' | 'webcam' | 'video') => void;
   scanRange?: 'full' | 'half';
-  isScanned?: boolean;
-  onScanComplete?: (source: string) => void;
-  onResetScan?: () => void;
 }
 
 export const BodyCanvas: React.FC<BodyCanvasProps> = ({
@@ -74,7 +70,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   scaleFactor,
   landmarks,
   onLandmarkChange,
-  onLandmarksBatchChange,
   onResetLandmarks,
   onResetModel,
   view,
@@ -87,10 +82,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   recommendation,
   inputSource,
   onInputSourceChange,
-  scanRange = 'full',
-  isScanned = true,
-  onScanComplete,
-  onResetScan
+  scanRange = 'full'
 }) => {
   const containerRef = useRef<SVGSVGElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -103,44 +95,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [rotationAngle, setRotationAngle] = useState<number>(0);
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
-  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const [videoDeviceCount, setVideoDeviceCount] = useState<number>(1);
-  const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
-  const [poseWarning, setPoseWarning] = useState<string | null>(null);
-  const [cameraErrorMsg, setCameraErrorMsg] = useState<string | null>(null);
-  const [showSnapshotModal, setShowSnapshotModal] = useState<boolean>(false);
-  const isPoseValidRef = useRef<boolean>(true);
-
-  // Detect number of camera devices available on system
-  useEffect(() => {
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices().then(devices => {
-        const videoDevs = devices.filter(d => d.kind === 'videoinput');
-        setVideoDeviceCount(videoDevs.length || 1);
-      }).catch(() => {
-        setVideoDeviceCount(1);
-      });
-    }
-  }, []);
-
-  const updatePoseState = (valid: boolean, warningMsg: string | null = null) => {
-    isPoseValidRef.current = valid;
-    setIsPoseValid(valid);
-    setPoseWarning(warningMsg);
-  };
 
   // Handle countdown ticks and beep audio feedback
   useEffect(() => {
     if (countdown === null) return;
     if (countdown === 0) {
-      if (inputSource === 'webcam' && !isPoseValidRef.current) {
-        setCountdown(null);
-        setIsScanning(false);
-        setScanStatus('idle');
-        setScanProgress(0);
-        alert("⚠️ THÔNG BÁO TỪ THỆ THỐNG AI FASHIONFIT:\n\nPhát hiện tư thế KHÔNG HỢP LỆ (Đang nằm hoặc cúi đầu trước camera)!\n\nVui lòng đứng thẳng toàn thân trước camera để AI kích hoạt tính năng quét số đo.");
-        return;
-      }
       setCountdown(null);
       setIsScanning(true);
       playAudioBeep('success'); // High beep to signal scanning start
@@ -173,14 +132,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const poseInstanceRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const prevLandmarksMapRef = useRef<Record<string, { x: number; y: number }>>({});
-
   // Ref to store the latest values of props/states to avoid stale closures in MediaPipe callbacks
   const trackingParamsRef = useRef({
     view,
     landmarks,
     onLandmarkChange,
-    onLandmarksBatchChange,
     inputSource,
     scanRange
   });
@@ -190,7 +146,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       view,
       landmarks,
       onLandmarkChange,
-      onLandmarksBatchChange,
       inputSource,
       scanRange
     };
@@ -234,78 +189,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   };
 
   const updateLandmarksFromMediaPipe = (results: any) => {
-    if (!results.poseLandmarks) {
-      if (trackingParamsRef.current.inputSource === 'webcam') {
-        setIsPoseValid(false);
-        setPoseWarning("Không tìm thấy cơ thể trong camera");
-      }
-      return;
-    }
+    if (!results.poseLandmarks) return;
     const mp = results.poseLandmarks;
     const { view, landmarks, onLandmarkChange, inputSource, scanRange } = trackingParamsRef.current;
-
-    // Validate standing posture for webcam
-    if (inputSource === 'webcam') {
-      const nose = mp[0];
-      const lShoulder = mp[11];
-      const rShoulder = mp[12];
-
-      const lShoulderVis = lShoulder?.visibility ?? 0;
-      const rShoulderVis = rShoulder?.visibility ?? 0;
-
-      // 1. Check if upper body / shoulders are visible with confidence
-      if (lShoulderVis < 0.4 && rShoulderVis < 0.4) {
-        updatePoseState(false, "Vui lòng đứng lùi xa khoảng 2.2m để camera thấy rõ vai & toàn thân");
-        return;
-      }
-
-      // 2. Check if user is lying down or tilted horizontally
-      if (lShoulder && rShoulder) {
-        const dx = Math.abs(lShoulder.x - rShoulder.x);
-        const dy = Math.abs(lShoulder.y - rShoulder.y);
-        if (dy > dx * 1.1) {
-          updatePoseState(false, "Phát hiện tư thế nằm! Vui lòng đứng thẳng trước camera");
-          return;
-        }
-      }
-
-      // 3. Check if nose is below shoulder level (lying down facing camera)
-      if (nose && lShoulder && rShoulder) {
-        const avgShoulderY = (lShoulder.y + rShoulder.y) / 2;
-        if (nose.y > avgShoulderY) {
-          updatePoseState(false, "Đang nằm hoặc cúi đầu! Vui lòng đứng thẳng");
-          return;
-        }
-      }
-
-      // Valid standing posture detected
-      updatePoseState(true, null);
-    } else {
-      updatePoseState(true, null);
-    }
-
-    // Helper function for 1:1 video landmark alignment without aspect-ratio crop distortion
-    const mapMediaPipePoint = (rawX: number, rawY: number) => {
-      const normX = inputSource === 'webcam' ? (1 - rawX) : rawX;
-      const normY = rawY;
-
-      const vid = videoRef.current;
-      if (inputSource === 'webcam' && vid && vid.videoWidth > 0 && vid.videoHeight > 0) {
-        // Clamp normalized coordinates to [0.02, 0.98] to prevent runaway dot drifting off-screen
-        const clampedX = Math.max(0.02, Math.min(0.98, normX));
-        const clampedY = Math.max(0.02, Math.min(0.98, normY));
-
-        return {
-          x: Math.round(clampedX * 400),
-          y: Math.round(clampedY * 650)
-        };
-      }
-
-      return {
-        x: Math.round(normX * 400),
-        y: Math.round(normY * 650)
-      };
-    };
 
     if (view === 'front') {
       const newLandmarks = landmarks.map(l => {
@@ -327,35 +213,21 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         }
 
         if (mpIndex !== -1 && mp[mpIndex]) {
-          const jointVis = mp[mpIndex].visibility ?? 1;
-          if (inputSource === 'webcam' && jointVis < 0.35) {
-            return l;
-          }
-          const pt = mapMediaPipePoint(mp[mpIndex].x, mp[mpIndex].y);
-          
-          // Exponential Moving Average (EMA) filter for 60FPS smooth tracking without lag or jitter
-          const prevPt = prevLandmarksMapRef.current[l.id];
-          const alpha = 0.72; // Ultra-responsive tracking weight
-          const smoothedX = prevPt ? Math.round(alpha * pt.x + (1 - alpha) * prevPt.x) : pt.x;
-          const smoothedY = prevPt ? Math.round(alpha * pt.y + (1 - alpha) * prevPt.y) : pt.y;
-
-          prevLandmarksMapRef.current[l.id] = { x: smoothedX, y: smoothedY };
-          return { ...l, x: smoothedX, y: smoothedY, visibility: jointVis };
+          // Mirrored if webcam
+          const normalizedX = inputSource === 'webcam' ? (1 - mp[mpIndex].x) : mp[mpIndex].x;
+          const xVal = normalizedX * 400;
+          const yVal = mp[mpIndex].y * 650;
+          return { ...l, x: Math.round(xVal), y: Math.round(yVal) };
         }
-        return { ...l, visibility: 0 };
+        return l;
       });
 
-      const { onLandmarksBatchChange } = trackingParamsRef.current;
-      if (onLandmarksBatchChange) {
-        onLandmarksBatchChange(newLandmarks);
-      } else {
-        newLandmarks.forEach(l => {
-          if (l.id.includes('knee') || l.id.includes('ankle')) {
-            if (scanRange === 'half') return;
-          }
-          onLandmarkChange(l.id, l.x, l.y);
-        });
-      }
+      newLandmarks.forEach(l => {
+        if (l.id.includes('knee') || l.id.includes('ankle')) {
+          if (scanRange === 'half') return; // Skip updating lower joints state in half mode
+        }
+        onLandmarkChange(l.id, l.x, l.y);
+      });
     } else {
       const leftVisible = (mp[11]?.visibility || 0) + (mp[13]?.visibility || 0) + (mp[15]?.visibility || 0);
       const rightVisible = (mp[12]?.visibility || 0) + (mp[14]?.visibility || 0) + (mp[16]?.visibility || 0);
@@ -389,13 +261,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         }
 
         if (mpPt) {
-          const pt = mapMediaPipePoint(mpPt.x, mpPt.y);
-          const prevPt = prevLandmarksMapRef.current[l.id];
-          const alpha = 0.72;
-          const smoothedX = prevPt ? Math.round(alpha * pt.x + (1 - alpha) * prevPt.x) : pt.x;
-          const smoothedY = prevPt ? Math.round(alpha * pt.y + (1 - alpha) * prevPt.y) : pt.y;
-          prevLandmarksMapRef.current[l.id] = { x: smoothedX, y: smoothedY };
-          return { ...l, x: smoothedX, y: smoothedY };
+          const normalizedX = inputSource === 'webcam' ? (1 - mpPt.x) : mpPt.x;
+          const xVal = normalizedX * 400;
+          const yVal = mpPt.y * 650;
+          return { ...l, x: Math.round(xVal), y: Math.round(yVal) };
         }
         return l;
       });
@@ -418,40 +287,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         buttockDepthPt.y = Math.round(hipPt.y + 20);
       }
 
-      const { onLandmarksBatchChange } = trackingParamsRef.current;
-      if (onLandmarksBatchChange) {
-        onLandmarksBatchChange(newLandmarks);
-      } else {
-        newLandmarks.forEach(l => {
-          if (l.id === 'knee' || l.id === 'ankle') {
-            if (scanRange === 'half') return;
-          }
-          onLandmarkChange(l.id, l.x, l.y);
-        });
-      }
+      newLandmarks.forEach(l => {
+        if (l.id === 'knee' || l.id === 'ankle') {
+          if (scanRange === 'half') return; // Skip updating lower joints state in half mode
+        }
+        onLandmarkChange(l.id, l.x, l.y);
+      });
     }
   };
 
-  const startWebcam = async (overrideMode?: 'user' | 'environment') => {
-    const targetMode = overrideMode || facingMode;
+  const startWebcam = async () => {
     setIsModelLoading(true);
     try {
       await loadMediaPipeScripts();
-      stopWebcam();
 
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: targetMode }
-        });
-      } catch (modeErr) {
-        console.warn(`Camera mode '${targetMode}' not supported, falling back to default camera:`, modeErr);
-        setFacingMode('user');
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
-      }
-
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: 'user' }
+      });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -465,11 +317,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         });
 
         pose.setOptions({
-          modelComplexity: 0,
+          modelComplexity: 1,
           smoothLandmarks: true,
           enableSegmentation: false,
-          minDetectionConfidence: 0.4,
-          minTrackingConfidence: 0.4
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
         });
 
         pose.onResults((results: any) => {
@@ -501,27 +353,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
 
       setIsWebcamActive(true);
-      setCameraErrorMsg(null);
       setIsScanning(false); // Wait for user to click scan button to start countdown
-    } catch (err: any) {
-      console.error("Camera error:", err);
-      setIsWebcamActive(false); // Show clean camera permission placeholder overlay with retry button
-      if (err?.name === 'NotReadableError' || err?.name === 'TrackStartError') {
-        setCameraErrorMsg("⚠️ Camera đang được sử dụng bởi ứng dụng khác (Chrome / Zoom / Zalo). Vui lòng đóng tab Chrome hoặc ứng dụng đang chiếm webcam rồi bấm 'Kích Hoạt Lại'.");
-      } else if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
-        setCameraErrorMsg("🚫 Quyền Camera bị từ chối trên Microsoft Edge. Bấm vào biểu tượng 🔒 hoặc 📹 trên thanh địa chỉ Edge, chọn 'Allow' (Cho phép) rồi bấm 'Kích Hoạt Lại'.");
-      } else {
-        setCameraErrorMsg("⚠️ Không thể kết nối với Webcam. Vui lòng kiểm tra thiết bị và bấm 'Kích Hoạt Lại'.");
-      }
+    } catch (err) {
+      console.error(err);
+      alert("Không thể kết nối Camera. Vui lòng kiểm tra quyền truy cập webcam.");
+      onInputSourceChange('mannequin');
     } finally {
       setIsModelLoading(false);
     }
-  };
-
-  const toggleFacingMode = () => {
-    const nextMode = facingMode === 'user' ? 'environment' : 'user';
-    setFacingMode(nextMode);
-    startWebcam(nextMode);
   };
 
   const stopWebcam = () => {
@@ -695,29 +534,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     startVideoScanning(file);
   };
 
+  // New rotation dragging states
   const [isRotating, setIsRotating] = useState<boolean>(false);
   const [meshStyle, setMeshStyle] = useState<'solid' | 'neon' | 'heatmap'>('solid');
   const [isWebcamActive, setIsWebcamActive] = useState<boolean>(false);
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
-  const [lightingMode, setLightingMode] = useState<'auto' | 'bright' | 'dark' | 'normal'>('auto');
-  const [showLightingMenu, setShowLightingMenu] = useState<boolean>(false);
-
-  // Real-time Adaptive Lighting & Anti-Overexposure / Anti-Underexposed Filter
-  const getVideoFilterStyle = () => {
-    switch (lightingMode) {
-      case 'auto':
-        return 'contrast(1.22) brightness(1.05) saturate(1.04)';
-      case 'bright':
-        // Anti-Overexposure: Dìm ánh sáng chói lóa (brightness 0.78), tăng tương phản viền bờ vai & eo (contrast 1.35)
-        return 'contrast(1.35) brightness(0.78) saturate(0.90)';
-      case 'dark':
-        // Anti-Dark: Bù sáng mạnh (brightness 1.20), tăng nổi bật khung hình thể (contrast 1.25)
-        return 'contrast(1.25) brightness(1.20) saturate(1.08)';
-      case 'normal':
-      default:
-        return 'none';
-    }
-  };
 
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [showInlineGuide, setShowInlineGuide] = useState<boolean>(false);
@@ -797,20 +618,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     if (isScanning) {
       setScanStatus('scanning');
       interval = setInterval(() => {
-        // Pause scan progress if webcam pose is invalid (e.g. user is lying down or out of frame)
-        if (inputSource === 'webcam' && !isPoseValidRef.current) {
-          return;
-        }
-
         setScanProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval!);
             setIsScanning(false);
             setScanStatus('success');
             playAudioBeep('double');
-            if (onScanComplete) {
-              onScanComplete(inputSource);
-            }
             return 100;
           }
           return prev + 5; // takes 4 seconds (20 * 200ms)
@@ -826,7 +639,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isScanning, isPoseValid, inputSource]);
+  }, [isScanning]);
 
   // Reset scan state on view change
   useEffect(() => {
@@ -931,13 +744,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     const lines: React.ReactNode[] = [];
     let idx = 0;
 
-    const drawLine = (p1: (Landmark & { visibility?: number }) | { x: number; y: number; visibility?: number } | undefined, p2: (Landmark & { visibility?: number }) | { x: number; y: number; visibility?: number } | undefined) => {
+    const drawLine = (p1: { x: number; y: number } | undefined, p2: { x: number; y: number } | undefined) => {
       if (!p1 || !p2) return;
-      if (inputSource === 'webcam') {
-        const vis1 = p1.visibility ?? 1;
-        const vis2 = p2.visibility ?? 1;
-        if (vis1 < 0.45 || vis2 < 0.45) return;
-      }
       lines.push(
         <line
           key={`bone-${idx++}`}
@@ -1877,288 +1685,31 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               Reset mô hình & camera
             </button>
           ) : (
-            <>
-              {onResetScan && (
-                <button
-                  type="button"
-                  onClick={onResetScan}
-                  title="Đặt lại số đo của tab hiện tại về trạng thái chưa quét (-- cm)"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(239, 68, 68, 0.08)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
-                >
-                  <RefreshCw size={11} />
-                  Reset số đo
-                </button>
-              )}
-              {onResetLandmarks && (
-                <button
-                  type="button"
-                  onClick={onResetLandmarks}
-                  title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(6, 182, 212, 0.08)',
-                    border: '1px solid rgba(6, 182, 212, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
-                    whiteSpace: 'nowrap', flexShrink: 0
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
-                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
-                >
-                  <RefreshCw size={11} />
-                  Reset chấm
-                </button>
-              )}
-            </>
+            onResetLandmarks && (
+              <button
+                type="button"
+                onClick={onResetLandmarks}
+                title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '0.25rem',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                  color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap', flexShrink: 0
+                }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+              >
+                <RefreshCw size={11} />
+                Reset chấm
+              </button>
+            )
           )}
         </div>
       </div>
 
-
-      {/* Dedicated Glassmorphic Camera Control Toolbar */}
-      {inputSource === 'webcam' && isWebcamActive && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '6px',
-          width: '100%',
-          background: 'rgba(15, 23, 42, 0.95)',
-          border: '1px solid rgba(56, 189, 248, 0.35)',
-          borderRadius: '12px',
-          padding: '0.4rem 0.65rem',
-          margin: '0.5rem 0',
-          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(8px)',
-          position: 'relative',
-          zIndex: 65
-        }}>
-          {/* Left: Lighting Menu Selector */}
-          <div style={{ position: 'relative' }}>
-            <button
-              type="button"
-              onClick={() => setShowLightingMenu(!showLightingMenu)}
-              title="Bấm để chọn chế độ xử lý ánh sáng (Auto AI / Chống cháy sáng / Khử tối)"
-              style={{
-                background: 
-                  lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.22)' :
-                  lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.25)' :
-                  lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.08)',
-                border: 
-                  lightingMode === 'auto' ? '1px solid rgba(234, 179, 8, 0.6)' :
-                  lightingMode === 'bright' ? '1px solid rgba(56, 189, 248, 0.6)' :
-                  lightingMode === 'dark' ? '1px solid rgba(245, 158, 11, 0.6)' : '1px solid rgba(255, 255, 255, 0.2)',
-                borderRadius: '14px',
-                color: 
-                  lightingMode === 'auto' ? '#fde047' :
-                  lightingMode === 'bright' ? '#38bdf8' :
-                  lightingMode === 'dark' ? '#fbbf24' : '#cbd5e1',
-                padding: '0.3rem 0.6rem',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              {lightingMode === 'auto' && <Sparkles size={12} />}
-              {lightingMode === 'bright' && <Sun size={12} />}
-              {lightingMode === 'dark' && <Moon size={12} />}
-              {lightingMode === 'normal' && <Sun size={12} />}
-              <span>
-                {lightingMode === 'auto' && "💡 Auto AI Bù Sáng ▾"}
-                {lightingMode === 'bright' && "☀️ Chống Cháy Sáng ▾"}
-                {lightingMode === 'dark' && "🌙 Khử Tối AI ▾"}
-                {lightingMode === 'normal' && "☀️ Cam Gốc (Tắt AI) ▾"}
-              </span>
-            </button>
-
-            {/* Explicit Lighting Options Dropdown Panel */}
-            {showLightingMenu && (
-              <div style={{
-                position: 'absolute',
-                top: '34px',
-                left: 0,
-                width: '210px',
-                background: 'rgba(15, 23, 42, 0.96)',
-                border: '1px solid rgba(56, 189, 248, 0.45)',
-                borderRadius: '10px',
-                padding: '0.4rem',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-                backdropFilter: 'blur(12px)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '3px',
-                zIndex: 100
-              }}>
-                <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#94a3b8', padding: '2px 6px', letterSpacing: '0.5px' }}>
-                  CHỌN CHẾ ĐỘ ÁNH SÁNG CAMERA:
-                </div>
-                
-                <button
-                  type="button"
-                  onClick={() => { setLightingMode('auto'); setShowLightingMenu(false); }}
-                  style={{
-                    background: lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: lightingMode === 'auto' ? '#fde047' : '#e2e8f0',
-                    padding: '0.35rem 0.5rem',
-                    fontSize: '0.66rem',
-                    fontWeight: 600,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Sparkles size={12} style={{ color: '#fde047' }} /> Auto AI (Tự động thích ứng)
-                  </span>
-                  {lightingMode === 'auto' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { setLightingMode('bright'); setShowLightingMenu(false); }}
-                  style={{
-                    background: lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: lightingMode === 'bright' ? '#38bdf8' : '#e2e8f0',
-                    padding: '0.35rem 0.5rem',
-                    fontSize: '0.66rem',
-                    fontWeight: 600,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Sun size={12} style={{ color: '#38bdf8' }} /> Chống Cháy Sáng (Nắng/Lóa)
-                  </span>
-                  {lightingMode === 'bright' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { setLightingMode('dark'); setShowLightingMenu(false); }}
-                  style={{
-                    background: lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: lightingMode === 'dark' ? '#fbbf24' : '#e2e8f0',
-                    padding: '0.35rem 0.5rem',
-                    fontSize: '0.66rem',
-                    fontWeight: 600,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Moon size={12} style={{ color: '#fbbf24' }} /> Khử Tối AI (Phòng tối)
-                  </span>
-                  {lightingMode === 'dark' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => { setLightingMode('normal'); setShowLightingMenu(false); }}
-                  style={{
-                    background: lightingMode === 'normal' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: lightingMode === 'normal' ? '#ffffff' : '#94a3b8',
-                    padding: '0.35rem 0.5rem',
-                    fontSize: '0.66rem',
-                    fontWeight: 600,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between'
-                  }}
-                >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Sun size={12} style={{ color: '#94a3b8' }} /> Camera Gốc (Tắt lọc AI)
-                  </span>
-                  {lightingMode === 'normal' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Camera Flip & Maximize Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <button
-              type="button"
-              onClick={toggleFacingMode}
-              title={`Lật camera (Đang dùng: ${facingMode === 'user' ? 'Trước' : 'Sau'})`}
-              style={{
-                background: 'rgba(34, 211, 238, 0.12)',
-                border: '1px solid rgba(34, 211, 238, 0.4)',
-                borderRadius: '14px',
-                color: '#22d3ee',
-                padding: '0.3rem 0.55rem',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                whiteSpace: 'nowrap'
-              }}
-            >
-              <RefreshCw size={11} />
-              <span>Lật Cam</span>
-            </button>
-
-            {hasMediaBackground && (
-              <button
-                type="button"
-                onClick={() => setIsMaximized(!isMaximized)}
-                title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: '14px',
-                  color: '#fff',
-                  padding: '0.3rem 0.55rem',
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {isMaximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                <span>{isMaximized ? "Thu nhỏ" : "Phóng to"}</span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
 
       <div className="canvas-container">
         <div className="media-viewport">
@@ -2205,27 +1756,35 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </div>
             )}
 
+          {/* Maximize Button */}
+          <div style={{
+            position: 'absolute',
+            top: '12px',
+            right: '12px',
+            display: 'flex',
+            gap: '6px',
+            zIndex: 50
+          }}>
             {hasMediaBackground && (
               <button
                 type="button"
                 onClick={() => setIsMaximized(!isMaximized)}
                 title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
                 style={{
-                  background: 'rgba(15, 23, 42, 0.88)',
+                  background: 'rgba(15, 23, 42, 0.85)',
                   border: '1px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: '16px',
+                  borderRadius: 'var(--radius-sm)',
                   color: '#fff',
-                  padding: '0.3rem 0.55rem',
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
+                  padding: '0.4rem 0.65rem',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '3px',
+                  gap: '4px',
                   backdropFilter: 'blur(6px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap'
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+                  transition: 'all 0.15s ease'
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
@@ -2257,7 +1816,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               muted
               style={{ 
                 transform: 'scaleX(-1)', // Mirror webcam
-                filter: getVideoFilterStyle(),
                 display: isModelLoading ? 'none' : 'block'
               }}
             />
@@ -2288,15 +1846,15 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               }}>
                 <CameraOff size={40} style={{ color: '#60a5fa' }} />
               </div>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: cameraErrorMsg ? '#f87171' : '#f8fafc' }}>
-                {cameraErrorMsg ? 'Chưa Thể Mở Camera' : 'Webcam AI Chưa Khởi Động'}
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
+                Webcam AI Chưa Khởi Động
               </h3>
-              <p style={{ fontSize: '0.78rem', color: cameraErrorMsg ? '#cbd5e1' : '#94a3b8', maxWidth: '320px', lineHeight: 1.5, marginBottom: '1.5rem' }}>
-                {cameraErrorMsg || 'Bấm nút bên dưới để cấp quyền camera và bắt đầu phân tích hình thể 3D thời gian thực.'}
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '300px', lineHeight: 1.45, marginBottom: '1.5rem' }}>
+                Bấm nút bên dưới để cấp quyền camera và bắt đầu phân tích hình thể 3D thời gian thực.
               </p>
               <button
                 type="button"
-                onClick={() => startWebcam()}
+                onClick={startWebcam}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -2395,84 +1953,106 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 className="laser-beam"
               />
 
-              {/* Render connecting bone lines & interactive landmarks live on media background */}
-              {hasMediaBackground && (
-                <>
-                  {getBones()}
-                  {landmarks.map((point) => {
-                    const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
-                    if (isLowerJoint && scanRange === 'half') {
-                      return null;
-                    }
-                    const vis = (point as any).visibility ?? 1;
-                    if (inputSource === 'webcam' && vis < 0.45) {
-                      return null; // Do not render joint dot when occluded/outside frame!
-                    }
-
-                    return (
-                      <g key={point.id} className="landmark-group">
-                        {/* Glowing outer HUD pulse target ring */}
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r={activePointId === point.id ? 10 : 8}
-                          className="landmark-pulse"
-                          style={{
-                            fill: 'none',
-                            stroke: activePointId === point.id ? '#22d3ee' : '#0891b2',
-                            strokeWidth: 1.2,
-                            pointerEvents: 'none'
-                          }}
-                        />
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r={activePointId === point.id ? 6 : 4.5}
-                          onMouseDown={() => handleMouseDown(point.id)}
-                          onTouchStart={(e) => {
-                            e.stopPropagation();
-                            handleMouseDown(point.id);
-                          }}
-                          onMouseEnter={() => setHoveredPointId(point.id)}
-                          onMouseLeave={() => setHoveredPointId(null)}
-                          className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
-                        />
-                        
-                        {/* Premium glassmorphic neon tooltip badge on hover/drag */}
-                        {(hoveredPointId === point.id || activePointId === point.id) && (
-                          <g transform={`translate(${point.x}, ${point.y - 18})`} style={{ pointerEvents: 'none' }}>
-                            <rect
-                              x={-60}
-                              y={-9}
-                              width={120}
-                              height={18}
-                              rx={4}
-                              fill="rgba(9, 13, 22, 0.94)"
-                              stroke="#00f5ff"
-                              strokeWidth="1.2"
-                              style={{ filter: 'drop-shadow(0 0 8px rgba(0, 245, 255, 0.6))' }}
-                            />
-                            <text
-                              x={0}
-                              y={0}
-                              textAnchor="middle"
-                              dominantBaseline="central"
-                              fontSize="9px"
-                              fontWeight="bold"
-                              fill="#ffffff"
-                            >
-                              {point.label}
-                            </text>
-                          </g>
-                        )}
-                      </g>
-                    );
-                  })}
-                </>
+              {/* Render webcam guide silhouette to help user align their body */}
+              {hasMediaBackground && inputSource === 'webcam' && (
+                <g className="webcam-guide-group">
+                  {gender === 'male' ? (
+                    <path
+                      d="M 200 45 C 212 45, 216 70, 216 82 C 216 90, 204 98, 200 98 C 196 98, 184 90, 184 82 C 184 70, 188 45, 200 45 Z
+                         M 200 98 C 205 98, 215 106, 228 116 C 255 136, 266 148, 270 185 C 274 220, 268 255, 262 290 C 258 310, 253 320, 248 335 C 242 355, 242 390, 242 450 C 242 510, 245 560, 240 595 C 238 610, 232 615, 222 615 C 212 615, 208 605, 206 575 C 204 545, 202 480, 200 470 C 198 480, 196 545, 194 575 C 192 605, 188 615, 178 615 C 168 615, 162 610, 160 595 C 155 560, 158 510, 158 450 C 158 390, 158 355, 152 335 C 147 320, 142 310, 138 290 C 132 255, 126 220, 130 185 C 134 148, 145 136, 172 116 C 185 106, 195 98, 200 98 Z"
+                      className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
+                    />
+                  ) : (
+                    <path
+                      d="M 200 48 C 210 48, 214 70, 214 82 C 214 90, 204 96, 200 96 C 196 96, 186 90, 186 82 C 186 70, 190 48, 200 48 Z
+                         M 200 96 C 204 96, 211 104, 222 114 C 245 132, 258 145, 262 178 C 266 210, 256 242, 248 275 C 242 295, 248 312, 250 335 C 252 358, 242 395, 240 450 C 238 505, 241 555, 236 585 C 233 600, 227 605, 220 605 C 212 605, 209 595, 207 565 C 205 535, 202 480, 200 470 C 198 470, 195 535, 193 565 C 191 595, 188 605, 180 605 C 173 605, 167 600, 164 585 C 159 555, 162 505, 160 450 C 158 395, 148 358, 150 335 C 152 312, 158 295, 152 275 C 144 242, 134 210, 138 178 C 142 132, 155 132, 178 114 C 189 104, 196 96, 200 96 Z"
+                      className={`webcam-guide-silhouette ${scanRange === 'half' ? 'half-body-fade' : ''}`}
+                    />
+                  )}
+                  {/* Dotted lines pointing to head and ankles/hips */}
+                  <line x1="0" y1="45" x2="400" y2="45" className="webcam-guide-line limit" />
+                  <line x1="0" y1={scanRange === 'half' ? 350 : 615} x2="400" y2={scanRange === 'half' ? 350 : 615} className="webcam-guide-line limit" />
+                  <text x="200" y="35" className="webcam-guide-text">Đỉnh đầu (Align Head)</text>
+                  <text x="200" y={scanRange === 'half' ? 370 : 635} className="webcam-guide-text">{scanRange === 'half' ? 'Hông (Align Hips)' : 'Gót chân (Align Heels)'}</text>
+                </g>
               )}
 
-              {/* Floating Measurements Labels on Photo/Video/Webcam View (Only when scanned or scanning) */}
-              {measurements && hasMediaBackground && (inputSource !== 'webcam' || isScanned || scanStatus === 'success') && (() => {
+
+
+              {/* Render connecting bone lines in 2D calibration editing mode */}
+              {hasMediaBackground && getBones()}
+
+              {/* Render interactive landmarks */}
+              {hasMediaBackground && landmarks.map((point) => {
+
+                const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
+                if (isLowerJoint && scanRange === 'half') {
+                  return null;
+                }
+
+                return (
+                  <g key={point.id} className="landmark-group">
+                    {/* Glowing outer HUD pulse target ring */}
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={activePointId === point.id ? 10 : 8}
+                      className="landmark-pulse"
+                      style={{
+                        fill: 'none',
+                        stroke: activePointId === point.id ? '#22d3ee' : '#0891b2',
+                        strokeWidth: 1.2,
+                        pointerEvents: 'none'
+                      }}
+                    />
+                    <circle
+                      cx={point.x}
+                      cy={point.y}
+                      r={activePointId === point.id ? 6 : 4.5}
+                      onMouseDown={() => handleMouseDown(point.id)}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        handleMouseDown(point.id);
+                      }}
+                      onMouseEnter={() => setHoveredPointId(point.id)}
+                      onMouseLeave={() => setHoveredPointId(null)}
+                      className={`landmark-dot ${activePointId === point.id ? 'dragging' : ''}`}
+                    />
+                    
+                    {/* Premium glassmorphic neon tooltip badge on hover/drag */}
+                    {(hoveredPointId === point.id || activePointId === point.id) && (
+                      <g transform={`translate(${point.x}, ${point.y - 18})`} style={{ pointerEvents: 'none' }}>
+                        {/* Shadow/Glow Rect */}
+                        <rect
+                          x={-60}
+                          y={-9}
+                          width={120}
+                          height={18}
+                          rx={4}
+                          fill="rgba(9, 13, 22, 0.94)"
+                          stroke="#00f5ff"
+                          strokeWidth="1.2"
+                          style={{ filter: 'drop-shadow(0 0 8px rgba(0, 245, 255, 0.6))' }}
+                        />
+                        <text
+                          x={0}
+                          y={0}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize="9px"
+                          fontWeight="bold"
+                          fill="#ffffff"
+                        >
+                          {point.label}
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              })}
+
+              {/* Floating Measurements Labels on Photo/Video View */}
+              {measurements && hasMediaBackground && (() => {
                 const nasion = landmarks.find(l => l.id === 'nasion');
                 const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
                 const rShoulder = landmarks.find(l => l.id === 'right_shoulder');
@@ -2481,7 +2061,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 const rHip = landmarks.find(l => l.id === 'right_hip');
                 const rKnee = landmarks.find(l => l.id === 'right_knee');
                 const rAnkle = landmarks.find(l => l.id === 'right_ankle');
-                const lAnkle = landmarks.find(l => l.id === 'left_ankle');
 
                 const shoulder = landmarks.find(l => l.id === 'shoulder');
                 const hip = landmarks.find(l => l.id === 'hip');
@@ -2498,7 +2077,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 const legVal = measurements.legLength.toFixed(1);
                 const thighVal = measurements.thighCircumference.toFixed(1);
                 const calfVal = measurements.calfCircumference.toFixed(1);
-                const ankleVal = measurements.ankleCircumference.toFixed(1);
 
                 const items: {
                   side: 'left' | 'right';
@@ -2511,8 +2089,27 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
                 const addItem = (side: 'left' | 'right', cardY: number, anchor: { x: number; y: number } | undefined, text: string) => {
                   if (!anchor) return;
-                  const cardX = side === 'left' ? 90 : 310;
-                  const isFlipped = false;
+                  const cardWidth = 80;
+                  const margin = 10;
+                  const gap = 20;
+                  const width = 400;
+
+                  let cardX = 0;
+                  let isFlipped = false;
+
+                  if (side === 'left') {
+                    cardX = anchor.x - gap;
+                    if (cardX < margin + cardWidth) {
+                      cardX = anchor.x + gap;
+                      isFlipped = true;
+                    }
+                  } else {
+                    cardX = anchor.x + gap;
+                    if (cardX + cardWidth > width - margin) {
+                      cardX = anchor.x - gap;
+                      isFlipped = true;
+                    }
+                  }
 
                   items.push({ side, cardX, cardY, anchor, text, isFlipped });
                 };
@@ -2526,7 +2123,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   const waistAnchor = lShoulder && lHip && rHip ? { x: (lHip.x + rHip.x) / 2, y: lShoulder.y + (lHip.y - lShoulder.y) * 0.75 } : undefined;
                   const thighAnchor = rHip && rKnee ? { x: (rHip.x + rKnee.x) / 2, y: (rHip.y + rKnee.y) / 2 } : undefined;
                   const calfAnchor = rKnee && rAnkle ? { x: (rKnee.x + rAnkle.x) / 2, y: (rKnee.y + rAnkle.y) / 2 } : undefined;
-                  const ankleAnchor = lAnkle;
 
                   addItem('left', 90, neckAnchor, `Cổ: ${neckVal} cm`);
                   addItem('left', 180, chestAnchor, `Ngực: ${chestVal} cm`);
@@ -2538,7 +2134,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   addItem('right', 220, lWrist, `Dài tay: ${armVal} cm`);
                   addItem('right', 360, midHip, `Mông: ${hipsVal} cm`);
                   addItem('right', 510, midHip, `Dài chân: ${legVal} cm`);
-                  addItem('right', 600, ankleAnchor, `Cổ chân: ${ankleVal} cm`);
                 } else {
                   // Side view
                   const waistDepthY = shoulder && hip ? shoulder.y + (hip.y - shoulder.y) * 0.75 : undefined;
@@ -2613,102 +2208,43 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </svg>
           )}
 
-          {/* Top Camera Status & Pose Validation Bar */}
-          {inputSource === 'webcam' && isWebcamActive && !isModelLoading && scanStatus !== 'scanning' && (
-            <div style={{
-              position: 'absolute',
-              top: '12px',
-              left: '12px',
-              right: '160px', // Leave ample space for top right camera control buttons
-              zIndex: 55,
-              pointerEvents: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}>
-              {!isPoseValid ? (
-                <div style={{
-                  background: 'rgba(239, 68, 68, 0.92)',
-                  color: '#fff',
-                  padding: '0.3rem 0.65rem',
-                  borderRadius: '20px',
-                  fontSize: '0.62rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
-                  backdropFilter: 'blur(6px)',
-                  letterSpacing: '0.3px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  <span>⚠️</span>
-                  <span>{poseWarning || "Hãy đứng thẳng trước camera"}</span>
-                </div>
-              ) : (
-                <div style={{
-                  background: 'rgba(15, 23, 42, 0.82)',
-                  border: '1px solid rgba(34, 211, 238, 0.35)',
-                  color: '#22d3ee',
-                  padding: '0.25rem 0.6rem',
-                  borderRadius: '20px',
-                  fontSize: '0.62rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  backdropFilter: 'blur(6px)',
-                  whiteSpace: 'nowrap'
-                }}>
-                  <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
-                  <span>LIVE AI TRACKING</span>
-                </div>
-              )}
+          {/* Floating AI Scanning Controls Overlay */}
+          {inputSource === 'webcam' && isWebcamActive && !isModelLoading && (
+            <div className="ai-controls-overlay">
+              <button
+                type="button"
+                className={`ai-scan-btn ${isScanning ? 'scanning' : 'paused'}`}
+                onClick={() => {
+                  if (isScanning) {
+                    setIsScanning(false);
+                  } else {
+                    if (scanStatus === 'success') {
+                      setScanProgress(0);
+                      setScanStatus('idle');
+                    }
+                    setCountdown(5);
+                  }
+                }}
+              >
+                {isScanning ? <span className="icon-pulse">⏸️</span> : <span>▶️</span>}
+                <span>{isScanning ? 'Tạm Dừng Quét AI' : (scanStatus === 'success' ? 'Quét Lại (Rescan)' : 'Bắt Đầu Quét AI')}</span>
+              </button>
+              <span className={`ai-scanning-badge ${isScanning ? 'active' : ''}`}>
+                {isScanning ? '⚡ AI đang quét khớp xương...' : '⏸️ Đã ghim số đo'}
+              </span>
             </div>
           )}
 
-          {/* Futuristic Laser Beam animation during active scanning */}
-          {inputSource === 'webcam' && isScanning && (
-            <div className="webcam-scanner-laser-line" />
-          )}
-
-          {/* Compact Non-Blocking Scanning Progress HUD overlay */}
+          {/* Guided Scanning Progress HUD overlay */}
           {scanStatus === 'scanning' && (
-            <div className="camera-scanning-hud" style={{
-              position: 'absolute',
-              top: '12px',
-              left: '12px',
-              right: '160px',
-              background: 'rgba(9, 13, 22, 0.88)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(0, 245, 255, 0.4)',
-              borderRadius: 'var(--radius-md)',
-              padding: '0.5rem 0.75rem',
-              zIndex: 55,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <div className="scanning-pulse-circle"></div>
-                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px', fontSize: '0.72rem' }}>
-                    {view === 'front' ? 'QUÉT MẶT TRƯỚC' : 'QUÉT MẶT NGHIÊNG'} ({scanProgress}%)
-                  </strong>
-                </div>
-                <span style={{ fontSize: '0.58rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.1rem 0.4rem', borderRadius: '10px' }}>
-                  {!isPoseValid ? 'PAUSED' : 'SCANNING'}
-                </span>
+            <div className="camera-scanning-hud">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <div className="scanning-pulse-circle"></div>
+                <strong>AI đang khóa khớp xương & phân tích: {scanProgress}%</strong>
               </div>
-              <div className="scanning-progress-bar-bg" style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%`, height: '100%', background: 'linear-gradient(90deg, #0055ff, #00f5ff)', boxShadow: '0 0 10px #00f5ff' }}></div>
+              <div className="scanning-progress-bar-bg">
+                <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%` }}></div>
               </div>
-              <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.66rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
-                {!isPoseValid 
-                  ? '⚠️ Vui lòng đứng thẳng trước camera...'
-                  : (scanProgress < 35 ? '🔍 AI đang định vị 14 mốc khớp xương...' : (scanProgress < 70 ? '⚡ Đang đo chu vi Ngực, Eo, Hông...' : '📐 Đang tính chiều dài chân & cổ chân...'))
-                }
-              </p>
             </div>
           )}
 
@@ -2716,13 +2252,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           {scanStatus === 'success' && (
             <div className="camera-success-overlay">
               <div className="success-icon">✓</div>
-              <h3>
-                {view === 'front' ? '🎉 BƯỚC 1: QUÉT MẶT TRƯỚC THÀNH CÔNG!' : '🏆 HOÀN THÀNH TOÀN BỘ ĐO ĐẠC HÌNH THỂ 3D!'}
-              </h3>
+              <h3>Quét {view === 'front' ? 'Mặt Trước' : 'Mặt Nghiêng'} Thành Công!</h3>
               <p>
                 {view === 'front' 
-                  ? "Đã ghi nhận số đo mặt trước. Vui lòng quay nghiêng người 90° để đo độ sâu Ngực - Eo - Mông." 
-                  : "Hệ thống đã phân tích toàn bộ số đo 2D/3D & dựng mô hình nhân trắc học hoàn chỉnh."
+                  ? "Đã ghi nhận số đo mặt trước. Vui lòng quay nghiêng người và bấm nút dưới để quét độ sâu." 
+                  : "Đã hoàn thành toàn bộ đo đạc nhân trắc học cơ thể."
                 }
               </p>
               <div className="success-actions">
@@ -2732,12 +2266,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     className="view-change-cta-btn"
                     onClick={() => {
                       onViewChange('side');
-                      setScanProgress(0);
-                      setScanStatus('idle');
-                      setCountdown(3);
                     }}
                   >
-                    👉 TIẾP TỤC BƯỚC 2: QUÉT MẶT NGHIÊNG
+                    👉 Chuyển Sang Mặt Nghiêng
                   </button>
                 ) : (
                   <button
@@ -2757,17 +2288,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       }, 120);
                     }}
                   >
-                    🎉 XEM MÔ HÌNH 3D & BÁO CÁO CHI TIẾT
+                    🎉 Xem Báo Cáo Chi Tiết
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="rescan-btn"
-                  onClick={() => setShowSnapshotModal(true)}
-                  style={{ background: 'rgba(34, 211, 238, 0.15)', borderColor: '#22d3ee', color: '#22d3ee' }}
-                >
-                  📷 Xem Ảnh Quét AI ({view === 'front' ? 'Mặt Trước' : 'Mặt Nghiêng'})
-                </button>
                 <button
                   type="button"
                   className="rescan-btn"
@@ -2783,113 +2306,108 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* Compact Non-Blocking Bottom Start Controls (Webcam active, scan idle, not scanning/counting down) */}
+          {/* Start Scan Button Overlay (Webcam active, scan idle, not scanning/counting down) */}
           {inputSource === 'webcam' && isWebcamActive && scanStatus === 'idle' && !isScanning && countdown === null && (
             <div style={{
               position: 'absolute',
-              bottom: '12px',
-              left: '12px',
-              right: '12px',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.45)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 50,
-              pointerEvents: 'none'
+              zIndex: 50
             }}>
-              <div style={{
-                background: 'rgba(9, 13, 22, 0.82)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: '1px solid rgba(0, 245, 255, 0.35)',
-                borderRadius: '30px',
-                padding: '0.4rem 1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                pointerEvents: 'auto'
+              <button
+                type="button"
+                onClick={() => setCountdown(5)}
+                style={{
+                  background: 'linear-gradient(135deg, #0055ff, #00f5ff)',
+                  border: 'none',
+                  borderRadius: '50px',
+                  color: '#fff',
+                  padding: '0.85rem 1.75rem',
+                  fontSize: '0.92rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(0, 245, 255, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.2s ease',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 30px rgba(0, 245, 255, 0.65)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 245, 255, 0.45)';
+                }}
+              >
+                ⏱️ Bắt đầu quét AI (5s)
+              </button>
+              <p style={{
+                marginTop: '1rem',
+                color: 'rgba(255, 255, 255, 0.85)',
+                fontSize: '0.75rem',
+                textAlign: 'center',
+                maxWidth: '82%',
+                lineHeight: 1.45,
+                fontFamily: 'system-ui, sans-serif'
               }}>
-                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#00f5ff', letterSpacing: '0.5px' }}>
-                  {view === 'front' ? '📍 BƯỚC 1/2: MẶT TRƯỚC' : '📍 BƯỚC 2/2: MẶT NGHIÊNG'}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setCountdown(5)}
-                  style={{
-                    background: 'linear-gradient(135deg, #0055ff, #00f5ff)',
-                    border: 'none',
-                    borderRadius: '20px',
-                    color: '#fff',
-                    padding: '0.45rem 1.1rem',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                    boxShadow: '0 0 15px rgba(0, 245, 255, 0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.4rem',
-                    transition: 'all 0.2s ease',
-                    textTransform: 'uppercase'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.transform = 'scale(1.04)';
-                    e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 245, 255, 0.65)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 245, 255, 0.4)';
-                  }}
-                >
-                  ⚡ BẮT ĐẦU QUÉT AI (5S)
-                </button>
-              </div>
+                Vui lòng đặt máy cố định, đứng lùi ra xa khoảng 2.2m - 2.5m để camera thu trọn vẹn từ đầu đến chân trước khi đếm ngược kết thúc.
+              </p>
             </div>
           )}
 
-          {/* Compact Non-Blocking Countdown Timer Badge (Camera stays 100% UNBLURRED and fully visible) */}
+          {/* Countdown timer overlay with ticking animation */}
           {countdown !== null && (
             <div style={{
               position: 'absolute',
-              top: '14px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'rgba(9, 13, 22, 0.85)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              border: '1px solid rgba(0, 245, 255, 0.5)',
-              borderRadius: '30px',
-              padding: '0.4rem 1.1rem',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(9, 13, 22, 0.75)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: '0.65rem',
+              justifyContent: 'center',
               zIndex: 100,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-              pointerEvents: 'none'
+              color: '#00f5ff',
+              fontFamily: 'system-ui, sans-serif'
             }}>
               <div style={{
-                width: '32px',
-                height: '32px',
+                width: '90px',
+                height: '90px',
                 borderRadius: '50%',
-                background: 'linear-gradient(135deg, #0055ff, #00f5ff)',
-                boxShadow: '0 0 12px rgba(0, 245, 255, 0.6)',
+                border: '4px solid #00f5ff',
+                boxShadow: '0 0 20px rgba(0, 245, 255, 0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '1.15rem',
+                fontSize: '2.8rem',
                 fontWeight: 800,
-                color: '#fff'
+                marginBottom: '1rem'
               }}>
                 {countdown}
               </div>
-              <span style={{ fontSize: '0.75rem', letterSpacing: '0.5px', color: '#fff', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                ⏱️ Chuẩn bị đứng thẳng trước camera ({countdown}s)...
+              <span style={{ fontSize: '0.78rem', letterSpacing: '1px', textTransform: 'uppercase', color: '#fff', fontWeight: 600 }}>
+                Chuẩn bị tạo dáng đứng...
               </span>
             </div>
           )}
 
-          {/* Floating Image Calibration Guidance Tooltip (ONLY for uploaded image mode) */}
-          {inputSource === 'image' && showImageGuidance && (
+          {/* Floating AI Scanning Guidance Tooltip */}
+          {hasMediaBackground && showImageGuidance && (
             <div style={{
               position: 'absolute',
               bottom: '12px',
@@ -3119,53 +2637,44 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         ) : (
           <div className="canvas-footer">
             {inputSource === 'webcam' && (
-              <div style={{ width: '100%', marginBottom: '0.35rem' }}>
+              <div className="webcam-instruction-card">
+                <div className="instruction-icon">🎯</div>
+                <div className="instruction-body">
+                  <strong>Hướng dẫn căn chỉnh camera:</strong>
+                  {scanRange === 'half' ? (
+                    <p>Di chuyển đứng gần sao cho <strong>Đỉnh đầu</strong> và <strong>Hông</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
+                  ) : (
+                    <p>Di chuyển đứng lùi xa sao cho <strong>Đỉnh đầu</strong> và <strong>Gót chân</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {inputSource === 'webcam' && (
+              <div className="webcam-tilt-guide-card">
                 <button
                   type="button"
+                  className="tilt-guide-header"
                   onClick={() => setShowTiltTips(!showTiltTips)}
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'rgba(37, 99, 235, 0.06)',
-                    border: '1px solid rgba(37, 99, 235, 0.25)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.4rem 0.75rem',
-                    fontSize: '0.72rem',
-                    fontWeight: 600,
-                    color: '#2563eb',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <span>❓</span> Hướng dẫn & Mẹo căn chỉnh camera
-                  </span>
-                  <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{showTiltTips ? '▲ Thu gọn' : '▼ Mở rộng'}</span>
+                  <span>💡 Mẹo đặt Camera Laptop & Đứng Đo Chuẩn</span>
+                  <span className="tilt-guide-arrow">{showTiltTips ? '▲' : '▼'}</span>
                 </button>
-
                 {showTiltTips && (
-                  <div style={{
-                    marginTop: '0.35rem',
-                    background: '#f8fafc',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '0.7rem 0.8rem',
-                    fontSize: '0.71rem',
-                    color: '#334155',
-                    lineHeight: 1.5,
-                    boxShadow: 'var(--shadow-sm)'
-                  }}>
-                    <p style={{ margin: '0 0 0.35rem 0' }}>
-                      🎯 <strong>Căn chỉnh thân người:</strong> {scanRange === 'half' ? 'Đứng gần (1m - 1.2m) sao cho Đỉnh đầu và Hông nằm trọn trong camera.' : 'Đứng lùi xa (2.2m - 2.5m) sao cho Đỉnh đầu và Gót chân nằm trọn trong camera.'}
-                    </p>
-                    <p style={{ margin: '0 0 0.35rem 0' }}>
-                      📐 <strong>Góc nghiêng màn hình:</strong> Gập màn hình laptop nhẹ ra sau (góc 95°-100°), đặt máy cao khoảng 70cm - 90cm.
-                    </p>
-                    <p style={{ margin: 0 }}>
-                      📱 <strong>Mẹo dùng Điện thoại:</strong> Bấm nút <strong>"Dùng Điện Thoại"</strong> ở góc trái để mở camera điện thoại góc rộng tiện lợi hơn.
-                    </p>
+                  <div className="tilt-guide-content">
+                    <div className="tilt-step">
+                      <strong>1. Độ nghiêng màn hình:</strong> Gập màn hình laptop ở góc khoảng 95°-100° (nghiêng nhẹ ra sau), đặt máy trên bàn cao 70cm - 90cm.
+                    </div>
+                    <div className="tilt-step">
+                      <strong>2. Khoảng cách đứng:</strong>
+                      <ul>
+                        <li><em>Chế độ Toàn thân:</em> Đứng lùi xa 2.2m - 2.5m, đảm bảo thấy rõ cả đầu và gót chân.</li>
+                        <li><em>Chế độ Nửa người:</em> Đứng gần 1.0m - 1.2m (hoặc ngồi thẳng), chỉ cần thấy rõ từ đầu đến hông.</li>
+                      </ul>
+                    </div>
+                    <div className="tilt-step">
+                      <strong>3. Điện thoại di động:</strong> Nếu phòng hẹp hoặc webcam quá mờ, bấm <strong>"Dùng Điện Thoại"</strong> ở góc trái, quét QR để mở camera điện thoại góc rộng tiện lợi hơn rất nhiều!
+                    </div>
                   </div>
                 )}
               </div>
@@ -3178,11 +2687,95 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             )}
             <div className="canvas-helper-text">
               <RefreshCw size={12} className="spin-hover" />
-              <span>Kéo thả các chấm đỏ để căn chỉnh mốc giải phẫu.</span>
+              <span>Kéo thả các chấm đỏ để căn chỉnh chính xác mốc giải phẫu. Vuốt/kéo trên khung để xoay Mannequin 3D.</span>
             </div>
           </div>
         )}
       </div> {/* Closes canvas-container */}
+      </div> {/* Closes main canvas card wrapper */}
+
+      {/* Right Side Panel: Diagnostics */}
+      {!isMaximized && (
+        <div className="canvas-side-panel right-panel" style={{
+          width: '130px',
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          marginTop: '6.5rem' // Align with main viewport box height
+        }}>
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
+            padding: '0.75rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            height: '240px',
+            fontFamily: 'system-ui, sans-serif'
+          }}>
+            {hasMediaBackground ? (
+              <>
+                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#fbbf24', letterSpacing: '0.5px' }}>
+                  ⚡ CHẨN ĐOÁN AI
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
+                  {view === 'front' ? (
+                    <>
+                      <div>🟢 <strong>Khớp vai:</strong> Cân đối (98%)</div>
+                      <div>🟢 <strong>Vòng ngực:</strong> Ổn định (95%)</div>
+                      <div>🟢 <strong>Vòng eo:</strong> Cân đối (97%)</div>
+                      <div>🟢 <strong>Khớp hông:</strong> Đã khóa (94%)</div>
+                      <div>🟢 <strong>Khớp gối:</strong> Song song (96%)</div>
+                      <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
+                        TỶ LỆ VÀNG: ĐẠT
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>🟢 <strong>Đỉnh đầu:</strong> Khớp nasion</div>
+                      <div>🟢 <strong>Sâu ngực:</strong> Trực diện tốt</div>
+                      <div>🟢 <strong>Sâu eo:</strong> Điểm lõm tốt</div>
+                      <div>🟢 <strong>Sâu mông:</strong> Điểm lồi tốt</div>
+                      <div>🟢 <strong>Trục dọc:</strong> Thẳng đứng (99%)</div>
+                      <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(251, 191, 36, 0.08)', borderRadius: '4px', color: '#fbbf24', textAlign: 'center' }}>
+                        ĐỘ SÂU 3D: KHỚP
+                      </div>
+                    </>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#10b981', letterSpacing: '0.5px' }}>
+                  🤖 MẪU 3D MẶC ĐỊNH
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
+                  <div>🧘 <strong>Tư thế:</strong> T-Pose (Chuẩn)</div>
+                  <div>👤 <strong>Giới tính:</strong> {gender === 'male' ? 'Nam giới' : 'Nữ giới'}</div>
+                  <div>⚖️ <strong>Thể trạng:</strong> {weight && measurements?.height ? (
+                    (() => {
+                      const bmi = weight / ((measurements.height / 100) * (measurements.height / 100));
+                      if (bmi < 18.5) return 'Mảnh khảnh';
+                      if (bmi < 24.9) return 'Cân đối';
+                      return 'Tròn trịa';
+                    })()
+                  ) : 'Cân đối'}</div>
+                  <div>🟢 <strong>Mốc đo:</strong> Khởi tạo chuẩn</div>
+                  <div>⚙️ <strong>Vật liệu:</strong> Neon Wireframe</div>
+                  <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '4px', color: '#10b981', textAlign: 'center' }}>
+                    CHƯA CÓ ẢNH ĐO
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       <input
         type="file"
@@ -3199,67 +2792,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         accept="video/*"
         style={{ display: 'none' }}
       />
-      {/* Snapshot Review Modal */}
-      {showSnapshotModal && (
-        <div 
-          className="calib-modal-overlay" 
-          onClick={() => setShowSnapshotModal(false)}
-          style={{ zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(9, 13, 22, 0.9)' }}
-        >
-          <div 
-            className="calib-modal" 
-            onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '540px', width: '92%', background: '#0f172a', border: '1px solid rgba(0, 245, 255, 0.4)', borderRadius: '16px', padding: '1.25rem' }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.75rem' }}>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#00f5ff', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                📷 Kiểm Tra Khung Xương AI Đã Quét ({view === 'front' ? 'Mặt Trước' : 'Mặt Nghiêng'})
-              </h3>
-              <button 
-                onClick={() => setShowSnapshotModal(false)}
-                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '400 / 650', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.2)', background: '#020617' }}>
-              {inputSource === 'image' && uploadedImage && (
-                <img src={uploadedImage} alt="Snapshot review" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              )}
-              {inputSource === 'webcam' && (
-                <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#090d16', color: '#38bdf8' }}>
-                  <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.85rem' }}>
-                    ✅ AI đã kiểm tra định vị thành công 14 mốc giải phẫu trên cơ thể bạn!
-                  </p>
-                </div>
-              )}
-              <svg viewBox="0 0 400 650" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                {getBones()}
-                {landmarks.map((point) => (
-                  <g key={`rev-${point.id}`}>
-                    <circle cx={point.x} cy={point.y} r="8" fill="none" stroke="#00f5ff" strokeWidth="1.5" />
-                    <circle cx={point.x} cy={point.y} r="4" fill="#00f5ff" />
-                    <text x={point.x} y={point.y - 12} textAnchor="middle" fontSize="9px" fontWeight="bold" fill="#ffffff">
-                      {point.label}
-                    </text>
-                  </g>
-                ))}
-              </svg>
-            </div>
-
-            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={() => setShowSnapshotModal(false)}
-                style={{ background: 'linear-gradient(135deg, #0055ff, #00f5ff)', border: 'none', borderRadius: '20px', color: '#fff', padding: '0.5rem 1.25rem', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
-              >
-                Đóng & Tiếp Tục
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

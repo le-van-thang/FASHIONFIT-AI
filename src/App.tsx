@@ -318,38 +318,52 @@ function App() {
 
   // Fetch recent sessions from Express MongoDB database with fallback (up to 1000 items)
   const loadHistory = async () => {
+    const isCleared = localStorage.getItem('fashionfit_history_cleared') === 'true';
     const backendRes = await fetchBackendSessions();
+
     if (!backendRes.error && backendRes.data) {
-      const formattedSessions = backendRes.data.map(item => ({
-        id: item._id || Math.random().toString(),
-        created_at: item.created_at || new Date().toISOString(),
-        customer_name: item.customer_name || '',
-        customer_phone: item.customer_phone || '',
-        notes: item.notes || '',
-        source: item.source || 'mannequin',
-        snapshot_img: item.snapshot_img || '',
-        gender: item.gender,
-        weight_kg: item.weight_kg,
-        height_cm: item.height_cm,
-        shoulder_width_cm: item.shoulder_width_cm,
-        arm_length_cm: item.arm_length_cm,
-        bust_cm: item.bust_cm,
-        waist_cm: item.waist_cm,
-        hip_cm: item.hip_cm,
-        inseam_cm: item.inseam_cm,
-        bust_depth_cm: item.bust_depth_cm || 0,
-        waist_depth_cm: item.waist_depth_cm || 0,
-        hip_depth_cm: item.hip_depth_cm || 0,
-        recommended_size: item.recommended_size,
-        confidence_pct: item.confidence_pct,
-        calibration_type: item.calibration_type,
-        reference_pixels: item.reference_pixels,
-        landmarks_front: item.landmarks_front,
-        landmarks_side: item.landmarks_side
-      }));
-      setHistory(formattedSessions as any);
+      if (backendRes.data.length === 0 && isCleared) {
+        setHistory([]);
+        return;
+      }
+      if (backendRes.data.length > 0) {
+        const formattedSessions = backendRes.data.map(item => ({
+          id: item._id || Math.random().toString(),
+          created_at: item.created_at || new Date().toISOString(),
+          customer_name: item.customer_name || '',
+          customer_phone: item.customer_phone || '',
+          notes: item.notes || '',
+          source: item.source || 'mannequin',
+          snapshot_img: item.snapshot_img || '',
+          gender: item.gender,
+          weight_kg: item.weight_kg,
+          height_cm: item.height_cm,
+          shoulder_width_cm: item.shoulder_width_cm,
+          arm_length_cm: item.arm_length_cm,
+          bust_cm: item.bust_cm,
+          waist_cm: item.waist_cm,
+          hip_cm: item.hip_cm,
+          inseam_cm: item.inseam_cm,
+          bust_depth_cm: item.bust_depth_cm || 0,
+          waist_depth_cm: item.waist_depth_cm || 0,
+          hip_depth_cm: item.hip_depth_cm || 0,
+          recommended_size: item.recommended_size,
+          confidence_pct: item.confidence_pct,
+          calibration_type: item.calibration_type,
+          reference_pixels: item.reference_pixels,
+          landmarks_front: item.landmarks_front,
+          landmarks_side: item.landmarks_side
+        }));
+        setHistory(formattedSessions as any);
+        return;
+      }
+    }
+
+    if (isCleared) {
+      setHistory([]);
       return;
     }
+
     const { data, error } = await fetchRecentSessions(1000);
     if (!error) {
       setHistory(data);
@@ -370,6 +384,7 @@ function App() {
 
   // Clear ALL sessions from history
   const handleClearAllHistory = async () => {
+    localStorage.setItem('fashionfit_history_cleared', 'true');
     await clearAllBackendSessions();
     await clearAllSessions();
     setHistory([]);
@@ -378,6 +393,8 @@ function App() {
 
   // Load a session's parameters back into current state
   const handleLoadSession = (session: MeasurementSession) => {
+    setCustomerName(session.customer_name || '');
+    setCustomerPhone(session.customer_phone || '');
     setInput({
       gender: session.gender,
       weight: session.weight_kg,
@@ -689,17 +706,23 @@ function App() {
   // Manual save handler triggered when clicking "Lưu Hồ Sơ Khách Hàng"
   const handleSaveSession = async () => {
     setSyncState('saving');
+    localStorage.removeItem('fashionfit_history_cleared');
+    const freshPayload = {
+      ...savePayload,
+      customer_name: customerName.trim() || 'Khách Vãng Lai',
+      customer_phone: customerPhone.trim() || ''
+    };
     try {
-      // Save to MongoDB Express Backend API
-      await saveBackendSession(savePayload as any);
-      await saveMeasurementSession(savePayload);
+      // Save to MongoDB Express Backend API & Supabase
+      await saveBackendSession(freshPayload as any);
+      await saveMeasurementSession(freshPayload as any);
       setSyncState('saved');
       const now = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
       setSavedAt(now);
-      loadHistory(); // Refresh history list
+      await loadHistory(); // Refresh history list
     } catch (e) {
       setSyncState('saved');
-      loadHistory();
+      await loadHistory();
     }
   };
 

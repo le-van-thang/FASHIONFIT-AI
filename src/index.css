@@ -3249,6 +3249,24 @@ body {
     width: 100% !important;
   }
 
+  /* Hide floating 3D debug info card on mobile to eliminate whitespace */
+  .canvas-side-panel {
+    display: none !important;
+  }
+
+  /* Full screen width History Drawer on mobile so titles are never clipped */
+  .history-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    right: -100vw !important;
+    left: auto !important;
+    border-left: none !important;
+  }
+
+  .history-drawer.open {
+    right: 0 !important;
+  }
+
   /* Floating Bottom Navigation Bar */
   .mobile-bottom-nav {
     display: flex;

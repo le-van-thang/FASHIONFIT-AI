@@ -860,10 +860,10 @@ function App() {
       <div className={`history-drawer ${isHistoryOpen ? 'open' : ''}`}>
         <div className="drawer-header" style={{ flexDirection: 'column', gap: '0.6rem', alignItems: 'stretch', padding: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div className="drawer-title-group" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <HistoryIcon size={18} style={{ color: '#38bdf8' }} />
-              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
-                Hồ Sơ & Lịch Sử Phiên Đo ({history.length})
+            <div className="drawer-title-group" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+              <HistoryIcon size={18} style={{ color: '#38bdf8', flexShrink: 0 }} />
+              <h3 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#f8fafc', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Hồ Sơ & Lịch Sử Đo ({history.length})
               </h3>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

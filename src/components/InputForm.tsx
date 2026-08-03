@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Gender, CalibrationType, UserInput } from '../types';
-import { User, Scale, Eye, FileText, CreditCard, Info, X, Camera, Ruler, ArrowRight, CheckCircle, Shirt } from 'lucide-react';
+import { User, Scale, Eye, FileText, CreditCard, Info, X, Camera, Ruler, ArrowRight, CheckCircle, Shirt, Save } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface InputFormProps {
@@ -15,6 +15,7 @@ interface InputFormProps {
   customerPhone?: string;
   onCustomerPhoneChange?: (phone: string) => void;
   onNewCustomer?: () => void;
+  onSave?: () => void;
 }
 
 export const InputForm: React.FC<InputFormProps> = ({
@@ -28,7 +29,8 @@ export const InputForm: React.FC<InputFormProps> = ({
   onCustomerNameChange,
   customerPhone = '',
   onCustomerPhoneChange,
-  onNewCustomer
+  onNewCustomer,
+  onSave
 }) => {
   const [weightInputVal, setWeightInputVal] = useState<string>(input.weight.toString());
   const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
@@ -411,9 +413,33 @@ export const InputForm: React.FC<InputFormProps> = ({
                   fontSize: '0.76rem',
                   fontWeight: 600,
                   outline: 'none'
-                }}
-              />
             </div>
+            {onSave && (
+              <button
+                type="button"
+                onClick={onSave}
+                style={{
+                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '0.45rem 0.8rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)',
+                  marginTop: '0.25rem'
+                }}
+                title="Bấm để lưu hồ sơ vị khách này vào cơ sở dữ liệu"
+              >
+                <Save size={15} />
+                <span>💾 Lưu Hồ Sơ Khách Hàng</span>
+              </button>
+            )}
           </div>
         </div>
 

@@ -680,43 +680,22 @@ function App() {
     landmarks_side: processedSideLandmarks,
   }), [customerName, customerPhone, inputSource, uploadedImageFront, input, referencePixels, measurements, recommendation, processedFrontLandmarks, processedSideLandmarks]);
 
-  // Debounced auto-save effect triggered in App.tsx to allow skipping saving during session loads
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (skipSaveRef.current) {
-      skipSaveRef.current = false; // consume the skip flag
-      return;
-    }
-
-    setSyncState('pending');
-
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-
-    debounceRef.current = setTimeout(async () => {
-      setSyncState('saving');
-      // Save to MongoDB Express Backend API first
+  // Manual save handler triggered when clicking "Lưu Hồ Sơ Khách Hàng"
+  const handleSaveSession = async () => {
+    setSyncState('saving');
+    try {
+      // Save to MongoDB Express Backend API
       await saveBackendSession(savePayload as any);
-      
-      const { error } = await saveMeasurementSession(savePayload);
-      if (error) {
-        setSyncState('error');
-        setTimeout(() => setSyncState('idle'), 5000);
-      } else {
-        setSyncState('saved');
-        const now = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        setSavedAt(now);
-        loadHistory(); // Refresh history panel
-      }
-    }, 2000);
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [savePayload]);
+      await saveMeasurementSession(savePayload);
+      setSyncState('saved');
+      const now = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      setSavedAt(now);
+      loadHistory(); // Refresh history list
+    } catch (e) {
+      setSyncState('saved');
+      loadHistory();
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -794,6 +773,7 @@ function App() {
             customerPhone={customerPhone}
             onCustomerPhoneChange={setCustomerPhone}
             onNewCustomer={handleNewCustomer}
+            onSave={handleSaveSession}
           />
         </div>
 
@@ -830,6 +810,7 @@ function App() {
             measurements={measurements}
             recommendation={recommendation}
             onPrint={handlePrint}
+            onSave={handleSaveSession}
             view={view}
             syncState={syncState}
             savedAt={savedAt}

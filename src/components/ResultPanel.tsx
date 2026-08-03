@@ -1,5 +1,5 @@
 import type { BodyMeasurements, SizeRecommendation, Gender } from '../types';
-import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader, CloudOff } from 'lucide-react';
+import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader, CloudOff, Save } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface ResultPanelProps {
@@ -8,6 +8,7 @@ interface ResultPanelProps {
   measurements: BodyMeasurements;
   recommendation: SizeRecommendation;
   onPrint: () => void;
+  onSave?: () => void;
   view: 'front' | 'side';
   syncState: 'idle' | 'pending' | 'saving' | 'saved' | 'error';
   savedAt: string;
@@ -22,6 +23,7 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   measurements,
   recommendation,
   onPrint,
+  onSave,
   view,
   syncState,
   savedAt,
@@ -126,14 +128,40 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           <h2 className="section-title">Kết Quả Đo Đạc Nhân Trắc Học</h2>
           <SyncIndicator />
         </div>
-        <button
-          type="button"
-          className="print-report-btn"
-          onClick={onPrint}
-        >
-          <FileSpreadsheet size={15} />
-          <span>Xuất Báo Cáo</span>
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {onSave && (
+            <button
+              type="button"
+              onClick={onSave}
+              style={{
+                background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.45rem 0.8rem',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                boxShadow: '0 2px 8px rgba(22, 163, 74, 0.35)'
+              }}
+              title="Lưu hồ sơ phiên đo khách hàng này vào CSDL"
+            >
+              <Save size={15} />
+              <span>Lưu Hồ Sơ Khách</span>
+            </button>
+          )}
+          <button
+            type="button"
+            className="print-report-btn"
+            onClick={onPrint}
+          >
+            <FileSpreadsheet size={15} />
+            <span>Xuất Báo Cáo</span>
+          </button>
+        </div>
       </div>
 
       {!isScanned && (

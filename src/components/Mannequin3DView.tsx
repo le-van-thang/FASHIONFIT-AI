@@ -78,42 +78,38 @@ interface ModelProps {
 const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel, showLabels = true }) => {
   const { scene } = useGLTF(path);
   
-  // Deep clone scene objects so wireframe overlay traversal never mutates solid body mesh visibility
-  const baseScene = useMemo(() => {
-    return scene.clone(true);
-  }, [scene]);
-
+  // Clone the scene to render the neon wireframe grid overlay on top of the solid body
   const wireframeScene = useMemo(() => {
-    return scene.clone(true);
+    return scene.clone();
   }, [scene]);
 
-  // Calculate bounding box of the scene to center model precisely at origin [0, 0, 0] on all 3 axes
+  // Calculate bounding box of the scene to find vertical bounds and center offset dynamically
   const { bounds, centerOffset } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(baseScene);
+    const box = new THREE.Box3().setFromObject(scene);
     const size = new THREE.Vector3();
     box.getSize(size);
     
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z
+    // Offset to center the model geometry precisely at origin [0, 0, 0] on all axes
     const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
     
+    console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
     return {
       bounds: { min: -size.y / 2, max: size.y / 2 },
       centerOffset: offset
     };
-  }, [baseScene, path]);
+  }, [scene, path]);
 
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#38bdf8'), // Glowing bright sky blue
-      roughness: 0.3,
-      metalness: 0.35,
-      transparent: false,
-      opacity: 1.0,
-      side: THREE.DoubleSide
+    return new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#0ea5e9'), // Brighter glowing cyber sky blue
+      transparent: true,
+      opacity: 0.55,
+      side: THREE.DoubleSide,
+      depthWrite: true
     });
   }, []);
 
@@ -145,7 +141,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Apply materials dynamically to both base body and wireframe scene
   useEffect(() => {
     // 1. Traverse base body scene
-    baseScene.traverse((child) => {
+    scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (viewMode === 'heatmap') {
           child.visible = true;
@@ -174,7 +170,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         }
       }
     });
-  }, [baseScene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
+  }, [scene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
 
   // Dynamic Y-scale adjustment for heatmap based on heightScale
   useEffect(() => {
@@ -196,23 +192,16 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     }
   });
 
-  // Scale model height by height factor (cm), and width/depth by weight with proportional silhouette protection
+  // Scale model height by height factor (cm), and width/depth by weight
   const scale = useMemo(() => {
     const baseWeight = gender === 'female' ? 52 : 65;
-    const baseHeight = gender === 'female' ? 165 : 180;
-    
-    // Clamp height for 3D mannequin rendering to guard against extreme midget/flat compression
-    const rawHeight = measurements?.height || baseHeight;
-    const heightVal = Math.max(130, Math.min(220, rawHeight));
-    
-    const heightScale = heightVal / baseHeight;
     const weightFactor = Math.max(0.75, Math.min(1.45, weight / baseWeight));
     
-    // Scale X, Y, Z proportionally so body silhouette never flattens into a pancake
-    const xzScale = weightFactor * (0.5 + 0.5 * heightScale) * 0.95;
-    const yScale = heightScale * 0.95;
+    // Scale height based on physical height in cm (relative to baseline 165cm)
+    const heightVal = measurements?.height || 165;
+    const heightScale = heightVal / 165;
     
-    return [xzScale, yScale, xzScale] as [number, number, number];
+    return [weightFactor * 0.95, heightScale * 0.95, weightFactor * 0.95] as [number, number, number];
   }, [gender, weight, measurements]);
 
   // 5 key measurement ring heights on the body (Y coordinates relative to model origin)
@@ -317,16 +306,16 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Apply default rotation to primitive scene contents
   useEffect(() => {
-    if (baseScene) baseScene.rotation.set(0, 0, 0);
+    if (scene) scene.rotation.set(0, 0, 0);
     if (wireframeScene) wireframeScene.rotation.set(0, 0, 0);
-  }, [baseScene, wireframeScene]);
+  }, [scene, wireframeScene]);
 
   return (
     <group ref={meshRef} scale={scale}>
       <group position={[centerOffset.x, centerOffset.y, centerOffset.z]}>
         {/* Base solid translucent body */}
         <primitive 
-          object={baseScene} 
+          object={scene} 
           onClick={(e: any) => {
             e.stopPropagation();
             if (e.point && onClickModel) {
@@ -996,18 +985,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
-  // Refs for camera focus target interpolation (default centered at Y = 0)
+  // Refs for camera focus target interpolation (default slightly lower at Y = -0.15 to shift model up)
   const controlsRef = useRef<any>(null);
-  const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
+  const targetPoint = useRef(new THREE.Vector3(0, -0.15, 0));
 
   // Reset camera view when counter changes
   useEffect(() => {
     if (cameraResetCounter > 0) {
       if (controlsRef.current) {
         controlsRef.current.reset();
-        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.target.set(0, -0.15, 0);
       }
-      targetPoint.current.set(0, 0, 0);
+      targetPoint.current.set(0, -0.15, 0);
     }
   }, [cameraResetCounter]);
 
@@ -1032,13 +1021,13 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onPointerMissed={() => {
-          targetPoint.current.set(0, 0, 0);
+          targetPoint.current.set(0, -0.15, 0);
         }}
       >
         <color attach="background" args={['#090d16']} />
         
         {/* Camera */}
-        <PerspectiveCamera makeDefault position={[0, 0, 4.3]} fov={36} />
+        <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 
@@ -1078,7 +1067,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {interactive && (
           <OrbitControls 
             ref={controlsRef}
-            target={[0, 0, 0]}
+            target={[0, -0.15, 0]}
             enablePan={false}
             minDistance={2.5}
             maxDistance={8.0}

@@ -1826,15 +1826,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           )}
         </div>
 
-        <div className="canvas-header-row2" style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.5rem',
-          width: '100%',
-          marginBottom: '0.75rem',
-          flexWrap: 'wrap'
-        }}>
+        <div className="canvas-header-row2">
           <div className="view-toggle-tabs">
             <button
               type="button"
@@ -1851,330 +1843,325 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               Mặt nghiêng
             </button>
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-            {inputSource === 'mannequin' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setCameraResetCounter(c => c + 1);
-                  if (onResetModel) {
-                    onResetModel();
-                  }
-                }}
-                title="Đặt lại toàn bộ số đo mô hình và góc camera về mặc định chuẩn"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                  background: '#ffffff',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.35rem 0.6rem',
-                  fontSize: '0.72rem',
-                  fontWeight: 600,
-                  color: '#0284c7',
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                  transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap'
-                }}
-                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
-                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#ffffff')}
-              >
-                <RefreshCw size={11} />
-                Reset mô hình
-              </button>
-            ) : (
-              <>
-                {onResetScan && (
-                  <button
-                    type="button"
-                    onClick={onResetScan}
-                    title="Đặt lại số đo của tab hiện tại về trạng thái chưa quét (-- cm)"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      background: '#ffffff',
-                      border: '1px solid #fca5a5',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '0.35rem 0.6rem',
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      color: '#dc2626',
-                      cursor: 'pointer',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                      transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#ffffff')}
-                  >
-                    <RefreshCw size={11} />
-                    Reset số đo
-                  </button>
-                )}
-                {onResetLandmarks && (
-                  <button
-                    type="button"
-                    onClick={onResetLandmarks}
-                    title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem',
-                      background: '#ffffff',
-                      border: '1px solid #7dd3fc',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '0.35rem 0.6rem',
-                      fontSize: '0.72rem',
-                      fontWeight: 600,
-                      color: '#0284c7',
-                      cursor: 'pointer',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                      transition: 'all 0.15s ease',
-                      whiteSpace: 'nowrap'
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f0f9ff')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#ffffff')}
-                  >
-                    <RefreshCw size={11} />
-                    Reset chấm
-                  </button>
-                )}
-              </>
-            )}
-          </div>
+          {/* Reset button always sits on Row 2 */}
+          {inputSource === 'mannequin' ? (
+            <button
+              type="button"
+              onClick={() => {
+                setCameraResetCounter(c => c + 1);
+                if (onResetModel) {
+                  onResetModel();
+                }
+              }}
+              title="Đặt lại toàn bộ số đo mô hình và góc camera về mặc định chuẩn"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                background: 'rgba(6, 182, 212, 0.08)',
+                border: '1px solid rgba(6, 182, 212, 0.3)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.3rem 0.55rem',
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                color: '#06b6d4',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                whiteSpace: 'nowrap',
+                flexShrink: 0
+              }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
+            >
+              <RefreshCw size={11} />
+              Reset mô hình & camera
+            </button>
+          ) : (
+            <>
+              {onResetScan && (
+                <button
+                  type="button"
+                  onClick={onResetScan}
+                  title="Đặt lại số đo của tab hiện tại về trạng thái chưa quét (-- cm)"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                    background: 'rgba(239, 68, 68, 0.08)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                    color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap', flexShrink: 0
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.08)')}
+                >
+                  <RefreshCw size={11} />
+                  Reset số đo
+                </button>
+              )}
+              {onResetLandmarks && (
+                <button
+                  type="button"
+                  onClick={onResetLandmarks}
+                  title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                    background: 'rgba(6, 182, 212, 0.08)',
+                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
+                    color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
+                    whiteSpace: 'nowrap', flexShrink: 0
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.18)')}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'rgba(6, 182, 212, 0.08)')}
+                >
+                  <RefreshCw size={11} />
+                  Reset chấm
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
 
 
-      <div className="canvas-container">
-        <div className="media-viewport">
-          {/* Top-Right: Sleek Ultra-Compact Camera Action Bar */}
-          {inputSource === 'webcam' && isWebcamActive && (
-            <div style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              zIndex: 70
-            }}>
-              {/* Lighting Mode Micro-Pill Selector */}
-              <div style={{ position: 'relative' }}>
+      {/* Dedicated Glassmorphic Camera Control Toolbar */}
+      {inputSource === 'webcam' && isWebcamActive && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '6px',
+          width: '100%',
+          background: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid rgba(56, 189, 248, 0.35)',
+          borderRadius: '12px',
+          padding: '0.4rem 0.65rem',
+          margin: '0.5rem 0',
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(8px)',
+          position: 'relative',
+          zIndex: 65
+        }}>
+          {/* Left: Lighting Menu Selector */}
+          <div style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setShowLightingMenu(!showLightingMenu)}
+              title="Bấm để chọn chế độ xử lý ánh sáng (Auto AI / Chống cháy sáng / Khử tối)"
+              style={{
+                background: 
+                  lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.22)' :
+                  lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.25)' :
+                  lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255, 255, 255, 0.08)',
+                border: 
+                  lightingMode === 'auto' ? '1px solid rgba(234, 179, 8, 0.6)' :
+                  lightingMode === 'bright' ? '1px solid rgba(56, 189, 248, 0.6)' :
+                  lightingMode === 'dark' ? '1px solid rgba(245, 158, 11, 0.6)' : '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '14px',
+                color: 
+                  lightingMode === 'auto' ? '#fde047' :
+                  lightingMode === 'bright' ? '#38bdf8' :
+                  lightingMode === 'dark' ? '#fbbf24' : '#cbd5e1',
+                padding: '0.3rem 0.6rem',
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {lightingMode === 'auto' && <Sparkles size={12} />}
+              {lightingMode === 'bright' && <Sun size={12} />}
+              {lightingMode === 'dark' && <Moon size={12} />}
+              {lightingMode === 'normal' && <Sun size={12} />}
+              <span>
+                {lightingMode === 'auto' && "💡 Auto AI Bù Sáng ▾"}
+                {lightingMode === 'bright' && "☀️ Chống Cháy Sáng ▾"}
+                {lightingMode === 'dark' && "🌙 Khử Tối AI ▾"}
+                {lightingMode === 'normal' && "☀️ Cam Gốc (Tắt AI) ▾"}
+              </span>
+            </button>
+
+            {/* Explicit Lighting Options Dropdown Panel */}
+            {showLightingMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '34px',
+                left: 0,
+                width: '210px',
+                background: 'rgba(15, 23, 42, 0.96)',
+                border: '1px solid rgba(56, 189, 248, 0.45)',
+                borderRadius: '10px',
+                padding: '0.4rem',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                backdropFilter: 'blur(12px)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '3px',
+                zIndex: 100
+              }}>
+                <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#94a3b8', padding: '2px 6px', letterSpacing: '0.5px' }}>
+                  CHỌN CHẾ ĐỘ ÁNH SÁNG CAMERA:
+                </div>
+                
                 <button
                   type="button"
-                  onClick={() => setShowLightingMenu(!showLightingMenu)}
-                  title="Chọn chế độ xử lý ánh sáng AI (Auto / Chống chói sáng / Khử tối)"
+                  onClick={() => { setLightingMode('auto'); setShowLightingMenu(false); }}
                   style={{
-                    background: 
-                      lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.25)' :
-                      lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.28)' :
-                      lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.28)' : 'rgba(15, 23, 42, 0.85)',
-                    border: 
-                      lightingMode === 'auto' ? '1px solid rgba(234, 179, 8, 0.65)' :
-                      lightingMode === 'bright' ? '1px solid rgba(56, 189, 248, 0.65)' :
-                      lightingMode === 'dark' ? '1px solid rgba(245, 158, 11, 0.65)' : '1px solid rgba(255, 255, 255, 0.25)',
-                    borderRadius: '12px',
-                    color: 
-                      lightingMode === 'auto' ? '#fde047' :
-                      lightingMode === 'bright' ? '#38bdf8' :
-                      lightingMode === 'dark' ? '#fbbf24' : '#cbd5e1',
-                    padding: '0.22rem 0.45rem',
-                    fontSize: '0.6rem',
-                    fontWeight: 700,
+                    background: lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: lightingMode === 'auto' ? '#fde047' : '#e2e8f0',
+                    padding: '0.35rem 0.5rem',
+                    fontSize: '0.66rem',
+                    fontWeight: 600,
+                    textAlign: 'left',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '3px',
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                    whiteSpace: 'nowrap'
+                    justifyContent: 'space-between'
                   }}
                 >
-                  {lightingMode === 'auto' && <Sparkles size={11} />}
-                  {lightingMode === 'bright' && <Sun size={11} />}
-                  {lightingMode === 'dark' && <Moon size={11} />}
-                  {lightingMode === 'normal' && <Sun size={11} />}
-                  <span>
-                    {lightingMode === 'auto' && "Auto ▾"}
-                    {lightingMode === 'bright' && "Chống Lóa ▾"}
-                    {lightingMode === 'dark' && "Khử Tối ▾"}
-                    {lightingMode === 'normal' && "Gốc ▾"}
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Sparkles size={12} style={{ color: '#fde047' }} /> Auto AI (Tự động thích ứng)
                   </span>
+                  {lightingMode === 'auto' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
                 </button>
 
-                {/* Lighting Options Dropdown */}
-                {showLightingMenu && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '28px',
-                    right: 0,
-                    width: '185px',
-                    background: 'rgba(15, 23, 42, 0.98)',
-                    border: '1px solid rgba(56, 189, 248, 0.45)',
-                    borderRadius: '10px',
-                    padding: '0.35rem',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
-                    backdropFilter: 'blur(12px)',
+                <button
+                  type="button"
+                  onClick={() => { setLightingMode('bright'); setShowLightingMenu(false); }}
+                  style={{
+                    background: lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: lightingMode === 'bright' ? '#38bdf8' : '#e2e8f0',
+                    padding: '0.35rem 0.5rem',
+                    fontSize: '0.66rem',
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    cursor: 'pointer',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2px',
-                    zIndex: 100
-                  }}>
-                    <div style={{ fontSize: '0.55rem', fontWeight: 700, color: '#94a3b8', padding: '2px 4px', letterSpacing: '0.5px' }}>
-                      CHỌN LỌC ÁNH SÁNG AI:
-                    </div>
-                    
-                    <button
-                      type="button"
-                      onClick={() => { setLightingMode('auto'); setShowLightingMenu(false); }}
-                      style={{
-                        background: lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: lightingMode === 'auto' ? '#fde047' : '#e2e8f0',
-                        padding: '0.3rem 0.45rem',
-                        fontSize: '0.62rem',
-                        fontWeight: 600,
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Sparkles size={11} style={{ color: '#fde047' }} /> Auto AI (Thích ứng)
-                      </span>
-                      {lightingMode === 'auto' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                    </button>
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Sun size={12} style={{ color: '#38bdf8' }} /> Chống Cháy Sáng (Nắng/Lóa)
+                  </span>
+                  {lightingMode === 'bright' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
+                </button>
 
-                    <button
-                      type="button"
-                      onClick={() => { setLightingMode('bright'); setShowLightingMenu(false); }}
-                      style={{
-                        background: lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: lightingMode === 'bright' ? '#38bdf8' : '#e2e8f0',
-                        padding: '0.3rem 0.45rem',
-                        fontSize: '0.62rem',
-                        fontWeight: 600,
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Sun size={11} style={{ color: '#38bdf8' }} /> Chống Lóa (Phòng sáng)
-                      </span>
-                      {lightingMode === 'bright' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                    </button>
+                <button
+                  type="button"
+                  onClick={() => { setLightingMode('dark'); setShowLightingMenu(false); }}
+                  style={{
+                    background: lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: lightingMode === 'dark' ? '#fbbf24' : '#e2e8f0',
+                    padding: '0.35rem 0.5rem',
+                    fontSize: '0.66rem',
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Moon size={12} style={{ color: '#fbbf24' }} /> Khử Tối AI (Phòng tối)
+                  </span>
+                  {lightingMode === 'dark' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
+                </button>
 
-                    <button
-                      type="button"
-                      onClick={() => { setLightingMode('dark'); setShowLightingMenu(false); }}
-                      style={{
-                        background: lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: lightingMode === 'dark' ? '#fbbf24' : '#e2e8f0',
-                        padding: '0.3rem 0.45rem',
-                        fontSize: '0.62rem',
-                        fontWeight: 600,
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Moon size={11} style={{ color: '#fbbf24' }} /> Khử Tối AI (Phòng tối)
-                      </span>
-                      {lightingMode === 'dark' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => { setLightingMode('normal'); setShowLightingMenu(false); }}
-                      style={{
-                        background: lightingMode === 'normal' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
-                        border: 'none',
-                        borderRadius: '6px',
-                        color: lightingMode === 'normal' ? '#ffffff' : '#94a3b8',
-                        padding: '0.3rem 0.45rem',
-                        fontSize: '0.62rem',
-                        fontWeight: 600,
-                        textAlign: 'left',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Sun size={11} style={{ color: '#94a3b8' }} /> Camera Gốc (Tắt AI)
-                      </span>
-                      {lightingMode === 'normal' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
-                    </button>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => { setLightingMode('normal'); setShowLightingMenu(false); }}
+                  style={{
+                    background: lightingMode === 'normal' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '6px',
+                    color: lightingMode === 'normal' ? '#ffffff' : '#94a3b8',
+                    padding: '0.35rem 0.5rem',
+                    fontSize: '0.66rem',
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    <Sun size={12} style={{ color: '#94a3b8' }} /> Camera Gốc (Tắt lọc AI)
+                  </span>
+                  {lightingMode === 'normal' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
+                </button>
               </div>
+            )}
+          </div>
 
-              {/* Camera Flip Micro Button */}
+          {/* Right: Camera Flip & Maximize Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <button
+              type="button"
+              onClick={toggleFacingMode}
+              title={`Lật camera (Đang dùng: ${facingMode === 'user' ? 'Trước' : 'Sau'})`}
+              style={{
+                background: 'rgba(34, 211, 238, 0.12)',
+                border: '1px solid rgba(34, 211, 238, 0.4)',
+                borderRadius: '14px',
+                color: '#22d3ee',
+                padding: '0.3rem 0.55rem',
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <RefreshCw size={11} />
+              <span>Lật Cam</span>
+            </button>
+
+            {hasMediaBackground && (
               <button
                 type="button"
-                onClick={toggleFacingMode}
-                title={`Lật camera (Đang dùng: ${facingMode === 'user' ? 'Trước' : 'Sau'})`}
+                onClick={() => setIsMaximized(!isMaximized)}
+                title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
                 style={{
-                  background: 'rgba(15, 23, 42, 0.85)',
-                  border: '1px solid rgba(34, 211, 238, 0.45)',
-                  borderRadius: '12px',
-                  color: '#22d3ee',
-                  padding: '0.22rem 0.4rem',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.25)',
+                  borderRadius: '14px',
+                  color: '#fff',
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+                  gap: '3px',
+                  whiteSpace: 'nowrap'
                 }}
               >
-                <RefreshCw size={11} />
+                {isMaximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                <span>{isMaximized ? "Thu nhỏ" : "Phóng to"}</span>
               </button>
+            )}
+          </div>
+        </div>
+      )}
 
-              {/* Maximize Micro Button */}
-              {hasMediaBackground && (
-                <button
-                  type="button"
-                  onClick={() => setIsMaximized(!isMaximized)}
-                  title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
-                  style={{
-                    background: 'rgba(15, 23, 42, 0.85)',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
-                    borderRadius: '12px',
-                    color: '#fff',
-                    padding: '0.22rem 0.4rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
-                  }}
-                >
-                  {isMaximized ? <Minimize2 size={11} /> : <Maximize2 size={11} />}
-                </button>
-              )}
-            </div>
-          )}
+      <div className="canvas-container">
+        <div className="media-viewport">
             {/* Synchronized 3D Model Status Badge */}
             {inputSource === 'mannequin' && (
               <div style={{

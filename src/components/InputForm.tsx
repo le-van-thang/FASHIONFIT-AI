@@ -128,23 +128,22 @@ export const InputForm: React.FC<InputFormProps> = ({
     const val = e.target.value;
     setHeightInputVal(val);
     const parsed = parseFloat(val);
-    if (!isNaN(parsed) && parsed >= 130 && parsed <= 230) {
+    if (!isNaN(parsed) && parsed >= 50 && parsed <= 250) {
       onChange({ ...input, customHeight: parsed });
     }
   };
 
   const handleHeightTextInputBlur = () => {
     const parsed = parseFloat(heightInputVal);
-    const defaultHeight = input.gender === 'female' ? 165 : 180;
-    const currentHeight = input.customHeight && input.customHeight >= 130 ? input.customHeight : defaultHeight;
+    const currentHeight = input.customHeight || 165;
     if (isNaN(parsed)) {
       setHeightInputVal(currentHeight.toString());
-    } else if (parsed < 130) {
-      onChange({ ...input, customHeight: 130 });
-      setHeightInputVal("130");
-    } else if (parsed > 230) {
-      onChange({ ...input, customHeight: 230 });
-      setHeightInputVal("230");
+    } else if (parsed < 50) {
+      onChange({ ...input, customHeight: 50 });
+      setHeightInputVal("50");
+    } else if (parsed > 250) {
+      onChange({ ...input, customHeight: 250 });
+      setHeightInputVal("250");
     } else {
       setHeightInputVal(parsed.toString());
     }
@@ -668,20 +667,20 @@ export const InputForm: React.FC<InputFormProps> = ({
               </div>
             </div>
             <div className="slider-wrapper">
-              <div className="slider-tooltip" style={{ left: `${(((Math.max(130, input.customHeight || 165)) - 130) / (220 - 130)) * 100}%` }}>
-                {Math.max(130, input.customHeight || 165)} cm ({formatHeightMeters(Math.max(130, input.customHeight || 165))})
+              <div className="slider-tooltip" style={{ left: `${(((input.customHeight || 165) - 50) / (220 - 50)) * 100}%` }}>
+                {input.customHeight || 165} cm ({formatHeightMeters(input.customHeight || 165)})
               </div>
               <input
                 type="range"
-                min="130"
+                min="50"
                 max="220"
-                value={Math.max(130, input.customHeight || 165)}
+                value={input.customHeight || 165}
                 onChange={(e) => onChange({ ...input, customHeight: Number(e.target.value) })}
                 className="weight-slider"
               />
               <div className="slider-ticks-container">
-                <span className="slider-tick-label" style={{ left: '0%' }}>130cm</span>
-                <span className="slider-tick-label" style={{ left: '50%', transform: 'translateX(-50%)' }}>175cm</span>
+                <span className="slider-tick-label" style={{ left: '0%' }}>50cm</span>
+                <span className="slider-tick-label" style={{ left: '50%', transform: 'translateX(-50%)' }}>135cm</span>
                 <span className="slider-tick-label" style={{ left: '100%', transform: 'translateX(-100%)' }}>220cm</span>
               </div>
             </div>

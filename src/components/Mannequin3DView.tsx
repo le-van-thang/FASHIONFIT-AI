@@ -107,12 +107,13 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#0ea5e9'), // Brighter glowing cyber sky blue
-      transparent: true,
-      opacity: 0.55,
-      side: THREE.DoubleSide,
-      depthWrite: true
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#38bdf8'), // Glowing bright sky blue
+      roughness: 0.3,
+      metalness: 0.35,
+      transparent: false,
+      opacity: 1.0,
+      side: THREE.DoubleSide
     });
   }, []);
 

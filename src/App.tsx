@@ -5,7 +5,7 @@ import { BodyCanvas } from './components/BodyCanvas';
 import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
 import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
-import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen, UserPlus } from 'lucide-react';
+import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen, UserPlus, Layers, Sliders, Camera, Shirt } from 'lucide-react';
 import { saveMeasurementSession, fetchRecentSessions, deleteSession, clearAllSessions } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
 import { saveBackendSession, fetchBackendSessions, deleteBackendSession, clearAllBackendSessions } from './lib/api';
@@ -274,6 +274,7 @@ function App() {
   const [historySearchQuery, setHistorySearchQuery] = useState<string>('');
   const [historySourceFilter, setHistorySourceFilter] = useState<string>('all');
   const [showClearAllConfirm, setShowClearAllConfirm] = useState<boolean>(false);
+  const [activeMobileTab, setActiveMobileTab] = useState<'3d' | 'input' | 'scan' | 'result'>('3d');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [syncState, setSyncState] = useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
@@ -756,7 +757,7 @@ function App() {
 
       {/* Main layout */}
       <main className="main-content">
-        <div className="left-column">
+        <div className={`left-column ${activeMobileTab === 'input' ? 'mobile-visible' : 'mobile-hidden'}`}>
           <InputForm
             input={input}
             onChange={setInput}
@@ -773,7 +774,7 @@ function App() {
           />
         </div>
 
-        <div className="center-column">
+        <div className={`center-column ${(activeMobileTab === '3d' || activeMobileTab === 'scan') ? 'mobile-visible' : 'mobile-hidden'}`}>
           <BodyCanvas
             gender={input.gender}
             weight={input.weight}
@@ -799,7 +800,7 @@ function App() {
           />
         </div>
 
-        <div className="right-column">
+        <div className={`right-column ${activeMobileTab === 'result' ? 'mobile-visible' : 'mobile-hidden'}`}>
           <ResultPanel
             gender={input.gender}
             weight={input.weight}
@@ -816,6 +817,45 @@ function App() {
           />
         </div>
       </main>
+
+      {/* Floating Glassmorphism Mobile Bottom Navigation Bar */}
+      <nav className="mobile-bottom-nav">
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeMobileTab === '3d' ? 'active' : ''}`}
+          onClick={() => setActiveMobileTab('3d')}
+        >
+          <Layers size={18} />
+          <span>Mô Hình 3D</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeMobileTab === 'input' ? 'active' : ''}`}
+          onClick={() => setActiveMobileTab('input')}
+        >
+          <Sliders size={18} />
+          <span>Nhập Liệu</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeMobileTab === 'scan' ? 'active' : ''}`}
+          onClick={() => setActiveMobileTab('scan')}
+        >
+          <Camera size={18} />
+          <span>Quét AI</span>
+        </button>
+
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeMobileTab === 'result' ? 'active' : ''}`}
+          onClick={() => setActiveMobileTab('result')}
+        >
+          <Shirt size={18} />
+          <span>Kết Quả Size</span>
+        </button>
+      </nav>
 
       {/* Slide-out History Drawer */}
       <div className={`history-drawer ${isHistoryOpen ? 'open' : ''}`}>

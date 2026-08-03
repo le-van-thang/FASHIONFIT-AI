@@ -3198,6 +3198,105 @@ body {
     left: 8px !important;
     right: 8px !important;
   }
+}
+
+/* ======================================================== */
+/* NATIVE MOBILE APP EXPERIENCE & BOTTOM TAB BAR (max-width: 768px) */
+/* ======================================================== */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: 74px !important;
+  }
+
+  .app-container {
+    padding: 0.5rem 0.5rem 80px 0.5rem !important;
+  }
+
+  .app-header {
+    padding: 0.65rem 0.85rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .app-header h1 {
+    font-size: 1.05rem !important;
+  }
+
+  .app-header .subtitle {
+    display: none !important;
+  }
+
+  .main-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Mobile Tab Visibility Controlled via activeMobileTab */
+  .left-column.mobile-hidden,
+  .center-column.mobile-hidden,
+  .right-column.mobile-hidden {
+    display: none !important;
+  }
+
+  .left-column.mobile-visible,
+  .center-column.mobile-visible,
+  .right-column.mobile-visible {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  /* Floating Bottom Navigation Bar */
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(56, 189, 248, 0.25);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 0.4rem;
+  }
+
+  .mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 0.64rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.35rem 0.6rem;
+    border-radius: 12px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    flex: 1;
+  }
+
+  .mobile-nav-btn.active {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+  }
+
+  .mobile-nav-btn.active svg {
+    transform: translateY(-1px) scale(1.1);
+    color: #38bdf8;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
+  }
+}
 /* Printable A4 Spec Sheet Styles for Tailors & PDF Export */
 @media print {
   body {

@@ -3195,6 +3195,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </div>
         )}
       </div> {/* Closes canvas-container */}
+      </div> {/* Closes canvas-wrapper */}
 
       <input
         type="file"

@@ -3183,7 +3183,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </div>
         )}
       </div> {/* Closes canvas-container */}
-      </div> {/* Closes main canvas card wrapper */}
 
       <input
         type="file"

@@ -6,9 +6,9 @@ import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
 import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, formatHeightMeters, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
 import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen } from 'lucide-react';
-import { saveMeasurementSession, fetchRecentSessions, deleteSession } from './lib/supabase';
+import { saveMeasurementSession, fetchRecentSessions, deleteSession, clearAllSessions } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
-import { saveBackendSession, fetchBackendSessions, deleteBackendSession } from './lib/api';
+import { saveBackendSession, fetchBackendSessions, deleteBackendSession, clearAllBackendSessions } from './lib/api';
 
 // Helper function to get initial landmarks based on gender and view
 const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'): Landmark[] => {
@@ -268,9 +268,14 @@ function App() {
     }
   }, [input.gender, inputSource, uploadedImageFront, uploadedImageSide]);
 
-  // Supabase history states & saving state
+  // Supabase & MongoDB history states & saving state
   const [history, setHistory] = useState<MeasurementSession[]>([]);
   const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [historySearchQuery, setHistorySearchQuery] = useState<string>('');
+  const [historySourceFilter, setHistorySourceFilter] = useState<string>('all');
+  const [showClearAllConfirm, setShowClearAllConfirm] = useState<boolean>(false);
+  const [customerName, setCustomerName] = useState<string>('');
+  const [customerPhone, setCustomerPhone] = useState<string>('');
   const [syncState, setSyncState] = useState<'idle' | 'pending' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<string>('');
   const [selectedCompareIds, setSelectedCompareIds] = useState<string[]>([]);
@@ -313,13 +318,18 @@ function App() {
   const isFirstRender = useRef(true);
   const skipSaveRef = useRef(false);
 
-  // Fetch recent sessions from Express MongoDB database with fallback
+  // Fetch recent sessions from Express MongoDB database with fallback (up to 1000 items)
   const loadHistory = async () => {
     const backendRes = await fetchBackendSessions();
     if (!backendRes.error && backendRes.data && backendRes.data.length > 0) {
       const formattedSessions = backendRes.data.map(item => ({
         id: item._id || Math.random().toString(),
         created_at: item.created_at || new Date().toISOString(),
+        customer_name: item.customer_name || '',
+        customer_phone: item.customer_phone || '',
+        notes: item.notes || '',
+        source: item.source || 'mannequin',
+        snapshot_img: item.snapshot_img || '',
         gender: item.gender,
         weight_kg: item.weight_kg,
         height_cm: item.height_cm,
@@ -342,7 +352,7 @@ function App() {
       setHistory(formattedSessions as any);
       return;
     }
-    const { data, error } = await fetchRecentSessions();
+    const { data, error } = await fetchRecentSessions(1000);
     if (!error) {
       setHistory(data);
     }
@@ -352,17 +362,20 @@ function App() {
     loadHistory();
   }, []);
 
-  // Delete session from history
+  // Delete single session from history
   const handleDeleteSession = async (id: string) => {
     await deleteBackendSession(id);
-    const { error } = await deleteSession(id);
-    if (!error) {
-      loadHistory();
-      setDeletingSessionId(null);
-    } else {
-      loadHistory();
-      setDeletingSessionId(null);
-    }
+    await deleteSession(id);
+    loadHistory();
+    setDeletingSessionId(null);
+  };
+
+  // Clear ALL sessions from history
+  const handleClearAllHistory = async () => {
+    await clearAllBackendSessions();
+    await clearAllSessions();
+    setHistory([]);
+    setShowClearAllConfirm(false);
   };
 
   // Load a session's parameters back into current state
@@ -643,6 +656,10 @@ function App() {
   }, [measurements]);
 
   const savePayload = useMemo(() => ({
+    customer_name: customerName,
+    customer_phone: customerPhone,
+    source: inputSource,
+    snapshot_img: uploadedImageFront || '',
     gender: input.gender,
     weight_kg: input.weight,
     calibration_type: input.calibrationType,
@@ -661,7 +678,7 @@ function App() {
     confidence_pct: recommendation.matchPercentage,
     landmarks_front: processedFrontLandmarks,
     landmarks_side: processedSideLandmarks,
-  }), [input, referencePixels, measurements, recommendation, processedFrontLandmarks, processedSideLandmarks]);
+  }), [customerName, customerPhone, inputSource, uploadedImageFront, input, referencePixels, measurements, recommendation, processedFrontLandmarks, processedSideLandmarks]);
 
   // Debounced auto-save effect triggered in App.tsx to allow skipping saving during session loads
   useEffect(() => {
@@ -784,125 +801,314 @@ function App() {
 
       {/* Slide-out History Drawer */}
       <div className={`history-drawer ${isHistoryOpen ? 'open' : ''}`}>
-        <div className="drawer-header">
-          <div className="drawer-title-group">
-            <HistoryIcon size={18} />
-            <h3>Lịch Sử Phiên Đo</h3>
+        <div className="drawer-header" style={{ flexDirection: 'column', gap: '0.6rem', alignItems: 'stretch', padding: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="drawer-title-group" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <HistoryIcon size={18} style={{ color: '#38bdf8' }} />
+              <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#f8fafc' }}>
+                Hồ Sơ & Lịch Sử Phiên Đo ({history.length})
+              </h3>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              {history.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowClearAllConfirm(true)}
+                  style={{
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                    color: '#f87171',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.25rem 0.55rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}
+                  title="Xóa toàn bộ lịch sử đo đạc"
+                >
+                  <Trash2 size={11} />
+                  <span>Xóa Tất Cả</span>
+                </button>
+              )}
+              <button className="drawer-close-btn" onClick={() => setIsHistoryOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
           </div>
-          <button className="drawer-close-btn" onClick={() => setIsHistoryOpen(false)}>
-            <X size={18} />
-          </button>
+
+          {/* Search Bar & Source Filters */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginTop: '0.2rem' }}>
+            <input
+              type="text"
+              placeholder="🔍 Tìm theo tên khách, SĐT, size (M/L/Savani), ngày đo..."
+              value={historySearchQuery}
+              onChange={(e) => setHistorySearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'rgba(15, 23, 42, 0.6)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '0.4rem 0.65rem',
+                fontSize: '0.72rem',
+                color: '#f8fafc',
+                outline: 'none'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '3px', overflowX: 'auto', paddingBottom: '2px' }}>
+              {[
+                { id: 'all', label: 'Tất cả' },
+                { id: 'webcam', label: '📹 Webcam AI' },
+                { id: 'image', label: '📷 Ảnh chụp' },
+                { id: 'mannequin', label: '🌐 Mô hình 3D' },
+                { id: 'video', label: '🎥 Video' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setHistorySourceFilter(tab.id)}
+                  style={{
+                    background: historySourceFilter === tab.id ? 'rgba(56, 189, 248, 0.25)' : 'rgba(15, 23, 42, 0.4)',
+                    border: `1px solid ${historySourceFilter === tab.id ? '#38bdf8' : 'rgba(255, 255, 255, 0.08)'}`,
+                    color: historySourceFilter === tab.id ? '#38bdf8' : '#94a3b8',
+                    borderRadius: '12px',
+                    padding: '0.2rem 0.5rem',
+                    fontSize: '0.64rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Clear All Confirmation Modal */}
+        {showClearAllConfirm && (
+          <div style={{
+            padding: '0.75rem 1rem',
+            background: 'rgba(239, 68, 68, 0.12)',
+            borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'space-between',
+            gap: '0.5rem'
+          }}>
+            <span style={{ fontSize: '0.72rem', color: '#fca5a5', fontWeight: 600 }}>
+              ⚠️ Xóa TOÀN BỘ {history.length} phiên đo lịch sử?
+            </span>
+            <div style={{ display: 'flex', gap: '4px' }}>
+              <button
+                type="button"
+                onClick={handleClearAllHistory}
+                style={{ background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', padding: '0.25rem 0.5rem', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Đồng Ý Xóa
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowClearAllConfirm(false)}
+                style={{ background: 'rgba(255,255,255,0.1)', color: '#cbd5e1', border: 'none', borderRadius: '4px', padding: '0.25rem 0.5rem', fontSize: '0.68rem', cursor: 'pointer' }}
+              >
+                Hủy
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="drawer-content">
           {history.length === 0 ? (
             <div className="history-empty">
               <Clock size={32} />
               <p>Chưa có phiên đo nào được lưu.</p>
-              <span>Thực hiện thay đổi số đo hoặc kéo landmark để hệ thống tự động lưu vào Supabase.</span>
+              <span>Thực hiện thay đổi số đo hoặc quét AI để hệ thống tự động lưu vào cơ sở dữ liệu.</span>
             </div>
-          ) : (
-            <>
-              <div className="history-list" style={{ paddingBottom: selectedCompareIds.length === 2 ? '60px' : '0' }}>
-                {history.map((session) => {
-                  const date = session.created_at
-                    ? new Date(session.created_at).toLocaleString('vi-VN', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    : 'Không rõ';
+          ) : (() => {
+            const filtered = history.filter(session => {
+              if (historySourceFilter !== 'all' && (session.source || 'mannequin') !== historySourceFilter) {
+                return false;
+              }
+              if (historySearchQuery.trim()) {
+                const q = historySearchQuery.toLowerCase();
+                const nameMatch = (session.customer_name || '').toLowerCase().includes(q);
+                const phoneMatch = (session.customer_phone || '').toLowerCase().includes(q);
+                const sizeMatch = (session.recommended_size || '').toLowerCase().includes(q);
+                const genderMatch = (session.gender === 'male' ? 'nam' : 'nữ').includes(q);
+                const dateMatch = (session.created_at || '').includes(q);
+                return nameMatch || phoneMatch || sizeMatch || genderMatch || dateMatch;
+              }
+              return true;
+            });
 
-                  return (
-                    <div
-                      key={session.id}
-                      className={`history-item-card ${deletingSessionId === session.id ? 'deleting' : ''}`}
-                      onClick={() => deletingSessionId !== session.id && handleLoadSession(session)}
-                    >
-                      {deletingSessionId === session.id && (
-                        <div className="card-delete-confirm-overlay" onClick={(e) => e.stopPropagation()}>
-                          <p>Xóa phiên đo này?</p>
-                          <div className="confirm-buttons">
-                            <button
-                              className="confirm-btn delete"
-                              onClick={() => handleDeleteSession(session.id!)}
-                            >
-                              Xóa
-                            </button>
-                            <button
-                              className="confirm-btn cancel"
-                              onClick={() => setDeletingSessionId(null)}
-                            >
-                              Hủy
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="item-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }} onClick={(e) => e.stopPropagation()}>
-                          <input
-                            type="checkbox"
-                            checked={selectedCompareIds.includes(session.id!)}
-                            onChange={() => handleToggleCompare(session.id!)}
-                            style={{ cursor: 'pointer', accentColor: '#38bdf8' }}
-                            title="Chọn để so sánh"
-                          />
-                          <span className="item-time">{date}</span>
-                        </div>
-                        <button
-                          className="item-delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeletingSessionId(session.id!);
-                          }}
-                          title="Xóa phiên đo này"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                      <div className="item-body">
-                        <div className="item-badge-row">
-                          <span className={`gender-badge ${session.gender}`}>
-                            {session.gender === 'male' ? 'Nam' : 'Nữ'}
-                          </span>
-                          <span className="size-badge-small">{session.recommended_size}</span>
-                        </div>
-                        <div className="item-metrics">
-                          <div>
-                            <span className="metric-label">Cân nặng:</span>
-                            <span className="metric-val">{session.weight_kg} kg</span>
-                          </div>
-                          <div>
-                            <span className="metric-label">Chiều cao:</span>
-                            <span className="metric-val">{session.height_cm} cm ({formatHeightMeters(session.height_cm)})</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="item-action">
-                        <FolderOpen size={12} />
-                        <span>Bấm để tải lại mô hình 3D</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {selectedCompareIds.length === 2 && (
-                <div className="drawer-compare-bar" style={{ padding: '0.75rem 1rem', background: 'rgba(30, 41, 59, 0.95)', borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', position: 'sticky', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
-                  <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Đã chọn 2 phiên đo</span>
-                  <button 
-                    type="button" 
-                    onClick={() => setIsCompareModalOpen(true)}
-                    style={{ background: '#38bdf8', color: '#0f172a', border: 'none', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
-                  >
-                    📊 So Sánh Vóc Dáng
-                  </button>
+            if (filtered.length === 0) {
+              return (
+                <div className="history-empty" style={{ padding: '2rem 1rem' }}>
+                  <Clock size={28} />
+                  <p style={{ fontSize: '0.82rem' }}>Không tìm thấy phiên đo phù hợp.</p>
+                  <span style={{ fontSize: '0.72rem' }}>Thử tìm từ khóa khác hoặc chuyển tab bộ lọc.</span>
                 </div>
-              )}
-            </>
-          )}
+              );
+            }
+
+            return (
+              <>
+                <div className="history-list" style={{ paddingBottom: selectedCompareIds.length === 2 ? '60px' : '0' }}>
+                  {filtered.map((session) => {
+                    const dateObj = session.created_at ? new Date(session.created_at) : new Date();
+                    const fullDateStr = session.created_at
+                      ? `${dateObj.getHours().toString().padStart(2, '0')}:${dateObj.getMinutes().toString().padStart(2, '0')}:${dateObj.getSeconds().toString().padStart(2, '0')} - ${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`
+                      : 'Không rõ';
+
+                    const source = session.source || 'mannequin';
+                    const getSourceBadge = () => {
+                      if (source === 'webcam') return { label: '📹 Webcam AI', bg: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: 'rgba(34, 197, 94, 0.3)' };
+                      if (source === 'image') return { label: '📷 Ảnh Chụp AI', bg: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' };
+                      if (source === 'video') return { label: '🎥 Video AI', bg: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: 'rgba(249, 115, 22, 0.3)' };
+                      return { label: '🌐 Mô Hình 3D', bg: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: 'rgba(56, 189, 248, 0.3)' };
+                    };
+                    const badge = getSourceBadge();
+
+                    return (
+                      <div
+                        key={session.id}
+                        className={`history-item-card ${deletingSessionId === session.id ? 'deleting' : ''}`}
+                        onClick={() => deletingSessionId !== session.id && handleLoadSession(session)}
+                        style={{ position: 'relative', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-md)', marginBottom: '0.75rem', background: 'rgba(15, 23, 42, 0.45)', overflow: 'hidden' }}
+                      >
+                        {deletingSessionId === session.id && (
+                          <div className="card-delete-confirm-overlay" onClick={(e) => e.stopPropagation()}>
+                            <p>Xóa phiên đo này?</p>
+                            <div className="confirm-buttons">
+                              <button
+                                className="confirm-btn delete"
+                                onClick={() => handleDeleteSession(session.id!)}
+                              >
+                                Xóa
+                              </button>
+                              <button
+                                className="confirm-btn cancel"
+                                onClick={() => setDeletingSessionId(null)}
+                              >
+                                Hủy
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="item-header" style={{ padding: '0.6rem 0.8rem', background: 'rgba(30, 41, 59, 0.6)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }} onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              checked={selectedCompareIds.includes(session.id!)}
+                              onChange={() => handleToggleCompare(session.id!)}
+                              style={{ cursor: 'pointer', accentColor: '#38bdf8' }}
+                              title="Chọn để so sánh 2 phiên đo"
+                            />
+                            <span className="item-time" style={{ fontSize: '0.68rem', fontWeight: 600, color: '#94a3b8' }}>
+                              📅 {fullDateStr}
+                            </span>
+                          </div>
+                          <button
+                            className="item-delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingSessionId(session.id!);
+                            }}
+                            title="Xóa phiên đo này"
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+
+                        <div className="item-body" style={{ padding: '0.75rem 0.8rem' }}>
+                          {/* Source & Customer Name Row */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '4px' }}>
+                            <span style={{
+                              background: badge.bg,
+                              color: badge.color,
+                              border: `1px solid ${badge.border}`,
+                              borderRadius: '12px',
+                              padding: '0.15rem 0.45rem',
+                              fontSize: '0.62rem',
+                              fontWeight: 700
+                            }}>
+                              {badge.label}
+                            </span>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span className={`gender-badge ${session.gender}`} style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem' }}>
+                                {session.gender === 'male' ? 'Nam' : 'Nữ'}
+                              </span>
+                              <span className="size-badge-small" style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                                {session.recommended_size}
+                              </span>
+                            </div>
+                          </div>
+
+                          {(session.customer_name || session.customer_phone) && (
+                            <div style={{ fontSize: '0.72rem', color: '#f8fafc', fontWeight: 600, marginBottom: '0.4rem', background: 'rgba(30, 41, 59, 0.5)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                              👤 {session.customer_name || 'Khách Hàng'} {session.customer_phone ? `(📞 ${session.customer_phone})` : ''}
+                            </div>
+                          )}
+
+                          <div className="item-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.35rem', fontSize: '0.72rem', color: '#cbd5e1' }}>
+                            <div>
+                              <span style={{ color: '#94a3b8' }}>Cao: </span>
+                              <strong style={{ color: '#f8fafc' }}>{session.height_cm}cm</strong>
+                            </div>
+                            <div>
+                              <span style={{ color: '#94a3b8' }}>Nặng: </span>
+                              <strong style={{ color: '#f8fafc' }}>{session.weight_kg}kg</strong>
+                            </div>
+                            <div>
+                              <span style={{ color: '#94a3b8' }}>Vai: </span>
+                              <strong style={{ color: '#f8fafc' }}>{session.shoulder_width_cm}cm</strong>
+                            </div>
+                            <div>
+                              <span style={{ color: '#94a3b8' }}>Tay: </span>
+                              <strong style={{ color: '#f8fafc' }}>{session.arm_length_cm}cm</strong>
+                            </div>
+                            <div>
+                              <span style={{ color: '#94a3b8' }}>Ngực: </span>
+                              <strong style={{ color: '#f8fafc' }}>{session.bust_cm}cm</strong>
+                            </div>
+                            <div>
+                              <span style={{ color: '#94a3b8' }}>Eo: </span>
+                              <strong style={{ color: '#f8fafc' }}>{session.waist_cm}cm</strong>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="item-action" style={{ padding: '0.5rem 0.8rem', background: 'rgba(15, 23, 42, 0.7)', borderTop: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.72rem', color: '#38bdf8', fontWeight: 600, cursor: 'pointer' }}>
+                          <FolderOpen size={12} />
+                          <span>Bấm để tải lại số đo & mô hình 3D</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {selectedCompareIds.length === 2 && (
+                  <div className="drawer-compare-bar" style={{ padding: '0.75rem 1rem', background: 'rgba(30, 41, 59, 0.95)', borderTop: '1px solid rgba(255, 255, 255, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', position: 'sticky', bottom: 0, left: 0, right: 0, zIndex: 10 }}>
+                    <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Đã chọn 2 phiên đo</span>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsCompareModalOpen(true)}
+                      style={{ background: '#38bdf8', color: '#0f172a', border: 'none', padding: '0.4rem 0.75rem', borderRadius: 'var(--radius-sm)', fontSize: '0.7rem', fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      📊 So Sánh Vóc Dáng
+                    </button>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 

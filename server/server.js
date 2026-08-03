@@ -12,6 +12,11 @@ app.use(express.json());
 
 // MongoDB Schema for Anthropometric Measurement Profile
 const MeasurementSchema = new mongoose.Schema({
+  customer_name: { type: String, default: '' },
+  customer_phone: { type: String, default: '' },
+  notes: { type: String, default: '' },
+  source: { type: String, default: 'mannequin' },
+  snapshot_img: { type: String, default: '' },
   gender: { type: String, enum: ['male', 'female'], required: true },
   weight_kg: { type: Number, required: true },
   calibration_type: { type: String, default: 'height' },
@@ -28,6 +33,8 @@ const MeasurementSchema = new mongoose.Schema({
   hip_depth_cm: { type: Number, default: 0 },
   recommended_size: { type: String, required: true },
   confidence_pct: { type: Number, default: 95 },
+  landmarks_front: { type: mongoose.Schema.Types.Mixed, default: null },
+  landmarks_side: { type: mongoose.Schema.Types.Mixed, default: null },
   created_at: { type: Date, default: Date.now }
 });
 
@@ -40,6 +47,10 @@ mongoose.connect(MONGO_URI)
     const count = await Measurement.countDocuments();
     if (count === 0) {
       await Measurement.create({
+        customer_name: 'Mẫu Nam Tiêu Chuẩn',
+        customer_phone: '0905000000',
+        notes: 'Hồ sơ đo mẫu thử nghiệm',
+        source: 'mannequin',
         gender: 'male',
         weight_kg: 75,
         calibration_type: 'height',
@@ -67,10 +78,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'FashionFit AI Backend Server', timestamp: new Date() });
 });
 
-// GET /api/measurements - Retrieve all saved customer measurement sessions
+// GET /api/measurements - Retrieve all saved customer measurement sessions (up to 1000)
 app.get('/api/measurements', async (req, res) => {
   try {
-    const sessions = await Measurement.find().sort({ created_at: -1 }).limit(50);
+    const sessions = await Measurement.find().sort({ created_at: -1 }).limit(1000);
     res.json(sessions);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -85,6 +96,16 @@ app.post('/api/measurements', async (req, res) => {
     res.status(201).json(saved);
   } catch (err) {
     res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE /api/measurements - Clear ALL measurement sessions
+app.delete('/api/measurements', async (req, res) => {
+  try {
+    await Measurement.deleteMany({});
+    res.json({ message: 'All measurement sessions deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

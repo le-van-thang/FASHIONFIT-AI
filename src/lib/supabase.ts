@@ -10,6 +10,11 @@ export interface MeasurementSession {
   id?: string;
   created_at?: string;
   session_name?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  notes?: string;
+  source?: string;
+  snapshot_img?: string;
 
   // Inputs
   gender: 'male' | 'female';
@@ -70,7 +75,7 @@ export async function saveMeasurementSession(
 
 // ─── Fetch recent sessions ────────────────────────────────────
 export async function fetchRecentSessions(
-  limit = 50
+  limit = 1000
 ): Promise<{ data: MeasurementSession[]; error: string | null }> {
   const { data, error } = await supabase
     .from('measurement_sessions')
@@ -82,6 +87,16 @@ export async function fetchRecentSessions(
     return { data: [], error: error.message };
   }
   return { data: data ?? [], error: null };
+}
+
+// ─── Clear all sessions ───────────────────────────────────────
+export async function clearAllSessions(): Promise<{ error: string | null }> {
+  const { error } = await supabase
+    .from('measurement_sessions')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
+
+  return { error: error ? error.message : null };
 }
 
 // ─── Delete a session ─────────────────────────────────────────

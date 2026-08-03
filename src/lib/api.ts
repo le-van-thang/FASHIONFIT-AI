@@ -4,6 +4,11 @@ const API_BASE_URL = 'http://localhost:5000/api';
 
 export interface BackendMeasurementPayload {
   _id?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  notes?: string;
+  source?: string;
+  snapshot_img?: string;
   gender: 'male' | 'female';
   weight_kg: number;
   calibration_type: string;
@@ -60,6 +65,23 @@ export async function saveBackendSession(payload: BackendMeasurementPayload): Pr
   } catch (err: any) {
     console.warn('Failed to save session to MongoDB backend:', err.message);
     return { data: null, error: err.message };
+  }
+}
+
+// Clear ALL measurement sessions from MongoDB backend
+export async function clearAllBackendSessions(): Promise<{ error: string | null }> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/measurements`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) {
+      throw new Error(`Server status ${res.status}`);
+    }
+
+    return { error: null };
+  } catch (err: any) {
+    return { error: err.message };
   }
 }
 

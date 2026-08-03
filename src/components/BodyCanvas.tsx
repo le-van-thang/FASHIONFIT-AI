@@ -2218,42 +2218,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </div>
             )}
 
-            {hasMediaBackground && (
-              <button
-                type="button"
-                onClick={() => setIsMaximized(!isMaximized)}
-                title={isMaximized ? "Thu nhỏ camera" : "Phóng to camera toàn màn hình"}
-                style={{
-                  background: 'rgba(15, 23, 42, 0.88)',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: '16px',
-                  color: '#fff',
-                  padding: '0.3rem 0.55rem',
-                  fontSize: '0.65rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px',
-                  backdropFilter: 'blur(6px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                  transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.45)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'rgba(15, 23, 42, 0.85)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-                }}
-              >
-                {isMaximized ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                <span>{isMaximized ? "Thu nhỏ" : "Phóng to"}</span>
-              </button>
-            )}
-
           {isModelLoading && (
             <div className="model-loading-overlay">
               <RefreshCw size={24} className="spin-anim" />

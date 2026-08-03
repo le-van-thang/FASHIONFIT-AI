@@ -83,7 +83,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     return scene.clone();
   }, [scene]);
 
-  // Calculate bounding box of the scene to center horizontally and place feet cleanly on floor
+  // Calculate bounding box of the scene to center model precisely at origin [0, 0, 0] on all 3 axes
   const { bounds, centerOffset } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);
     const size = new THREE.Vector3();
@@ -92,12 +92,11 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Place feet exactly at Y = -1.0 (on grid floor) and center X, Z
-    const offsetY = -box.min.y - 1.0;
-    const offset = new THREE.Vector3(-center.x, offsetY, -center.z);
+    // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z
+    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
     
     return {
-      bounds: { min: 0, max: size.y },
+      bounds: { min: -size.y / 2, max: size.y / 2 },
       centerOffset: offset
     };
   }, [scene, path]);
@@ -1034,7 +1033,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         <color attach="background" args={['#090d16']} />
         
         {/* Camera */}
-        <PerspectiveCamera makeDefault position={[0, 0, 5.0]} fov={36} />
+        <PerspectiveCamera makeDefault position={[0, 0, 4.3]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 

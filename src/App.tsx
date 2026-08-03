@@ -319,7 +319,7 @@ function App() {
   // Fetch recent sessions from Express MongoDB database with fallback (up to 1000 items)
   const loadHistory = async () => {
     const backendRes = await fetchBackendSessions();
-    if (!backendRes.error && backendRes.data && backendRes.data.length > 0) {
+    if (!backendRes.error && backendRes.data) {
       const formattedSessions = backendRes.data.map(item => ({
         id: item._id || Math.random().toString(),
         created_at: item.created_at || new Date().toISOString(),
@@ -823,6 +823,8 @@ function App() {
             sizeSystem={input.sizeSystem}
             isScanned={scannedSources[inputSource] ?? true}
             inputSource={inputSource}
+            customerName={customerName}
+            customerPhone={customerPhone}
           />
         </div>
       </main>
@@ -1119,11 +1121,22 @@ function App() {
                             </div>
                           </div>
 
-                          {(session.customer_name || session.customer_phone) && (
-                            <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700, marginBottom: '0.5rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '0.35rem 0.6rem', borderRadius: '6px' }}>
-                              👤 {session.customer_name || 'Khách Hàng'} {session.customer_phone ? `(📞 ${session.customer_phone})` : ''}
-                            </div>
-                          )}
+                          <div style={{
+                            fontSize: '0.78rem',
+                            color: '#38bdf8',
+                            fontWeight: 700,
+                            marginBottom: '0.5rem',
+                            background: 'rgba(56, 189, 248, 0.12)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            padding: '0.35rem 0.65rem',
+                            borderRadius: '6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                          }}>
+                            <span>👤 KH: <strong>{session.customer_name || 'Khách Vãng Lai'}</strong></span>
+                            {session.customer_phone ? <span>📞 {session.customer_phone}</span> : <span style={{ opacity: 0.6, fontSize: '0.7rem' }}>Chưa có SĐT</span>}
+                          </div>
 
                           <div className="item-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.4rem', fontSize: '0.74rem', color: '#e2e8f0' }}>
                             <div>

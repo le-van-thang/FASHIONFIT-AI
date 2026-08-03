@@ -1034,8 +1034,8 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
       >
         <color attach="background" args={['#090d16']} />
         
-        {/* Camera */}
-        <PerspectiveCamera makeDefault position={[0, 0.85, 4.2]} fov={36} />
+        {/* Camera (Zoomed out in PIP mode without labels so full mannequin fits centered in PIP card) */}
+        <PerspectiveCamera makeDefault position={[0, 0.85, showLabels ? 4.2 : 5.8]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 

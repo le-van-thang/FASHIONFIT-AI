@@ -331,7 +331,20 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           if (inputSource === 'webcam' && jointVis < 0.35) {
             return l;
           }
-          const pt = mapMediaPipePoint(mp[mpIndex].x, mp[mpIndex].y);
+
+          let rawX = mp[mpIndex].x;
+          let rawY = mp[mpIndex].y;
+
+          if (l.id === 'nasion' && mp[1] && mp[4]) {
+            // Anatomical Nasion: Anchor to eye bridge so head tilt never shifts point down to mouth
+            rawX = (mp[0].x * 0.4 + mp[1].x * 0.3 + mp[4].x * 0.3);
+            rawY = (mp[0].y * 0.25 + mp[1].y * 0.375 + mp[4].y * 0.375);
+          } else if (l.id === 'left_shoulder' || l.id === 'right_shoulder') {
+            // Align shoulder landmark right on top shoulder ridge
+            rawY = mp[mpIndex].y - 0.015;
+          }
+
+          const pt = mapMediaPipePoint(rawX, rawY);
           
           // Exponential Moving Average (EMA) filter for 60FPS smooth tracking without lag or jitter
           const prevPt = prevLandmarksMapRef.current[l.id];

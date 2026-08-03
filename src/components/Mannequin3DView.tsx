@@ -83,7 +83,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     return scene.clone();
   }, [scene]);
 
-  // Calculate bounding box of the scene to find vertical bounds and center offset dynamically
+  // Calculate bounding box of the scene to center horizontally and place feet cleanly on floor
   const { bounds, centerOffset } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(scene);
     const size = new THREE.Vector3();
@@ -92,12 +92,12 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to center the model geometry precisely at origin [0, 0, 0] on all axes
-    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
+    // Place feet exactly at Y = -1.0 (on grid floor) and center X, Z
+    const offsetY = -box.min.y - 1.0;
+    const offset = new THREE.Vector3(-center.x, offsetY, -center.z);
     
-    console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
     return {
-      bounds: { min: -size.y / 2, max: size.y / 2 },
+      bounds: { min: 0, max: size.y },
       centerOffset: offset
     };
   }, [scene, path]);
@@ -992,18 +992,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
-  // Refs for camera focus target interpolation (default slightly lower at Y = -0.15 to shift model up)
+  // Refs for camera focus target interpolation (default centered at Y = 0)
   const controlsRef = useRef<any>(null);
-  const targetPoint = useRef(new THREE.Vector3(0, -0.15, 0));
+  const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
 
   // Reset camera view when counter changes
   useEffect(() => {
     if (cameraResetCounter > 0) {
       if (controlsRef.current) {
         controlsRef.current.reset();
-        controlsRef.current.target.set(0, -0.15, 0);
+        controlsRef.current.target.set(0, 0, 0);
       }
-      targetPoint.current.set(0, -0.15, 0);
+      targetPoint.current.set(0, 0, 0);
     }
   }, [cameraResetCounter]);
 
@@ -1028,13 +1028,13 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onPointerMissed={() => {
-          targetPoint.current.set(0, -0.15, 0);
+          targetPoint.current.set(0, 0, 0);
         }}
       >
         <color attach="background" args={['#090d16']} />
         
         {/* Camera */}
-        <PerspectiveCamera makeDefault position={[0, 0, 5.6]} fov={36} />
+        <PerspectiveCamera makeDefault position={[0, 0, 5.0]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 
@@ -1074,7 +1074,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {interactive && (
           <OrbitControls 
             ref={controlsRef}
-            target={[0, -0.15, 0]}
+            target={[0, 0, 0]}
             enablePan={false}
             minDistance={2.5}
             maxDistance={8.0}

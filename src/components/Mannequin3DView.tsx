@@ -96,8 +96,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to place feet precisely on the grid floor (Y = 0) and center X & Z
-    const offset = new THREE.Vector3(-center.x, -box.min.y, -center.z);
+    // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z
+    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
     
     return {
       bounds: { min: -size.y / 2, max: size.y / 2 },
@@ -993,18 +993,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
-  // Refs for camera focus target interpolation (default centered at body height Y = 0.85)
+  // Refs for camera focus target interpolation (default centered at origin [0, 0, 0])
   const controlsRef = useRef<any>(null);
-  const targetPoint = useRef(new THREE.Vector3(0, 0.85, 0));
+  const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
 
   // Reset camera view when counter changes
   useEffect(() => {
     if (cameraResetCounter > 0) {
       if (controlsRef.current) {
         controlsRef.current.reset();
-        controlsRef.current.target.set(0, 0.85, 0);
+        controlsRef.current.target.set(0, 0, 0);
       }
-      targetPoint.current.set(0, 0.85, 0);
+      targetPoint.current.set(0, 0, 0);
     }
   }, [cameraResetCounter]);
 
@@ -1029,18 +1029,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onPointerMissed={() => {
-          targetPoint.current.set(0, 0.85, 0);
+          targetPoint.current.set(0, 0, 0);
         }}
       >
         <color attach="background" args={['#090d16']} />
         
         {/* Camera (Zoomed out in PIP mode without labels so full mannequin fits centered in PIP card) */}
-        <PerspectiveCamera makeDefault position={[0, 0.85, showLabels ? 4.2 : 5.8]} fov={36} />
+        <PerspectiveCamera makeDefault position={[0, 0, showLabels ? 4.3 : 4.8]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 
         {/* Futuristic Grid and Lighting */}
-        <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, 0, 0]} />
+        <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -0.95, 0]} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={0.9} />
         <directionalLight position={[-10, -10, -5]} intensity={0.4} />
@@ -1075,7 +1075,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {interactive && (
           <OrbitControls 
             ref={controlsRef}
-            target={[0, 0.85, 0]}
+            target={[0, 0, 0]}
             enablePan={false}
             minDistance={2.5}
             maxDistance={8.0}

@@ -2533,7 +2533,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
                   return (
                     <g key={`lbl2d-${idx}`} transform={`translate(${item.cardX}, ${item.cardY})`} style={{ pointerEvents: 'none' }}>
-                      {/* Connection Line */}
+                      {/* Connection Line to anatomical landmark */}
                       <line
                         x1={0}
                         y1={0}
@@ -2543,18 +2543,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                           stroke: 'rgba(34, 211, 238, 0.65)',
                           strokeWidth: 1.0,
                           strokeDasharray: '2,2'
-                        }}
-                      />
-                      {/* Glowing Target Dot */}
-                      <circle
-                        cx={anchorDx}
-                        cy={anchorDy}
-                        r="3.5"
-                        style={{
-                          fill: '#22d3ee',
-                          stroke: '#0891b2',
-                          strokeWidth: 1.5,
-                          filter: 'drop-shadow(0 0 4px #22d3ee)'
                         }}
                       />
                       {/* Card Label */}

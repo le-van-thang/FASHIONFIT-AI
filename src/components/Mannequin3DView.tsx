@@ -78,38 +78,42 @@ interface ModelProps {
 const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel, showLabels = true }) => {
   const { scene } = useGLTF(path);
   
-  // Clone the scene to render the neon wireframe grid overlay on top of the solid body
-  const wireframeScene = useMemo(() => {
-    return scene.clone();
+  // Deep clone scene objects so wireframe overlay traversal never mutates solid body mesh visibility
+  const baseScene = useMemo(() => {
+    return scene.clone(true);
   }, [scene]);
 
-  // Calculate bounding box of the scene to find vertical bounds and center offset dynamically
+  const wireframeScene = useMemo(() => {
+    return scene.clone(true);
+  }, [scene]);
+
+  // Calculate bounding box of the scene to center model precisely at origin [0, 0, 0] on all 3 axes
   const { bounds, centerOffset } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(scene);
+    const box = new THREE.Box3().setFromObject(baseScene);
     const size = new THREE.Vector3();
     box.getSize(size);
     
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to center the model geometry precisely at origin [0, 0, 0] on all axes
+    // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z
     const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
     
-    console.log(`[MODEL DEBUG] path="${path}" size=${JSON.stringify(size)} min=${JSON.stringify(box.min)} max=${JSON.stringify(box.max)} offset=${JSON.stringify(offset)}`);
     return {
       bounds: { min: -size.y / 2, max: size.y / 2 },
       centerOffset: offset
     };
-  }, [scene, path]);
+  }, [baseScene, path]);
 
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
-    return new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#0ea5e9'), // Brighter glowing cyber sky blue
-      transparent: true,
-      opacity: 0.55,
-      side: THREE.DoubleSide,
-      depthWrite: true
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#38bdf8'), // Glowing bright sky blue
+      roughness: 0.3,
+      metalness: 0.35,
+      transparent: false,
+      opacity: 1.0,
+      side: THREE.DoubleSide
     });
   }, []);
 
@@ -141,7 +145,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Apply materials dynamically to both base body and wireframe scene
   useEffect(() => {
     // 1. Traverse base body scene
-    scene.traverse((child) => {
+    baseScene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (viewMode === 'heatmap') {
           child.visible = true;
@@ -170,7 +174,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         }
       }
     });
-  }, [scene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
+  }, [baseScene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
 
   // Dynamic Y-scale adjustment for heatmap based on heightScale
   useEffect(() => {
@@ -306,16 +310,16 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Apply default rotation to primitive scene contents
   useEffect(() => {
-    if (scene) scene.rotation.set(0, 0, 0);
+    if (baseScene) baseScene.rotation.set(0, 0, 0);
     if (wireframeScene) wireframeScene.rotation.set(0, 0, 0);
-  }, [scene, wireframeScene]);
+  }, [baseScene, wireframeScene]);
 
   return (
     <group ref={meshRef} scale={scale}>
       <group position={[centerOffset.x, centerOffset.y, centerOffset.z]}>
         {/* Base solid translucent body */}
         <primitive 
-          object={scene} 
+          object={baseScene} 
           onClick={(e: any) => {
             e.stopPropagation();
             if (e.point && onClickModel) {

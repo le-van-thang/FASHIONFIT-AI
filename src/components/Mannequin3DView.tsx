@@ -76,16 +76,18 @@ interface ModelProps {
 }
 
 const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel, showLabels = true }) => {
-  const { scene } = useGLTF(path);
-  
-  // Clone the scene to render the neon wireframe grid overlay on top of the solid body
+  // Deep clone scene objects so wireframe overlay traversal never mutates solid body mesh visibility
+  const baseScene = useMemo(() => {
+    return scene.clone(true);
+  }, [scene]);
+
   const wireframeScene = useMemo(() => {
-    return scene.clone();
+    return scene.clone(true);
   }, [scene]);
 
   // Calculate bounding box of the scene to center model precisely at origin [0, 0, 0] on all 3 axes
   const { bounds, centerOffset } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(scene);
+    const box = new THREE.Box3().setFromObject(baseScene);
     const size = new THREE.Vector3();
     box.getSize(size);
     
@@ -99,7 +101,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
       bounds: { min: -size.y / 2, max: size.y / 2 },
       centerOffset: offset
     };
-  }, [scene, path]);
+  }, [baseScene, path]);
 
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
@@ -140,7 +142,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Apply materials dynamically to both base body and wireframe scene
   useEffect(() => {
     // 1. Traverse base body scene
-    scene.traverse((child) => {
+    baseScene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (viewMode === 'heatmap') {
           child.visible = true;
@@ -169,7 +171,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
         }
       }
     });
-  }, [scene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
+  }, [baseScene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
 
   // Dynamic Y-scale adjustment for heatmap based on heightScale
   useEffect(() => {
@@ -321,7 +323,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
       <group position={[centerOffset.x, centerOffset.y, centerOffset.z]}>
         {/* Base solid translucent body */}
         <primitive 
-          object={scene} 
+          object={baseScene} 
           onClick={(e: any) => {
             e.stopPropagation();
             if (e.point && onClickModel) {

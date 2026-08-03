@@ -2253,7 +2253,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 <span>{isMaximized ? "Thu nhỏ" : "Phóng to"}</span>
               </button>
             )}
-          </div>
 
           {isModelLoading && (
             <div className="model-loading-overlay">

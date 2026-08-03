@@ -3296,7 +3296,16 @@ body {
     color: #38bdf8;
     filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.6));
   }
+
+  .camera-success-overlay h3 {
+    font-size: 1rem !important;
+  }
+  .view-change-cta-btn {
+    padding: 0.75rem 1.1rem !important;
+    font-size: 0.82rem !important;
+  }
 }
+
 /* Printable A4 Spec Sheet Styles for Tailors & PDF Export */
 @media print {
   body {
@@ -3324,14 +3333,6 @@ body {
   }
   .measure-value {
     color: #000000 !important;
-  }
-}
-  .camera-success-overlay h3 {
-    font-size: 1rem !important;
-  }
-  .view-change-cta-btn {
-    padding: 0.75rem 1.1rem !important;
-    font-size: 0.82rem !important;
   }
 }
 

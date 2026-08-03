@@ -807,7 +807,6 @@ function App() {
             measurements={measurements}
             recommendation={recommendation}
             onPrint={handlePrint}
-            onSave={handleSaveSession}
             view={view}
             syncState={syncState}
             savedAt={savedAt}

@@ -1,5 +1,5 @@
 import type { BodyMeasurements, SizeRecommendation, Gender } from '../types';
-import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader, Save } from 'lucide-react';
+import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface ResultPanelProps {
@@ -8,7 +8,6 @@ interface ResultPanelProps {
   measurements: BodyMeasurements;
   recommendation: SizeRecommendation;
   onPrint: () => void;
-  onSave?: () => void;
   view: 'front' | 'side';
   syncState: 'idle' | 'pending' | 'saving' | 'saved' | 'error';
   savedAt: string;
@@ -23,7 +22,6 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   measurements,
   recommendation,
   onPrint,
-  onSave,
   view,
   syncState,
   savedAt,

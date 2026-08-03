@@ -700,6 +700,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [isWebcamActive, setIsWebcamActive] = useState<boolean>(false);
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
   const [lightingMode, setLightingMode] = useState<'auto' | 'bright' | 'dark' | 'normal'>('auto');
+  const [showLightingMenu, setShowLightingMenu] = useState<boolean>(false);
 
   // Real-time Adaptive Lighting & Anti-Overexposure / Anti-Underexposed Filter
   const getVideoFilterStyle = () => {
@@ -1970,55 +1971,36 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </div>
             )}
 
-          {/* Maximize & Camera Flip Buttons */}
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            right: '8px',
-            display: 'flex',
-            gap: '4px',
-            zIndex: 60
-          }}>
-            {inputSource === 'webcam' && isWebcamActive && (
+          {/* Top-Left: Lighting Control Selector Dropdown */}
+          {inputSource === 'webcam' && isWebcamActive && (
+            <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 65 }}>
               <button
                 type="button"
-                onClick={() => {
-                  setLightingMode(prev => {
-                    if (prev === 'auto') return 'bright';
-                    if (prev === 'bright') return 'dark';
-                    if (prev === 'dark') return 'normal';
-                    return 'auto';
-                  });
-                }}
-                title={
-                  lightingMode === 'auto' ? "AI Tự động căn chỉnh độ sáng & độ tương phản" :
-                  lightingMode === 'bright' ? "Chế độ Chống Cháy Sáng / Chống Nắng Lóa: Dìm ánh sáng chói & tăng viền sắc nét" :
-                  lightingMode === 'dark' ? "Chế độ Khử Tối AI: Bù sáng & tách nổi khung hình thể" :
-                  "Mặc định (Tắt lọc AI)"
-                }
+                onClick={() => setShowLightingMenu(!showLightingMenu)}
+                title="Bấm để chọn chế độ xử lý ánh sáng (Auto AI / Chống cháy sáng / Khử tối)"
                 style={{
                   background: 
-                    lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.22)' :
-                    lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.25)' :
-                    lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(15, 23, 42, 0.88)',
+                    lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.25)' :
+                    lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.3)' :
+                    lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(15, 23, 42, 0.9)',
                   border: 
-                    lightingMode === 'auto' ? '1px solid rgba(234, 179, 8, 0.6)' :
-                    lightingMode === 'bright' ? '1px solid rgba(56, 189, 248, 0.6)' :
-                    lightingMode === 'dark' ? '1px solid rgba(245, 158, 11, 0.6)' : '1px solid rgba(255, 255, 255, 0.25)',
+                    lightingMode === 'auto' ? '1px solid rgba(234, 179, 8, 0.7)' :
+                    lightingMode === 'bright' ? '1px solid rgba(56, 189, 248, 0.7)' :
+                    lightingMode === 'dark' ? '1px solid rgba(245, 158, 11, 0.7)' : '1px solid rgba(255, 255, 255, 0.25)',
                   borderRadius: '16px',
                   color: 
                     lightingMode === 'auto' ? '#fde047' :
                     lightingMode === 'bright' ? '#38bdf8' :
-                    lightingMode === 'dark' ? '#fbbf24' : '#94a3b8',
-                  padding: '0.3rem 0.55rem',
+                    lightingMode === 'dark' ? '#fbbf24' : '#f8fafc',
+                  padding: '0.35rem 0.65rem',
                   fontSize: '0.65rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '3px',
-                  backdropFilter: 'blur(6px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  gap: '4px',
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
                   transition: 'all 0.15s ease',
                   whiteSpace: 'nowrap'
                 }}
@@ -2028,14 +2010,144 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 {lightingMode === 'dark' && <Moon size={12} />}
                 {lightingMode === 'normal' && <Sun size={12} />}
                 <span>
-                  {lightingMode === 'auto' && "💡 Auto AI Bù Sáng"}
-                  {lightingMode === 'bright' && "☀️ Chống Cháy Sáng"}
-                  {lightingMode === 'dark' && "🌙 Khử Tối AI"}
-                  {lightingMode === 'normal' && "☀️ Cam Gốc (Tắt AI)"}
+                  {lightingMode === 'auto' && "💡 Auto AI Bù Sáng ▾"}
+                  {lightingMode === 'bright' && "☀️ Chống Cháy Sáng ▾"}
+                  {lightingMode === 'dark' && "🌙 Khử Tối AI ▾"}
+                  {lightingMode === 'normal' && "☀️ Cam Gốc (Tắt AI) ▾"}
                 </span>
               </button>
-            )}
 
+              {/* Explicit Lighting Options Dropdown Panel */}
+              {showLightingMenu && (
+                <div style={{
+                  position: 'absolute',
+                  top: '32px',
+                  left: 0,
+                  width: '210px',
+                  background: 'rgba(15, 23, 42, 0.96)',
+                  border: '1px solid rgba(56, 189, 248, 0.4)',
+                  borderRadius: '10px',
+                  padding: '0.4rem',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+                  backdropFilter: 'blur(12px)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '3px',
+                  zIndex: 100
+                }}>
+                  <div style={{ fontSize: '0.58rem', fontWeight: 700, color: '#94a3b8', padding: '2px 6px', letterSpacing: '0.5px' }}>
+                    CHỌN CHẾ ĐỘ ÁNH SÁNG CAMERA:
+                  </div>
+                  
+                  <button
+                    type="button"
+                    onClick={() => { setLightingMode('auto'); setShowLightingMenu(false); }}
+                    style={{
+                      background: lightingMode === 'auto' ? 'rgba(234, 179, 8, 0.2)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: lightingMode === 'auto' ? '#fde047' : '#e2e8f0',
+                      padding: '0.35rem 0.5rem',
+                      fontSize: '0.66rem',
+                      fontWeight: 600,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Sparkles size={12} style={{ color: '#fde047' }} /> Auto AI (Tự động thích ứng)
+                    </span>
+                    {lightingMode === 'auto' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setLightingMode('bright'); setShowLightingMenu(false); }}
+                    style={{
+                      background: lightingMode === 'bright' ? 'rgba(56, 189, 248, 0.2)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: lightingMode === 'bright' ? '#38bdf8' : '#e2e8f0',
+                      padding: '0.35rem 0.5rem',
+                      fontSize: '0.66rem',
+                      fontWeight: 600,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Sun size={12} style={{ color: '#38bdf8' }} /> Chống Cháy Sáng (Nắng/Nắng lóa)
+                    </span>
+                    {lightingMode === 'bright' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setLightingMode('dark'); setShowLightingMenu(false); }}
+                    style={{
+                      background: lightingMode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: lightingMode === 'dark' ? '#fbbf24' : '#e2e8f0',
+                      padding: '0.35rem 0.5rem',
+                      fontSize: '0.66rem',
+                      fontWeight: 600,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Moon size={12} style={{ color: '#fbbf24' }} /> Khử Tối AI (Phòng tối/Thiếu sáng)
+                    </span>
+                    {lightingMode === 'dark' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setLightingMode('normal'); setShowLightingMenu(false); }}
+                    style={{
+                      background: lightingMode === 'normal' ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '6px',
+                      color: lightingMode === 'normal' ? '#ffffff' : '#94a3b8',
+                      padding: '0.35rem 0.5rem',
+                      fontSize: '0.66rem',
+                      fontWeight: 600,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Sun size={12} style={{ color: '#94a3b8' }} /> Camera Gốc (Tắt bộ lọc AI)
+                    </span>
+                    {lightingMode === 'normal' && <span style={{ color: '#22c55e', fontWeight: 800 }}>✓</span>}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Top-Right: Camera Flip & Maximize Buttons */}
+          <div style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            display: 'flex',
+            gap: '4px',
+            zIndex: 60
+          }}>
             {inputSource === 'webcam' && isWebcamActive && (
               <button
                 type="button"

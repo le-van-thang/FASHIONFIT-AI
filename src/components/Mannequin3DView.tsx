@@ -97,7 +97,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     box.getCenter(center);
     
     // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z
-    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
+    const offset = new THREE.Vector3(-center.x, -center.y + 0.05, -center.z);
     
     return {
       bounds: { min: -size.y / 2, max: size.y / 2 },
@@ -107,10 +107,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#38bdf8'), // Glowing bright sky blue
-      roughness: 0.3,
-      metalness: 0.35,
+    return new THREE.MeshBasicMaterial({
+      color: new THREE.Color('#00d8ff'), // Glowing bright electric sky blue
       transparent: false,
       opacity: 1.0,
       side: THREE.DoubleSide
@@ -144,9 +142,12 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Apply materials dynamically to both base body and wireframe scene
   useEffect(() => {
-    // 1. Traverse base body scene
+    // 1. Traverse base body scene and ensure vertex normals exist
     baseScene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
+        if (child.geometry) {
+          child.geometry.computeVertexNormals();
+        }
         if (viewMode === 'heatmap') {
           child.visible = true;
           child.material = heatmapMaterial;
@@ -163,6 +164,9 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     // 2. Traverse wireframe overlay scene
     wireframeScene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
+        if (child.geometry) {
+          child.geometry.computeVertexNormals();
+        }
         if (viewMode === 'heatmap') {
           child.visible = false;
         } else if (viewMode === 'solid') {

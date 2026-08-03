@@ -1830,19 +1830,16 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '6px',
-          padding: '0.35rem 0.5rem',
-          background: 'rgba(15, 23, 42, 0.6)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: 'var(--radius-md)',
-          width: '100%'
+          gap: '0.5rem',
+          width: '100%',
+          marginBottom: '0.75rem',
+          flexWrap: 'wrap'
         }}>
-          <div className="view-toggle-tabs" style={{ display: 'flex', gap: '4px' }}>
+          <div className="view-toggle-tabs">
             <button
               type="button"
               className={`tab-btn ${view === 'front' ? 'active' : ''}`}
               onClick={() => onViewChange('front')}
-              style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem' }}
             >
               Mặt trước
             </button>
@@ -1850,13 +1847,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               type="button"
               className={`tab-btn ${view === 'side' ? 'active' : ''}`}
               onClick={() => onViewChange('side')}
-              style={{ fontSize: '0.72rem', padding: '0.3rem 0.65rem' }}
             >
               Mặt nghiêng
             </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
             {inputSource === 'mannequin' ? (
               <button
                 type="button"
@@ -1871,17 +1867,20 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.25rem',
-                  background: 'rgba(6, 182, 212, 0.1)',
-                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                  background: '#ffffff',
+                  border: '1px solid #cbd5e1',
                   borderRadius: 'var(--radius-sm)',
-                  padding: '0.3rem 0.55rem',
-                  fontSize: '0.68rem',
+                  padding: '0.35rem 0.6rem',
+                  fontSize: '0.72rem',
                   fontWeight: 600,
-                  color: '#06b6d4',
+                  color: '#0284c7',
                   cursor: 'pointer',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
                   transition: 'all 0.15s ease',
                   whiteSpace: 'nowrap'
                 }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f1f5f9')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#ffffff')}
               >
                 <RefreshCw size={11} />
                 Reset mô hình
@@ -1894,14 +1893,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     onClick={onResetScan}
                     title="Đặt lại số đo của tab hiện tại về trạng thái chưa quét (-- cm)"
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '0.25rem',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      background: '#ffffff',
+                      border: '1px solid #fca5a5',
                       borderRadius: 'var(--radius-sm)',
-                      padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                      color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s ease',
+                      padding: '0.35rem 0.6rem',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      transition: 'all 0.15s ease',
                       whiteSpace: 'nowrap'
                     }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#fef2f2')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#ffffff')}
                   >
                     <RefreshCw size={11} />
                     Reset số đo
@@ -1913,14 +1921,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     onClick={onResetLandmarks}
                     title="Đặt lại vị trí các chấm đỏ về mặc định chuẩn"
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '0.25rem',
-                      background: 'rgba(6, 182, 212, 0.1)',
-                      border: '1px solid rgba(6, 182, 212, 0.35)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      background: '#ffffff',
+                      border: '1px solid #7dd3fc',
                       borderRadius: 'var(--radius-sm)',
-                      padding: '0.3rem 0.55rem', fontSize: '0.68rem', fontWeight: 600,
-                      color: '#06b6d4', cursor: 'pointer', transition: 'all 0.15s ease',
+                      padding: '0.35rem 0.6rem',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      color: '#0284c7',
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      transition: 'all 0.15s ease',
                       whiteSpace: 'nowrap'
                     }}
+                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#f0f9ff')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#ffffff')}
                   >
                     <RefreshCw size={11} />
                     Reset chấm

@@ -1382,18 +1382,23 @@ body {
 /* ===================== */
 /* Sliding History Drawer */
 /* ===================== */
+/* ===================== */
+/* Sliding History Drawer */
+/* ===================== */
 .history-drawer {
   position: fixed;
   top: 0;
-  right: -400px; /* Hidden by default */
-  width: 380px;
+  right: -440px; /* Hidden by default */
+  width: 420px;
   height: 100vh;
-  background-color: #ffffff;
-  box-shadow: -4px 0 24px rgba(15, 23, 42, 0.15);
+  background-color: #0b1329;
+  border-left: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.65);
   z-index: 1050;
   display: flex;
   flex-direction: column;
-  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #f8fafc;
 }
 
 .history-drawer.open {
@@ -1403,8 +1408,8 @@ body {
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(15, 23, 42, 0.35);
-  backdrop-filter: blur(2px);
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
   z-index: 1040;
   animation: fadeIn 0.2s ease;
 }
@@ -1419,8 +1424,8 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0f172a;
 }
 
 .drawer-title-group {
@@ -1432,12 +1437,12 @@ body {
 .drawer-title-group h3 {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--text-main);
+  color: #f8fafc;
   margin: 0;
 }
 
 .drawer-title-group svg {
-  color: var(--color-primary);
+  color: #38bdf8;
 }
 
 .drawer-close-btn {
@@ -1446,25 +1451,25 @@ body {
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: none;
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-sm);
-  color: var(--text-muted);
+  color: #94a3b8;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .drawer-close-btn:hover {
-  background-color: #fee2e2;
-  border-color: #fca5a5;
-  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #f87171;
 }
 
 .drawer-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1.25rem 1.5rem;
-  background-color: #fafbfc;
+  padding: 1rem 1.25rem;
+  background-color: #060b17;
 }
 
 .history-empty {
@@ -1474,26 +1479,27 @@ body {
   justify-content: center;
   text-align: center;
   height: 60%;
-  color: var(--text-muted);
+  color: #94a3b8;
   padding: 2rem;
   gap: 0.75rem;
 }
 
 .history-empty svg {
-  color: #cbd5e1;
+  color: #38bdf8;
   animation: pulse 2s infinite ease-in-out;
 }
 
 .history-empty p {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  color: var(--text-main);
+  color: #f8fafc;
   margin: 0;
 }
 
 .history-empty span {
   font-size: 0.72rem;
   line-height: 1.4;
+  color: #94a3b8;
 }
 
 .history-list {
@@ -1503,22 +1509,28 @@ body {
 }
 
 .history-item-card {
-  background-color: #ffffff;
-  border: 1px solid var(--border-color);
+  background-color: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-md);
-  padding: 0.85rem;
+  padding: 0;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
   overflow: hidden;
   text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.history-item-card:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.15);
 }
 
 .card-delete-confirm-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(4px);
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(6px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1538,7 +1550,7 @@ body {
   margin: 0;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #f8fafc;
 }
 
 .card-delete-confirm-overlay .confirm-buttons {
@@ -1565,7 +1577,7 @@ body {
 
 .card-delete-confirm-overlay .confirm-btn.delete:hover {
   background-color: #dc2626;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
 }
 
 .card-delete-confirm-overlay .confirm-btn.cancel {

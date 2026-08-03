@@ -982,11 +982,11 @@ function App() {
                         key={session.id}
                         className={`history-item-card ${deletingSessionId === session.id ? 'deleting' : ''}`}
                         onClick={() => deletingSessionId !== session.id && handleLoadSession(session)}
-                        style={{ position: 'relative', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 'var(--radius-md)', marginBottom: '0.75rem', background: 'rgba(15, 23, 42, 0.45)', overflow: 'hidden' }}
+                        style={{ position: 'relative', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: 'var(--radius-md)', marginBottom: '0.75rem', background: '#0f172a', overflow: 'hidden' }}
                       >
                         {deletingSessionId === session.id && (
                           <div className="card-delete-confirm-overlay" onClick={(e) => e.stopPropagation()}>
-                            <p>Xóa phiên đo này?</p>
+                            <p style={{ color: '#f8fafc', fontWeight: 700 }}>Xóa phiên đo này?</p>
                             <div className="confirm-buttons">
                               <button
                                 className="confirm-btn delete"
@@ -997,6 +997,7 @@ function App() {
                               <button
                                 className="confirm-btn cancel"
                                 onClick={() => setDeletingSessionId(null)}
+                                style={{ background: 'rgba(255,255,255,0.1)', color: '#cbd5e1' }}
                               >
                                 Hủy
                               </button>
@@ -1004,7 +1005,7 @@ function App() {
                           </div>
                         )}
 
-                        <div className="item-header" style={{ padding: '0.6rem 0.8rem', background: 'rgba(30, 41, 59, 0.6)', borderBottom: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="item-header" style={{ padding: '0.55rem 0.8rem', background: 'rgba(30, 41, 59, 0.9)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }} onClick={(e) => e.stopPropagation()}>
                             <input
                               type="checkbox"
@@ -1013,7 +1014,7 @@ function App() {
                               style={{ cursor: 'pointer', accentColor: '#38bdf8' }}
                               title="Chọn để so sánh 2 phiên đo"
                             />
-                            <span className="item-time" style={{ fontSize: '0.68rem', fontWeight: 600, color: '#94a3b8' }}>
+                            <span className="item-time" style={{ fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8' }}>
                               📅 {fullDateStr}
                             </span>
                           </div>
@@ -1024,13 +1025,13 @@ function App() {
                               setDeletingSessionId(session.id!);
                             }}
                             title="Xóa phiên đo này"
-                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                            style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', padding: '2px' }}
                           >
                             <Trash2 size={13} />
                           </button>
                         </div>
 
-                        <div className="item-body" style={{ padding: '0.75rem 0.8rem' }}>
+                        <div className="item-body" style={{ padding: '0.75rem 0.8rem', background: '#0f172a' }}>
                           {/* Source & Customer Name Row */}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '4px' }}>
                             <span style={{
@@ -1038,59 +1039,59 @@ function App() {
                               color: badge.color,
                               border: `1px solid ${badge.border}`,
                               borderRadius: '12px',
-                              padding: '0.15rem 0.45rem',
-                              fontSize: '0.62rem',
+                              padding: '0.2rem 0.55rem',
+                              fontSize: '0.64rem',
                               fontWeight: 700
                             }}>
                               {badge.label}
                             </span>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <span className={`gender-badge ${session.gender}`} style={{ fontSize: '0.62rem', padding: '0.15rem 0.4rem' }}>
+                              <span className={`gender-badge ${session.gender}`} style={{ fontSize: '0.64rem', padding: '0.18rem 0.45rem', fontWeight: 700 }}>
                                 {session.gender === 'male' ? 'Nam' : 'Nữ'}
                               </span>
-                              <span className="size-badge-small" style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                              <span className="size-badge-small" style={{ fontSize: '0.68rem', fontWeight: 800, background: 'rgba(56, 189, 248, 0.25)', color: '#38bdf8', padding: '0.18rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.4)' }}>
                                 {session.recommended_size}
                               </span>
                             </div>
                           </div>
 
                           {(session.customer_name || session.customer_phone) && (
-                            <div style={{ fontSize: '0.72rem', color: '#f8fafc', fontWeight: 600, marginBottom: '0.4rem', background: 'rgba(30, 41, 59, 0.5)', padding: '0.3rem 0.5rem', borderRadius: '4px' }}>
+                            <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 700, marginBottom: '0.5rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '0.35rem 0.6rem', borderRadius: '6px' }}>
                               👤 {session.customer_name || 'Khách Hàng'} {session.customer_phone ? `(📞 ${session.customer_phone})` : ''}
                             </div>
                           )}
 
-                          <div className="item-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.35rem', fontSize: '0.72rem', color: '#cbd5e1' }}>
+                          <div className="item-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.4rem', fontSize: '0.74rem', color: '#e2e8f0' }}>
                             <div>
                               <span style={{ color: '#94a3b8' }}>Cao: </span>
-                              <strong style={{ color: '#f8fafc' }}>{session.height_cm}cm</strong>
+                              <strong style={{ color: '#ffffff' }}>{session.height_cm}cm</strong>
                             </div>
                             <div>
                               <span style={{ color: '#94a3b8' }}>Nặng: </span>
-                              <strong style={{ color: '#f8fafc' }}>{session.weight_kg}kg</strong>
+                              <strong style={{ color: '#ffffff' }}>{session.weight_kg}kg</strong>
                             </div>
                             <div>
                               <span style={{ color: '#94a3b8' }}>Vai: </span>
-                              <strong style={{ color: '#f8fafc' }}>{session.shoulder_width_cm}cm</strong>
+                              <strong style={{ color: '#ffffff' }}>{session.shoulder_width_cm}cm</strong>
                             </div>
                             <div>
                               <span style={{ color: '#94a3b8' }}>Tay: </span>
-                              <strong style={{ color: '#f8fafc' }}>{session.arm_length_cm}cm</strong>
+                              <strong style={{ color: '#ffffff' }}>{session.arm_length_cm}cm</strong>
                             </div>
                             <div>
                               <span style={{ color: '#94a3b8' }}>Ngực: </span>
-                              <strong style={{ color: '#f8fafc' }}>{session.bust_cm}cm</strong>
+                              <strong style={{ color: '#ffffff' }}>{session.bust_cm}cm</strong>
                             </div>
                             <div>
                               <span style={{ color: '#94a3b8' }}>Eo: </span>
-                              <strong style={{ color: '#f8fafc' }}>{session.waist_cm}cm</strong>
+                              <strong style={{ color: '#ffffff' }}>{session.waist_cm}cm</strong>
                             </div>
                           </div>
                         </div>
 
-                        <div className="item-action" style={{ padding: '0.5rem 0.8rem', background: 'rgba(15, 23, 42, 0.7)', borderTop: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.72rem', color: '#38bdf8', fontWeight: 600, cursor: 'pointer' }}>
-                          <FolderOpen size={12} />
+                        <div className="item-action" style={{ padding: '0.5rem 0.8rem', background: '#020617', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.72rem', color: '#38bdf8', fontWeight: 700, cursor: 'pointer' }}>
+                          <FolderOpen size={13} />
                           <span>Bấm để tải lại số đo & mô hình 3D</span>
                         </div>
                       </div>

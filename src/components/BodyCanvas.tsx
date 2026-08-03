@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
-import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2 } from 'lucide-react';
+import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2, Sun, Sparkles } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
 
 
@@ -284,33 +284,21 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       updatePoseState(true, null);
     }
 
-    // Helper function for aspect-ratio crop compensation (object-fit: cover)
+    // Helper function for 1:1 video landmark alignment without aspect-ratio crop distortion
     const mapMediaPipePoint = (rawX: number, rawY: number) => {
       const normX = inputSource === 'webcam' ? (1 - rawX) : rawX;
-      let normY = rawY;
+      const normY = rawY;
 
       const vid = videoRef.current;
       if (inputSource === 'webcam' && vid && vid.videoWidth > 0 && vid.videoHeight > 0) {
-        const videoAspect = vid.videoWidth / vid.videoHeight;
-        const containerAspect = 400 / 650; // Viewport 400x650
+        // Clamp normalized coordinates to [0.02, 0.98] to prevent runaway dot drifting off-screen
+        const clampedX = Math.max(0.02, Math.min(0.98, normX));
+        const clampedY = Math.max(0.02, Math.min(0.98, normY));
 
-        if (videoAspect > containerAspect) {
-          // Video is wider than 400x650 viewport -> Horizontal crop
-          const renderWidthRatio = videoAspect / containerAspect;
-          const correctedX = (normX - 0.5) * renderWidthRatio + 0.5;
-          return {
-            x: Math.round(correctedX * 400),
-            y: Math.round(normY * 650)
-          };
-        } else {
-          // Video is taller than 400x650 viewport -> Vertical crop
-          const renderHeightRatio = containerAspect / videoAspect;
-          const correctedY = (normY - 0.5) * renderHeightRatio + 0.5;
-          return {
-            x: Math.round(normX * 400),
-            y: Math.round(correctedY * 650)
-          };
-        }
+        return {
+          x: Math.round(clampedX * 400),
+          y: Math.round(clampedY * 650)
+        };
       }
 
       return {
@@ -707,11 +695,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     startVideoScanning(file);
   };
 
-  // New rotation dragging states
   const [isRotating, setIsRotating] = useState<boolean>(false);
   const [meshStyle, setMeshStyle] = useState<'solid' | 'neon' | 'heatmap'>('solid');
   const [isWebcamActive, setIsWebcamActive] = useState<boolean>(false);
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
+  const [isAutoLighting, setIsAutoLighting] = useState<boolean>(true);
 
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
   const [showInlineGuide, setShowInlineGuide] = useState<boolean>(false);
@@ -1977,6 +1965,34 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             {inputSource === 'webcam' && isWebcamActive && (
               <button
                 type="button"
+                onClick={() => setIsAutoLighting(!isAutoLighting)}
+                title={isAutoLighting ? "Tắt chế độ tự động bù sáng AI" : "Bật chế độ tự động bù sáng & tăng độ tương phản AI trong môi trường thiếu sáng"}
+                style={{
+                  background: isAutoLighting ? 'rgba(234, 179, 8, 0.22)' : 'rgba(15, 23, 42, 0.88)',
+                  border: isAutoLighting ? '1px solid rgba(234, 179, 8, 0.6)' : '1px solid rgba(255, 255, 255, 0.25)',
+                  borderRadius: '16px',
+                  color: isAutoLighting ? '#fde047' : '#94a3b8',
+                  padding: '0.3rem 0.55rem',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  backdropFilter: 'blur(6px)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <Sun size={12} />
+                <span>{isAutoLighting ? "Bù Sáng: BẬT" : "Bù Sáng: TẮT"}</span>
+              </button>
+            )}
+
+            {inputSource === 'webcam' && isWebcamActive && (
+              <button
+                type="button"
                 onClick={toggleFacingMode}
                 title={`Lật camera (Đang dùng: ${facingMode === 'user' ? 'Trước' : 'Sau'})`}
                 style={{
@@ -2062,6 +2078,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               muted
               style={{ 
                 transform: 'scaleX(-1)', // Mirror webcam
+                filter: isAutoLighting ? 'contrast(1.18) brightness(1.08) saturate(1.05)' : 'none',
                 display: isModelLoading ? 'none' : 'block'
               }}
             />

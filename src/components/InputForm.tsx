@@ -347,30 +347,11 @@ export const InputForm: React.FC<InputFormProps> = ({
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
           marginBottom: '1.25rem'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
+          <div style={{ marginBottom: '0.6rem' }}>
             <label style={{ fontSize: '0.8rem', color: '#1e40af', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
               <User size={15} style={{ color: '#2563eb' }} />
-              <span>Ghi Chú Khách Hàng (Tùy Chọn Thợ May)</span>
+              <span>Ghi Chú Khách Hàng (Dành Cho Thợ May)</span>
             </label>
-            {onNewCustomer && (
-              <button
-                type="button"
-                onClick={onNewCustomer}
-                style={{
-                  background: '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '0.2rem 0.5rem',
-                  fontSize: '0.66rem',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-                title="Bắt đầu đo phiên mới cho khách tiếp theo"
-              >
-                ➕ Khách Mới
-              </button>
-            )}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', width: '100%', boxSizing: 'border-box' }}>

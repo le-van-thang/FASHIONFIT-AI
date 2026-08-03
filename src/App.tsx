@@ -314,9 +314,6 @@ function App() {
     });
   };
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isFirstRender = useRef(true);
-  const skipSaveRef = useRef(false);
 
   // Fetch recent sessions from Express MongoDB database with fallback (up to 1000 items)
   const loadHistory = async () => {

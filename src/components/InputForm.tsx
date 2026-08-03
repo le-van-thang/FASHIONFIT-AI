@@ -413,6 +413,8 @@ export const InputForm: React.FC<InputFormProps> = ({
                   fontSize: '0.76rem',
                   fontWeight: 600,
                   outline: 'none'
+                }}
+              />
             </div>
             {onSave && (
               <button

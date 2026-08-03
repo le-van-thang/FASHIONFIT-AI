@@ -1,5 +1,5 @@
 import type { BodyMeasurements, SizeRecommendation, Gender } from '../types';
-import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader, CloudOff, Save } from 'lucide-react';
+import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader, Save } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface ResultPanelProps {

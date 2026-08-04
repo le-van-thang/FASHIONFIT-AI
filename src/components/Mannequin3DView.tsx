@@ -210,7 +210,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const meshRef = useRef<THREE.Group>(null);
   useFrame((state) => {
     if (meshRef.current) {
-      const genderOffset = gender === 'female' ? Math.PI : 0;
+      const genderOffset = gender === 'female' ? Math.PI : -Math.PI / 2;
       const baseRotationY = (rotationAngle * Math.PI) / 180;
       meshRef.current.rotation.y = genderOffset + baseRotationY + Math.sin(state.clock.getElapsedTime() * 0.3) * 0.12;
     }

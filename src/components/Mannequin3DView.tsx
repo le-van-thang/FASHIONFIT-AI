@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, PerspectiveCamera, Html } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import type { Landmark, Gender, BodyMeasurements } from '../types';
 
 // Custom Shader Material for Heatmap Mode (Anatomical Pressure / Fit Tension Map)
@@ -23,43 +24,25 @@ const HeatmapShaderMaterial = {
     uniform float minY;
     uniform float maxY;
     varying vec3 vWorldPosition;
-
     void main() {
-      // Normalize world Y position between minY and maxY bounds of the entire model
-      float h = clamp((vWorldPosition.y - minY) / (maxY - minY), 0.0, 1.0);
+      // Map vertical height Y to smooth cyan -> lime -> yellow -> red tension gradient
+      float normY = clamp((vWorldPosition.y - minY) / (maxY - minY), 0.0, 1.0);
       
-      // Define multi-stop thermal tension map colors
-      vec3 colorBlue = vec3(0.01, 0.22, 0.98);   // Blue: Loose fit / low contact
-      vec3 colorCyan = vec3(0.00, 0.96, 1.00);   // Cyan: Semi-loose
-      vec3 colorYellow = vec3(1.00, 0.78, 0.00); // Yellow: Medium contact / soft drape
-      vec3 colorRed = vec3(0.95, 0.08, 0.08);    // Red: Tight fit / high pressure (chest/shoulders/hip curves)
+      vec3 colorLow = vec3(0.0, 0.85, 1.0);    // Cyan (Legs/Low tension)
+      vec3 colorMid = vec3(0.2, 1.0, 0.3);     // Lime Green (Waist/Mid tension)
+      vec3 colorHigh = vec3(1.0, 0.85, 0.0);   // Yellow (Chest/High tension)
+      vec3 colorPeak = vec3(1.0, 0.2, 0.3);    // Crimson Red (Shoulders/Peak tension)
       
       vec3 finalColor;
-      
-      if (h < 0.15) {
-        // Feet: Cool blue
-        finalColor = colorBlue;
-      } else if (h < 0.32) {
-        // Calves/Legs: Blue to Cyan (low tension)
-        finalColor = mix(colorBlue, colorCyan, (h - 0.15) / 0.17);
-      } else if (h < 0.48) {
-        // Thighs to Hips/Glutes: Cyan to Red (high tension fit zone)
-        finalColor = mix(colorCyan, colorRed, (h - 0.32) / 0.16);
-      } else if (h < 0.60) {
-        // Waist/Stomach: Red back to Yellow (looser drape zone)
-        finalColor = mix(colorRed, colorYellow, (h - 0.48) / 0.12);
-      } else if (h < 0.78) {
-        // Chest/Bust and Shoulders: Yellow to Red (high tension drape zone)
-        finalColor = mix(colorYellow, colorRed, (h - 0.60) / 0.18);
-      } else if (h < 0.86) {
-        // Neck: Red back to Blue (very quick cool down)
-        finalColor = mix(colorRed, colorBlue, (h - 0.78) / 0.08);
+      if (normY < 0.33) {
+        finalColor = mix(colorLow, colorMid, normY / 0.33);
+      } else if (normY < 0.66) {
+        finalColor = mix(colorMid, colorHigh, (normY - 0.33) / 0.33);
       } else {
-        // Head: Cool blue (zero garment contact)
-        finalColor = colorBlue;
+        finalColor = mix(colorHigh, colorPeak, (normY - 0.66) / 0.34);
       }
       
-      gl_FragColor = vec4(finalColor, 0.82);
+      gl_FragColor = vec4(finalColor, 0.85);
     }
   `
 };
@@ -78,13 +61,13 @@ interface ModelProps {
 const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measurements, rotationAngle = 0, onClickModel, showLabels = true }) => {
   const { scene } = useGLTF(path);
   
-  // Deep clone scene objects so wireframe overlay traversal never mutates solid body mesh visibility
+  // Deep clone scene objects via SkeletonUtils so male GLTF SkinnedMesh skeleton rotation works properly
   const baseScene = useMemo(() => {
-    return scene.clone(true);
+    return SkeletonUtils.clone(scene);
   }, [scene]);
 
   const wireframeScene = useMemo(() => {
-    return scene.clone(true);
+    return SkeletonUtils.clone(scene);
   }, [scene]);
 
   // Calculate bounding box of the scene to center model on X & Z, while placing feet precisely on grid floor Y = 0
@@ -209,10 +192,12 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Apply Y-rotation (supporting front/side view angle and breathing rotation effect)
   const meshRef = useRef<THREE.Group>(null);
   useFrame((state) => {
+    const genderOffset = Math.PI;
+    const baseRotationY = (rotationAngle * Math.PI) / 180;
+    const targetY = genderOffset + baseRotationY + Math.sin(state.clock.getElapsedTime() * 0.3) * 0.12;
+
     if (meshRef.current) {
-      const genderOffset = gender === 'female' ? Math.PI : -Math.PI / 2;
-      const baseRotationY = (rotationAngle * Math.PI) / 180;
-      meshRef.current.rotation.y = genderOffset + baseRotationY + Math.sin(state.clock.getElapsedTime() * 0.3) * 0.12;
+      meshRef.current.rotation.y = targetY;
     }
   });
 

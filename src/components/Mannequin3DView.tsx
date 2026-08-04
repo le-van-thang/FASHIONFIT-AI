@@ -224,21 +224,21 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Position for futuristic wrist radar ring
   const wristRingPos = useMemo(() => [
-    gender === 'female' ? 0.48 : 0.54,
+    gender === 'female' ? 0.38 : 0.44,
     gender === 'female' ? 0.92 : 1.04,
     0
   ] as [number, number, number], [gender]);
 
   // Derived Y positions for 3D HTML labels to stagger them and prevent overlaps
   const neckPos = useMemo(() => [
-    gender === 'female' ? -0.06 : -0.07,
-    gender === 'female' ? 1.38 : 1.58,
+    gender === 'female' ? -0.09 : -0.10,
+    gender === 'female' ? 1.34 : 1.50,
     0
   ] as [number, number, number], [gender]);
 
   const shoulderPos = useMemo(() => [
-    gender === 'female' ? 0.16 : 0.20,
-    gender === 'female' ? 1.25 : 1.45,
+    gender === 'female' ? 0.22 : 0.27,
+    gender === 'female' ? 1.22 : 1.40,
     0
   ] as [number, number, number], [gender]);
 
@@ -249,7 +249,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   ] as [number, number, number], [gender]);
 
   const armPos = useMemo(() => [
-    gender === 'female' ? 0.48 : 0.54,
+    gender === 'female' ? 0.38 : 0.44,
     gender === 'female' ? 0.92 : 1.04,
     0
   ] as [number, number, number], [gender]);

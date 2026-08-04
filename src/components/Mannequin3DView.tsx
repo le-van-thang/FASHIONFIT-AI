@@ -224,8 +224,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Position for futuristic wrist radar ring
   const wristRingPos = useMemo(() => [
-    gender === 'female' ? 0.35 : 0.40,
-    gender === 'female' ? 0.94 : 1.06,
+    gender === 'female' ? 0.48 : 0.54,
+    gender === 'female' ? 0.92 : 1.04,
     0
   ] as [number, number, number], [gender]);
 
@@ -249,8 +249,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   ] as [number, number, number], [gender]);
 
   const armPos = useMemo(() => [
-    gender === 'female' ? 0.35 : 0.40,
-    gender === 'female' ? 0.94 : 1.06,
+    gender === 'female' ? 0.48 : 0.54,
+    gender === 'female' ? 0.92 : 1.04,
     0
   ] as [number, number, number], [gender]);
 

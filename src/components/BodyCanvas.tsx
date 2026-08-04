@@ -1857,14 +1857,20 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             <button
               type="button"
               className={`tab-btn ${view === 'front' ? 'active' : ''}`}
-              onClick={() => onViewChange('front')}
+              onClick={() => {
+                setRotationAngle(0);
+                onViewChange('front');
+              }}
             >
               Mặt trước
             </button>
             <button
               type="button"
               className={`tab-btn ${view === 'side' ? 'active' : ''}`}
-              onClick={() => onViewChange('side')}
+              onClick={() => {
+                setRotationAngle(90);
+                onViewChange('side');
+              }}
             >
               Mặt nghiêng
             </button>

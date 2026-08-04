@@ -1011,7 +1011,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
-  const effectiveRotationAngle = rotationAngle !== undefined ? rotationAngle : (view === 'side' ? 90 : 0);
+  const effectiveRotationAngle = (rotationAngle !== undefined && rotationAngle !== 0) ? rotationAngle : (view === 'side' ? 90 : 0);
 
   // Refs for camera focus target interpolation (default centered at body height Y = 0.92)
   const controlsRef = useRef<any>(null);

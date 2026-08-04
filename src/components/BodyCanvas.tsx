@@ -108,8 +108,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
   const [cameraErrorMsg, setCameraErrorMsg] = useState<string | null>(null);
-  const [showSnapshotModal, setShowSnapshotModal] = useState<boolean>(false);
   const isPoseValidRef = useRef<boolean>(true);
+
+  // Synchronize 3D model rotation angle with active view tab ('front' -> 0°, 'side' -> 90°)
+  useEffect(() => {
+    setRotationAngle(view === 'side' ? 90 : 0);
+  }, [view]);
 
   // Detect number of camera devices available on system
   useEffect(() => {

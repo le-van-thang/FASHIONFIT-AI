@@ -87,7 +87,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     return scene.clone(true);
   }, [scene]);
 
-  // Calculate bounding box of the scene to center model precisely at origin [0, 0, 0] on all 3 axes
+  // Calculate bounding box of the scene to center model on X & Z, while placing feet precisely on grid floor Y = 0
   const { bounds, centerOffset } = useMemo(() => {
     baseScene.updateMatrixWorld(true);
     const box = new THREE.Box3();
@@ -112,11 +112,11 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     const center = new THREE.Vector3();
     box.getCenter(center);
     
-    // Offset to center model geometry precisely at origin [0, 0, 0] on X, Y, Z
-    const offset = new THREE.Vector3(-center.x, -center.y, -center.z);
+    // Offset to center model X & Z at 0, and align feet precisely on the grid floor at Y = 0
+    const offset = new THREE.Vector3(-center.x, -box.min.y, -center.z);
     
     return {
-      bounds: { min: -size.y / 2, max: size.y / 2 },
+      bounds: { min: 0, max: size.y },
       centerOffset: offset
     };
   }, [baseScene, path]);
@@ -972,9 +972,9 @@ const CameraController: React.FC<{
         controlsRef.current.update();
       }
     } else {
-      // Locked level front/side view in PIP mode - zoom out to Z = 5.6 to fit full body centered
-      camera.position.set(0, 0, 5.6);
-      camera.lookAt(0, 0, 0);
+      // Locked level front/side view in PIP mode - centered at body height Y = 0.92
+      camera.position.set(0, 0.92, 5.4);
+      camera.lookAt(0, 0.92, 0);
     }
   });
   return null;
@@ -1009,18 +1009,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
 
-  // Refs for camera focus target interpolation (default centered at origin [0, 0, 0])
+  // Refs for camera focus target interpolation (default centered at body height Y = 0.92)
   const controlsRef = useRef<any>(null);
-  const targetPoint = useRef(new THREE.Vector3(0, 0, 0));
+  const targetPoint = useRef(new THREE.Vector3(0, 0.92, 0));
 
   // Reset camera view when counter changes
   useEffect(() => {
     if (cameraResetCounter > 0) {
       if (controlsRef.current) {
         controlsRef.current.reset();
-        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.target.set(0, 0.92, 0);
       }
-      targetPoint.current.set(0, 0, 0);
+      targetPoint.current.set(0, 0.92, 0);
     }
   }, [cameraResetCounter]);
 
@@ -1045,18 +1045,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onPointerMissed={() => {
-          targetPoint.current.set(0, 0, 0);
+          targetPoint.current.set(0, 0.92, 0);
         }}
       >
         <color attach="background" args={['#090d16']} />
         
-        {/* Camera (Zoomed out to fit full 3D body + measurement cards centered inside viewport) */}
-        <PerspectiveCamera makeDefault position={[0, 0, showLabels ? 5.3 : 5.6]} fov={36} />
+        {/* Camera (Framed at Y = 0.92 so full body and HUD cards fit 100% centered) */}
+        <PerspectiveCamera makeDefault position={[0, 0.92, showLabels ? 5.2 : 5.4]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 
         {/* Futuristic Grid and Lighting */}
-        <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, -0.95, 0]} />
+        <gridHelper args={[10, 20, '#0055ff', '#1e293b']} position={[0, 0, 0]} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[10, 10, 5]} intensity={0.9} />
         <directionalLight position={[-10, -10, -5]} intensity={0.4} />
@@ -1091,7 +1091,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         {interactive && (
           <OrbitControls 
             ref={controlsRef}
-            target={[0, 0, 0]}
+            target={[0, 0.92, 0]}
             enablePan={false}
             minDistance={2.5}
             maxDistance={8.0}

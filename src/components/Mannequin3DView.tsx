@@ -192,7 +192,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Apply Y-rotation (supporting front/side view angle and breathing rotation effect)
   const meshRef = useRef<THREE.Group>(null);
   useFrame((state) => {
-    const genderOffset = Math.PI;
+    const genderOffset = gender === 'female' ? Math.PI : 0;
     const baseRotationY = (rotationAngle * Math.PI) / 180;
     const targetY = genderOffset + baseRotationY + Math.sin(state.clock.getElapsedTime() * 0.3) * 0.12;
 
@@ -222,6 +222,13 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     { id: 'thigh', y: gender === 'female' ? 0.60 : 0.73, color: '#34d399', radius: gender === 'female' ? 0.10 : 0.11 },
   ], [gender]);
 
+  // Position for futuristic wrist radar ring
+  const wristRingPos = useMemo(() => [
+    gender === 'female' ? 0.46 : 0.52,
+    gender === 'female' ? 0.94 : 1.06,
+    0
+  ] as [number, number, number], [gender]);
+
   // Derived Y positions for 3D HTML labels to stagger them and prevent overlaps
   const neckPos = useMemo(() => [
     gender === 'female' ? -0.06 : -0.07,
@@ -242,8 +249,8 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   ] as [number, number, number], [gender]);
 
   const armPos = useMemo(() => [
-    gender === 'female' ? 0.65 : 0.76,
-    gender === 'female' ? 1.15 : 1.35,
+    gender === 'female' ? 0.46 : 0.52,
+    gender === 'female' ? 0.94 : 1.06,
     0
   ] as [number, number, number], [gender]);
 
@@ -353,6 +360,20 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
             </mesh>
           </group>
         ))}
+
+        {/* Futuristic 3D Wrist Radar Ring */}
+        {measurements && showLabels && (
+          <group position={wristRingPos} rotation={[0, 0, Math.PI / 2]}>
+            <mesh>
+              <ringGeometry args={[0.040, 0.046, 32]} />
+              <meshBasicMaterial color="#38bdf8" side={THREE.DoubleSide} transparent opacity={0.85} />
+            </mesh>
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.035, 0.040, 32]} />
+              <meshBasicMaterial color="#00f2fe" side={THREE.DoubleSide} transparent opacity={0.5} />
+            </mesh>
+          </group>
+        )}
 
         {/* 9 Staggered HUD HTML Cards to prevent overlapping */}
         {measurements && showLabels && (

@@ -222,38 +222,35 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     { id: 'thigh', y: gender === 'female' ? 0.60 : 0.73, color: '#34d399', radius: gender === 'female' ? 0.10 : 0.11 },
   ], [gender]);
 
-  // Position for futuristic wrist radar ring
-  // Bone data from GLTF debug: lowerarm_twist_L x=0.47 y=1.509 (left arm wrist level)
+  // Position for futuristic wrist radar ring (Wrist joint level)
   const wristRingPos = useMemo(() => [
-    gender === 'female' ? 0.42 : 0.47,
-    gender === 'female' ? 1.38 : 1.51,
+    gender === 'female' ? 0.45 : 0.52,
+    gender === 'female' ? 0.94 : 1.08,
     0
   ] as [number, number, number], [gender]);
 
-  // Label positions derived from real GLTF bone world-space coordinates
-  // neck_M y=1.734  | clavicle_R x=-0.042 y=1.687 | upperarm_R x=-0.189 y=1.656
-  // lowerarm_twist_L x=0.47 y=1.509 (wrist level)
+  // Derived Y positions for 3D HTML labels to align with exact anatomical landmarks
   const neckPos = useMemo(() => [
-    gender === 'female' ? -0.06 : -0.05,
-    gender === 'female' ? 1.63 : 1.73,
+    gender === 'female' ? -0.07 : -0.08,
+    gender === 'female' ? 1.36 : 1.52,
     0
   ] as [number, number, number], [gender]);
 
   const shoulderPos = useMemo(() => [
-    gender === 'female' ? 0.17 : 0.19,
-    gender === 'female' ? 1.58 : 1.66,
+    gender === 'female' ? 0.21 : 0.26,
+    gender === 'female' ? 1.24 : 1.44,
     0
   ] as [number, number, number], [gender]);
 
   const chestPos = useMemo(() => [
     gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 1.42 : 1.54,
+    gender === 'female' ? 1.20 : 1.40,
     0
   ] as [number, number, number], [gender]);
 
   const armPos = useMemo(() => [
-    gender === 'female' ? 0.42 : 0.47,
-    gender === 'female' ? 1.38 : 1.51,
+    gender === 'female' ? 0.45 : 0.52,
+    gender === 'female' ? 0.94 : 1.08,
     0
   ] as [number, number, number], [gender]);
 

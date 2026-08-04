@@ -985,7 +985,8 @@ interface Mannequin3DViewProps {
   weight: number;
   scaleFactor: number;
   landmarks: Landmark[];
-  rotationAngle: number;
+  rotationAngle?: number;
+  view?: 'front' | 'side';
   meshStyle?: 'solid' | 'neon' | 'heatmap';
   width?: number;
   height?: number;
@@ -1001,13 +1002,16 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
   weight,
   meshStyle = 'solid',
   measurements,
-  rotationAngle = 0,
+  rotationAngle,
+  view = 'front',
   cameraResetCounter = 0,
   showLabels = true,
   interactive = true
 }) => {
   const modelPath = gender === 'male' ? '/models/low_poly_male_base_-_slender.glb' : '/models/female_base_mesh.glb';
   const fallbackPath = '/models/female_base_mesh.glb';
+
+  const effectiveRotationAngle = rotationAngle !== undefined ? rotationAngle : (view === 'side' ? 90 : 0);
 
   // Refs for camera focus target interpolation (default centered at body height Y = 0.92)
   const controlsRef = useRef<any>(null);
@@ -1069,7 +1073,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
               gender={gender}
               weight={weight}
               measurements={measurements}
-              rotationAngle={rotationAngle}
+              rotationAngle={effectiveRotationAngle}
               onClickModel={handleClickModel}
             >
               <Model 
@@ -1078,7 +1082,7 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
                 gender={gender} 
                 weight={weight} 
                 measurements={measurements}
-                rotationAngle={rotationAngle}
+                rotationAngle={effectiveRotationAngle}
                 onClickModel={handleClickModel}
                 showLabels={showLabels}
               />

@@ -2353,6 +2353,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               scaleFactor={scaleFactor}
               landmarks={landmarks}
               rotationAngle={rotationAngle}
+              view={view}
               meshStyle={meshStyle}
               width={width}
               height={height}

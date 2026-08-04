@@ -89,7 +89,23 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Calculate bounding box of the scene to center model precisely at origin [0, 0, 0] on all 3 axes
   const { bounds, centerOffset } = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(baseScene);
+    baseScene.updateMatrixWorld(true);
+    const box = new THREE.Box3();
+    baseScene.traverse((child: any) => {
+      if (child.isMesh && child.geometry) {
+        child.geometry.computeBoundingBox();
+        if (child.geometry.boundingBox) {
+          const meshBox = child.geometry.boundingBox.clone();
+          meshBox.applyMatrix4(child.matrixWorld);
+          box.union(meshBox);
+        }
+      }
+    });
+    
+    if (box.isEmpty()) {
+      box.setFromObject(baseScene);
+    }
+    
     const size = new THREE.Vector3();
     box.getSize(size);
     
@@ -956,9 +972,9 @@ const CameraController: React.FC<{
         controlsRef.current.update();
       }
     } else {
-      // Locked level front/side view, matching SVG templates exactly
-      camera.position.set(0, -0.07, 4.05);
-      camera.lookAt(0, -0.07, 0);
+      // Locked level front/side view in PIP mode - zoom out to Z = 5.6 to fit full body centered
+      camera.position.set(0, 0, 5.6);
+      camera.lookAt(0, 0, 0);
     }
   });
   return null;
@@ -1034,8 +1050,8 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
       >
         <color attach="background" args={['#090d16']} />
         
-        {/* Camera (Zoomed out in PIP mode without labels so full mannequin fits centered in PIP card) */}
-        <PerspectiveCamera makeDefault position={[0, 0, showLabels ? 4.3 : 4.8]} fov={36} />
+        {/* Camera (Zoomed out to fit full 3D body + measurement cards centered inside viewport) */}
+        <PerspectiveCamera makeDefault position={[0, 0, showLabels ? 5.3 : 5.6]} fov={36} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 

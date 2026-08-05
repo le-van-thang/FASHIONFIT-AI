@@ -26,21 +26,27 @@ const HeatmapShaderMaterial = {
     varying vec3 vWorldPosition;
     void main() {
       float y = vWorldPosition.y;
+      float x = vWorldPosition.x;
+      
+      // X attenuation: torso body width is ~0.28. Extended arms (|x| > 0.28) have low fabric tension!
+      float torsoFactor = exp(-pow(x / 0.26, 2.0));
       
       // Anatomical Garment Fit Tension (CLO 3D & Browzwear Industry Standard):
-      // Bust / Chest peak tension at Y ≈ 1.38 - 1.45
-      // Hip / Seat peak tension at Y ≈ 0.90 - 1.02
-      // Waistband fit tension at Y ≈ 1.10 - 1.22
-      float bustTension  = exp(-pow((y - 1.40) / 0.14, 2.0));   // Peak 1.0 at Bust/Chest
-      float hipTension   = exp(-pow((y - 0.95) / 0.15, 2.0));   // Peak 0.88 at Hips/Seat
-      float waistTension = exp(-pow((y - 1.15) / 0.10, 2.0));  // Peak 0.60 at Waist
+      // Bust / Chest peak tension at Y ≈ 1.40 (centered on torso)
+      // Shoulder Acromion tension at Y ≈ 1.60
+      // Hip / Seat peak tension at Y ≈ 0.95
+      // Waistband fit tension at Y ≈ 1.15
+      float bustTension     = exp(-pow((y - 1.40) / 0.14, 2.0)) * torsoFactor;
+      float shoulderTension = exp(-pow((y - 1.60) / 0.08, 2.0)) * clamp(abs(x) / 0.18, 0.0, 1.0) * exp(-pow(x / 0.32, 2.0));
+      float hipTension      = exp(-pow((y - 0.95) / 0.15, 2.0)) * torsoFactor;
+      float waistTension    = exp(-pow((y - 1.15) / 0.10, 2.0)) * torsoFactor;
       
       // Combine tension curves
-      float tension = clamp(bustTension * 1.0 + hipTension * 0.88 + waistTension * 0.45, 0.0, 1.0);
+      float tension = clamp(bustTension * 0.95 + shoulderTension * 0.85 + hipTension * 0.85 + waistTension * 0.45, 0.0, 1.0);
       
-      // Head & Neck attenuation (Force cool blue for Y > 1.58 - zero clothing pressure on head)
-      if (y > 1.58) {
-        tension *= max(0.0, 1.0 - (y - 1.58) / 0.12);
+      // Head & Neck attenuation (Force cool blue for Y > 1.62 - zero clothing pressure on head)
+      if (y > 1.62) {
+        tension *= max(0.0, 1.0 - (y - 1.62) / 0.12);
       }
       // Lower Leg & Foot attenuation (Force cool blue for Y < 0.55)
       if (y < 0.55) {

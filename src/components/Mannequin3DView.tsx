@@ -146,6 +146,19 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     };
   }, [baseScene, path]);
 
+  // Scale model height by height factor (cm), and width/depth by weight
+  const scale = useMemo(() => {
+    const baseWeight = gender === 'female' ? 52 : 65;
+    const weightFactor = Math.max(0.75, Math.min(1.45, weight / baseWeight));
+    
+    // Scale height based on physical height in cm (relative to baseline 165cm)
+    const heightVal = measurements?.height || 165;
+    const heightScale = heightVal / 165;
+    const scaleMult = gender === 'female' ? 0.78 : 0.95;
+    
+    return [weightFactor * scaleMult, heightScale * scaleMult, weightFactor * scaleMult] as [number, number, number];
+  }, [gender, weight, measurements]);
+
   // Create materials for Sci-Fi Hologram style (Ocean Blue + Cyan Neon grid)
   const solidMaterial = useMemo(() => {
     return new THREE.MeshBasicMaterial({
@@ -245,18 +258,6 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     }
   });
 
-  // Scale model height by height factor (cm), and width/depth by weight
-  const scale = useMemo(() => {
-    const baseWeight = gender === 'female' ? 52 : 65;
-    const weightFactor = Math.max(0.75, Math.min(1.45, weight / baseWeight));
-    
-    // Scale height based on physical height in cm (relative to baseline 165cm)
-    const heightVal = measurements?.height || 165;
-    const heightScale = heightVal / 165;
-    const scaleMult = gender === 'female' ? 0.78 : 0.95;
-    
-    return [weightFactor * scaleMult, heightScale * scaleMult, weightFactor * scaleMult] as [number, number, number];
-  }, [gender, weight, measurements]);
 
   // 5 key measurement ring heights on the body (Y coordinates relative to model origin)
   const measureRings = useMemo(() => [

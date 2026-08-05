@@ -232,13 +232,13 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Derived Y positions for 3D HTML labels to align with exact anatomical landmarks
   const neckPos = useMemo(() => [
     gender === 'female' ? -0.06 : -0.05,
-    gender === 'female' ? 1.50 : 1.62,
+    gender === 'female' ? 1.56 : 1.68,
     0
   ] as [number, number, number], [gender]);
 
   const shoulderPos = useMemo(() => [
-    gender === 'female' ? 0.18 : 0.22,
-    gender === 'female' ? 1.46 : 1.58,
+    gender === 'female' ? 0.16 : 0.19,
+    gender === 'female' ? 1.50 : 1.62,
     0
   ] as [number, number, number], [gender]);
 
@@ -273,7 +273,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   ] as [number, number, number], [gender]);
 
   const calfPos = useMemo(() => [
-    gender === 'female' ? -0.12 : -0.14,
+    gender === 'female' ? -0.15 : -0.17,
     gender === 'female' ? 0.30 : 0.38,
     0
   ] as [number, number, number], [gender]);

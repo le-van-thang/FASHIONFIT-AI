@@ -98,6 +98,14 @@ body {
   border: 1px solid rgba(59, 130, 246, 0.15);
 }
 
+/* Customer Info Inputs: Crisp dark bold value with soft light italic placeholder */
+.customer-input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.65 !important;
+  font-style: italic !important;
+  font-weight: 400 !important;
+}
+
 /* Main Layout Grid */
 .main-content {
   display: grid;

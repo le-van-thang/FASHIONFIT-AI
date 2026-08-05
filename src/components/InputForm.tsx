@@ -356,9 +356,10 @@ export const InputForm: React.FC<InputFormProps> = ({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', width: '100%', boxSizing: 'border-box' }}>
             <div style={{ width: '100%', boxSizing: 'border-box' }}>
-              <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '2px' }}>Tên Khách Hàng / Mã Đơn:</span>
+              <span style={{ fontSize: '0.70rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '3px' }}>Tên Khách Hàng / Mã Đơn:</span>
               <input
                 type="text"
+                className="customer-input"
                 placeholder="Ví dụ: Anh Hoàng (Vest Nam)"
                 value={customerName}
                 onChange={(e) => onCustomerNameChange && onCustomerNameChange(e.target.value)}
@@ -366,20 +367,21 @@ export const InputForm: React.FC<InputFormProps> = ({
                   width: '100%',
                   boxSizing: 'border-box',
                   background: '#ffffff',
-                  border: '1px solid #cbd5e1',
+                  border: '1.5px solid #94a3b8',
                   color: '#0f172a',
                   padding: '0.45rem 0.65rem',
                   borderRadius: '6px',
                   fontSize: '0.76rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   outline: 'none'
                 }}
               />
             </div>
             <div style={{ width: '100%', boxSizing: 'border-box' }}>
-              <span style={{ fontSize: '0.68rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '2px' }}>Số Điện Thoại Liên Hệ:</span>
+              <span style={{ fontSize: '0.70rem', fontWeight: 800, color: '#0f172a', display: 'block', marginBottom: '3px' }}>Số Điện Thoại Liên Hệ:</span>
               <input
                 type="text"
+                className="customer-input"
                 placeholder="Ví dụ: 0905123456"
                 value={customerPhone}
                 onChange={(e) => onCustomerPhoneChange && onCustomerPhoneChange(e.target.value)}
@@ -387,12 +389,12 @@ export const InputForm: React.FC<InputFormProps> = ({
                   width: '100%',
                   boxSizing: 'border-box',
                   background: '#ffffff',
-                  border: '1px solid #cbd5e1',
+                  border: '1.5px solid #94a3b8',
                   color: '#0f172a',
                   padding: '0.45rem 0.65rem',
                   borderRadius: '6px',
                   fontSize: '0.76rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   outline: 'none'
                 }}
               />

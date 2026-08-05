@@ -1608,101 +1608,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   return (
     <div className={isMaximized ? "canvas-wrapper maximized" : "canvas-main-horizontal-layout"}>
-      {/* Left Side Panel: 3D Live Preview or WebGL Status */}
-      {!isMaximized && (
-        <div className="canvas-side-panel left-panel" style={{
-          width: '130px',
-          flexShrink: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.75rem',
-          marginTop: '6.5rem' // Align with main viewport box height
-        }}>
-          {inputSource !== 'mannequin' && hasMediaBackground ? (
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              height: '240px'
-            }}>
-              <div style={{
-                fontSize: '0.52rem',
-                fontWeight: 700,
-                color: '#22d3ee',
-                padding: '6px 10px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                textAlign: 'center',
-                letterSpacing: '0.5px',
-                whiteSpace: 'nowrap',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px'
-              }}>
-                <span>MÔ HÌNH 3D LIVE</span>
-                {measurements && (
-                  <span style={{ color: '#94a3b8', fontSize: '0.48rem' }}>
-                    {measurements.height.toFixed(0)} cm | {weight} kg
-                  </span>
-                )}
-              </div>
-              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                <Mannequin3DView
-                  gender={gender}
-                  weight={weight}
-                  scaleFactor={scaleFactor}
-                  landmarks={landmarks}
-                  rotationAngle={rotationAngle}
-                  meshStyle={meshStyle}
-                  width={130}
-                  height={200}
-                  scanRange={scanRange}
-                  measurements={measurements}
-                  cameraResetCounter={cameraResetCounter}
-                  showLabels={false}
-                  interactive={false}
-                />
-              </div>
-            </div>
-          ) : (
-            <div style={{
-              background: 'rgba(15, 23, 42, 0.75)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(34, 211, 238, 0.25)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
-              padding: '0.75rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-              height: '240px',
-              fontFamily: 'system-ui, sans-serif'
-            }}>
-              <span style={{ fontSize: '0.58rem', fontWeight: 700, color: '#22d3ee', letterSpacing: '0.5px' }}>
-                🖥️ HỆ THỐNG 3D ACTIVE
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.55rem', color: '#94a3b8' }}>
-                <div>🟢 <strong>WebGL 2.0:</strong> Khởi chạy</div>
-                <div>⚡ <strong>FPS:</strong> 60 / Mượt mà</div>
-                <div>📐 <strong>Đa giác:</strong> 15.4K Mesh</div>
-                <div>🎨 <strong>Hologram:</strong> Ocean Blue</div>
-                <div>👁️ <strong>Camera:</strong> Orthographic</div>
-                <div style={{ marginTop: '0.2rem', padding: '0.2rem', background: 'rgba(34, 211, 238, 0.08)', borderRadius: '4px', color: '#22d3ee', textAlign: 'center' }}>
-                  THREE.JS ENGINE
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Main Canvas Card wrapper */}
       <div className={isMaximized ? "" : "canvas-wrapper"} style={isMaximized ? {} : { margin: 0 }}>
         <div className="canvas-header">
@@ -1976,6 +1881,91 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
       <div className="canvas-container">
         <div className="media-viewport">
+          {/* Top-Right Badge: Sleek 3D WebGL Status Pill */}
+          {inputSource === 'mannequin' && (
+            <div style={{
+              position: 'absolute',
+              top: '12px',
+              right: '12px',
+              zIndex: 60,
+              background: 'rgba(15, 23, 42, 0.75)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid rgba(34, 211, 238, 0.3)',
+              borderRadius: '9999px',
+              padding: '4px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.62rem',
+              color: '#22d3ee',
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+              letterSpacing: '0.3px',
+              pointerEvents: 'none'
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 6px #22c55e' }}></span>
+                WebGL 2.0
+              </span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.25)' }}>•</span>
+              <span>⚡ 60 FPS</span>
+              <span style={{ color: 'rgba(255, 255, 255, 0.25)' }}>•</span>
+              <span>📐 15.4K Mesh</span>
+            </div>
+          )}
+
+          {/* Bottom-Left: Picture-in-Picture (PiP) Mini 3D Model Window */}
+          {inputSource !== 'mannequin' && hasMediaBackground && (
+            <div style={{
+              position: 'absolute',
+              bottom: '12px',
+              left: '12px',
+              zIndex: 60,
+              width: '125px',
+              height: '185px',
+              background: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid rgba(34, 211, 238, 0.35)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <div style={{
+                fontSize: '0.50rem',
+                fontWeight: 700,
+                color: '#22d3ee',
+                padding: '4px 6px',
+                background: 'rgba(34, 211, 238, 0.12)',
+                borderBottom: '1px solid rgba(34, 211, 238, 0.2)',
+                textAlign: 'center',
+                letterSpacing: '0.4px',
+                whiteSpace: 'nowrap'
+              }}>
+                MÔ HÌNH 3D LIVE
+              </div>
+              <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                <Mannequin3DView
+                  gender={gender}
+                  weight={weight}
+                  scaleFactor={scaleFactor}
+                  landmarks={landmarks}
+                  rotationAngle={rotationAngle}
+                  meshStyle={meshStyle}
+                  width={125}
+                  height={160}
+                  scanRange={scanRange}
+                  measurements={measurements}
+                  cameraResetCounter={cameraResetCounter}
+                  showLabels={false}
+                  interactive={false}
+                />
+              </div>
+            </div>
+          )}
           {/* Top-Right: Sleek Ultra-Compact Camera Action Bar */}
           {inputSource === 'webcam' && isWebcamActive && (
             <div style={{

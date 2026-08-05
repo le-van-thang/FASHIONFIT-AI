@@ -172,6 +172,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isModelLoading, setIsModelLoading] = useState<boolean>(false);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [showPip3D, setShowPip3D] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const cameraInstanceRef = useRef<any>(null);
@@ -1872,6 +1873,32 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     Reset chấm
                   </button>
                 )}
+
+                {inputSource !== 'mannequin' && hasMediaBackground && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPip3D(!showPip3D)}
+                    title="Ẩn/Hiện cửa sổ xem nhanh mô hình 3D mini"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem',
+                      background: showPip3D ? '#e0f2fe' : '#ffffff',
+                      border: showPip3D ? '1px solid #38bdf8' : '1px solid #cbd5e1',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '0.35rem 0.6rem',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      color: showPip3D ? '#0284c7' : '#475569',
+                      cursor: 'pointer',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                      transition: 'all 0.15s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <span>{showPip3D ? '👁️ Ẩn 3D Mini' : '👁️ Hiện 3D Mini'}</span>
+                  </button>
+                )}
               </>
             )}
           </div>
@@ -1956,8 +1983,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* Bottom-Left: Picture-in-Picture (PiP) Mini 3D Model Window */}
-          {inputSource !== 'mannequin' && hasMediaBackground && (
+          {/* Bottom-Left: Optional Picture-in-Picture (PiP) Mini 3D Model Window */}
+          {inputSource !== 'mannequin' && hasMediaBackground && showPip3D && (
             <div style={{
               position: 'absolute',
               bottom: '12px',
@@ -1965,12 +1992,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               zIndex: 60,
               width: '125px',
               height: '185px',
-              background: 'rgba(15, 23, 42, 0.85)',
+              background: 'rgba(15, 23, 42, 0.92)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid rgba(34, 211, 238, 0.35)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+              border: '1px solid rgba(34, 211, 238, 0.45)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column'
@@ -1982,11 +2009,29 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 padding: '4px 6px',
                 background: 'rgba(34, 211, 238, 0.12)',
                 borderBottom: '1px solid rgba(34, 211, 238, 0.2)',
-                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'space-between',
                 letterSpacing: '0.4px',
                 whiteSpace: 'nowrap'
               }}>
-                MÔ HÌNH 3D LIVE
+                <span>MÔ HÌNH 3D LIVE</span>
+                <button
+                  type="button"
+                  onClick={() => setShowPip3D(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#94a3b8',
+                    cursor: 'pointer',
+                    fontSize: '0.65rem',
+                    padding: '0 2px',
+                    lineHeight: 1
+                  }}
+                  title="Đóng cửa sở 3D Mini"
+                >
+                  ✕
+                </button>
               </div>
               <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                 <Mannequin3DView

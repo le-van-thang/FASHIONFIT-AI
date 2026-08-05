@@ -209,7 +209,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     // Scale height based on physical height in cm (relative to baseline 165cm)
     const heightVal = measurements?.height || 165;
     const heightScale = heightVal / 165;
-    const scaleMult = gender === 'female' ? 0.88 : 0.95;
+    const scaleMult = gender === 'female' ? 0.78 : 0.95;
     
     return [weightFactor * scaleMult, heightScale * scaleMult, weightFactor * scaleMult] as [number, number, number];
   }, [gender, weight, measurements]);
@@ -225,63 +225,63 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Position for futuristic wrist radar ring (Wrist joint level)
   const wristRingPos = useMemo(() => [
-    gender === 'female' ? 0.40 : 0.50,
-    gender === 'female' ? 1.38 : 1.38,
+    gender === 'female' ? -0.42 : 0.50,
+    gender === 'female' ? 1.62 : 1.38,
     0
   ] as [number, number, number], [gender]);
 
   // Derived Y positions for 3D HTML labels to align with exact anatomical landmarks
   const neckPos = useMemo(() => [
-    gender === 'female' ? -0.05 : -0.05,
-    gender === 'female' ? 1.68 : 1.68,
+    gender === 'female' ? 0.05 : -0.05,
+    1.68,
     0
   ] as [number, number, number], [gender]);
 
   const shoulderPos = useMemo(() => [
-    gender === 'female' ? 0.18 : 0.19,
-    gender === 'female' ? 1.62 : 1.62,
+    gender === 'female' ? -0.18 : 0.19,
+    1.62,
     0
   ] as [number, number, number], [gender]);
 
   const chestPos = useMemo(() => [
-    gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 1.44 : 1.44,
+    gender === 'female' ? 0.16 : -0.17,
+    1.44,
     0
   ] as [number, number, number], [gender]);
 
   const armPos = useMemo(() => [
-    gender === 'female' ? -0.18 : 0.50,
+    gender === 'female' ? 0.42 : 0.50,
     gender === 'female' ? 1.62 : 1.38,
     0
   ] as [number, number, number], [gender]);
 
   const waistPos = useMemo(() => [
-    gender === 'female' ? -0.13 : -0.14,
-    gender === 'female' ? 1.18 : 1.18,
+    gender === 'female' ? 0.13 : -0.14,
+    1.18,
     0
   ] as [number, number, number], [gender]);
 
   const hipsPos = useMemo(() => [
-    gender === 'female' ? 0.15 : 0.17,
-    gender === 'female' ? 0.97 : 0.97,
+    gender === 'female' ? -0.15 : 0.17,
+    0.97,
     0
   ] as [number, number, number], [gender]);
 
   const thighPos = useMemo(() => [
-    gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 0.80 : 0.80,
+    gender === 'female' ? 0.15 : -0.17,
+    0.80,
     0
   ] as [number, number, number], [gender]);
 
   const calfPos = useMemo(() => [
-    gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 0.38 : 0.38,
+    gender === 'female' ? 0.15 : -0.17,
+    0.38,
     0
   ] as [number, number, number], [gender]);
 
   const legPos = useMemo(() => [
-    gender === 'female' ? 0.13 : 0.14,
-    gender === 'female' ? 0.52 : 0.52,
+    gender === 'female' ? -0.13 : 0.14,
+    0.52,
     0
   ] as [number, number, number], [gender]);
 
@@ -298,20 +298,20 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   // Side view positions
   const chestDepthPos = useMemo(() => [
-    gender === 'female' ? 0.14 : 0.16,
-    gender === 'female' ? 1.40 : 1.40,
+    gender === 'female' ? -0.15 : 0.16,
+    1.40,
     0
   ] as [number, number, number], [gender]);
 
   const waistDepthPos = useMemo(() => [
-    gender === 'female' ? 0.10 : 0.12,
-    gender === 'female' ? 1.18 : 1.18,
+    gender === 'female' ? -0.11 : 0.12,
+    1.18,
     0
   ] as [number, number, number], [gender]);
 
   const hipsDepthPos = useMemo(() => [
-    gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 0.97 : 0.97,
+    gender === 'female' ? 0.15 : -0.17,
+    0.97,
     0
   ] as [number, number, number], [gender]);
 

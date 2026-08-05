@@ -25,24 +25,44 @@ const HeatmapShaderMaterial = {
     uniform float maxY;
     varying vec3 vWorldPosition;
     void main() {
-      // Map vertical height Y to smooth cyan -> lime -> yellow -> red tension gradient
-      float normY = clamp((vWorldPosition.y - minY) / (maxY - minY), 0.0, 1.0);
+      float y = vWorldPosition.y;
       
-      vec3 colorLow = vec3(0.0, 0.85, 1.0);    // Cyan (Legs/Low tension)
-      vec3 colorMid = vec3(0.2, 1.0, 0.3);     // Lime Green (Waist/Mid tension)
-      vec3 colorHigh = vec3(1.0, 0.85, 0.0);   // Yellow (Chest/High tension)
-      vec3 colorPeak = vec3(1.0, 0.2, 0.3);    // Crimson Red (Shoulders/Peak tension)
+      // Anatomical Garment Fit Tension (CLO 3D & Browzwear Industry Standard):
+      // Bust / Chest peak tension at Y ≈ 1.38 - 1.45
+      // Hip / Seat peak tension at Y ≈ 0.90 - 1.02
+      // Waistband fit tension at Y ≈ 1.10 - 1.22
+      float bustTension  = exp(-pow((y - 1.40) / 0.14, 2.0));   // Peak 1.0 at Bust/Chest
+      float hipTension   = exp(-pow((y - 0.95) / 0.15, 2.0));   // Peak 0.88 at Hips/Seat
+      float waistTension = exp(-pow((y - 1.15) / 0.10, 2.0));  // Peak 0.60 at Waist
+      
+      // Combine tension curves
+      float tension = clamp(bustTension * 1.0 + hipTension * 0.88 + waistTension * 0.45, 0.0, 1.0);
+      
+      // Head & Neck attenuation (Force cool blue for Y > 1.58 - zero clothing pressure on head)
+      if (y > 1.58) {
+        tension *= max(0.0, 1.0 - (y - 1.58) / 0.12);
+      }
+      // Lower Leg & Foot attenuation (Force cool blue for Y < 0.55)
+      if (y < 0.55) {
+        tension *= max(0.0, (y - 0.15) / 0.40);
+      }
+
+      // Color Spectrum (CLO 3D Standard): Cool Cyan (Relaxed) -> Green (Normal) -> Yellow (Snug) -> Crimson Red (Tight Peak)
+      vec3 colorCyan   = vec3(0.0, 0.75, 1.0);
+      vec3 colorGreen  = vec3(0.2, 0.95, 0.35);
+      vec3 colorYellow = vec3(1.0, 0.85, 0.0);
+      vec3 colorRed    = vec3(0.95, 0.15, 0.25);
       
       vec3 finalColor;
-      if (normY < 0.33) {
-        finalColor = mix(colorLow, colorMid, normY / 0.33);
-      } else if (normY < 0.66) {
-        finalColor = mix(colorMid, colorHigh, (normY - 0.33) / 0.33);
+      if (tension < 0.35) {
+        finalColor = mix(colorCyan, colorGreen, tension / 0.35);
+      } else if (tension < 0.70) {
+        finalColor = mix(colorGreen, colorYellow, (tension - 0.35) / 0.35);
       } else {
-        finalColor = mix(colorHigh, colorPeak, (normY - 0.66) / 0.34);
+        finalColor = mix(colorYellow, colorRed, (tension - 0.70) / 0.30);
       }
       
-      gl_FragColor = vec4(finalColor, 0.85);
+      gl_FragColor = vec4(finalColor, 0.88);
     }
   `
 };

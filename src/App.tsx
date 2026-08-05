@@ -717,39 +717,95 @@ function App() {
 
   // Manual save handler triggered when clicking "Lưu Hồ Sơ Khách Hàng"
   const handleSaveSession = async () => {
+    // Check Rule 1: Must have AI scanned data (images/webcam/video)
+    if (inputSource === 'mannequin' && !uploadedImageFront && !processedFrontLandmarks) {
+      alert('⚠️ Khách hàng chưa thực hiện quét số đo AI. Vui lòng chuyển sang tab "Ảnh mẫu", "Webcam AI" hoặc "Video AI" để quét số đo thực tế trước khi lưu hồ sơ.');
+      return;
+    }
+
     setSyncState('saving');
     
-    const newSession: MeasurementSession = {
-      id: 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-      created_at: new Date().toISOString(),
-      customer_name: customerName.trim() || 'Khách Vãng Lai',
-      customer_phone: customerPhone.trim() || '',
-      source: inputSource,
-      snapshot_img: uploadedImageFront || '',
-      gender: input.gender,
-      weight_kg: input.weight,
-      calibration_type: input.calibrationType,
-      reference_pixels: referencePixels,
-      height_cm: parseFloat(measurements.height.toFixed(1)),
-      shoulder_width_cm: parseFloat(measurements.shoulderWidth.toFixed(1)),
-      arm_length_cm: parseFloat(measurements.armLength.toFixed(1)),
-      bust_cm: parseFloat(measurements.chestCircumference.toFixed(1)),
-      waist_cm: parseFloat(measurements.waistCircumference.toFixed(1)),
-      hip_cm: parseFloat(measurements.hipCircumference.toFixed(1)),
-      inseam_cm: parseFloat(measurements.legLength.toFixed(1)),
-      bust_depth_cm: parseFloat((measurements.chestDepth || 0).toFixed(1)),
-      waist_depth_cm: parseFloat((measurements.waistDepth || 0).toFixed(1)),
-      hip_depth_cm: parseFloat((measurements.hipDepth || 0).toFixed(1)),
-      recommended_size: recommendation.size,
-      confidence_pct: recommendation.matchPercentage,
-      landmarks_front: processedFrontLandmarks,
-      landmarks_side: processedSideLandmarks
-    };
+    const formattedName = customerName.trim() || 'Khách Vãng Lai';
+    const formattedPhone = customerPhone.trim();
+
+    let sessionToSave: MeasurementSession | null = null;
 
     setHistory(prev => {
-      const updated = [newSession, ...prev];
-      localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(updated));
-      return updated;
+      // Find existing customer session by phone (if provided) or by name
+      const existingIndex = prev.findIndex(item => {
+        if (formattedPhone && item.customer_phone) {
+          return item.customer_phone.trim() === formattedPhone;
+        }
+        return item.customer_name.trim().toLowerCase() === formattedName.toLowerCase() && formattedName !== 'Khách Vãng Lai';
+      });
+
+      if (existingIndex >= 0) {
+        // Upsert: Update existing customer record in-place with latest AI measurements
+        const existing = prev[existingIndex];
+        sessionToSave = {
+          ...existing,
+          updated_at: new Date().toISOString(),
+          customer_name: formattedName,
+          customer_phone: formattedPhone,
+          source: inputSource,
+          snapshot_img: uploadedImageFront || existing.snapshot_img || '',
+          gender: input.gender,
+          weight_kg: input.weight,
+          calibration_type: input.calibrationType,
+          reference_pixels: referencePixels,
+          height_cm: parseFloat(measurements.height.toFixed(1)),
+          shoulder_width_cm: parseFloat(measurements.shoulderWidth.toFixed(1)),
+          arm_length_cm: parseFloat(measurements.armLength.toFixed(1)),
+          bust_cm: parseFloat(measurements.chestCircumference.toFixed(1)),
+          waist_cm: parseFloat(measurements.waistCircumference.toFixed(1)),
+          hip_cm: parseFloat(measurements.hipCircumference.toFixed(1)),
+          inseam_cm: parseFloat(measurements.legLength.toFixed(1)),
+          bust_depth_cm: parseFloat((measurements.chestDepth || 0).toFixed(1)),
+          waist_depth_cm: parseFloat((measurements.waistDepth || 0).toFixed(1)),
+          hip_depth_cm: parseFloat((measurements.hipDepth || 0).toFixed(1)),
+          recommended_size: recommendation.size,
+          confidence_pct: recommendation.matchPercentage,
+          landmarks_front: processedFrontLandmarks || existing.landmarks_front,
+          landmarks_side: processedSideLandmarks || existing.landmarks_side
+        };
+
+        const updated = [...prev];
+        updated[existingIndex] = sessionToSave;
+        localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(updated));
+        return updated;
+      } else {
+        // Create new customer record
+        sessionToSave = {
+          id: 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+          created_at: new Date().toISOString(),
+          customer_name: formattedName,
+          customer_phone: formattedPhone,
+          source: inputSource,
+          snapshot_img: uploadedImageFront || '',
+          gender: input.gender,
+          weight_kg: input.weight,
+          calibration_type: input.calibrationType,
+          reference_pixels: referencePixels,
+          height_cm: parseFloat(measurements.height.toFixed(1)),
+          shoulder_width_cm: parseFloat(measurements.shoulderWidth.toFixed(1)),
+          arm_length_cm: parseFloat(measurements.armLength.toFixed(1)),
+          bust_cm: parseFloat(measurements.chestCircumference.toFixed(1)),
+          waist_cm: parseFloat(measurements.waistCircumference.toFixed(1)),
+          hip_cm: parseFloat(measurements.hipCircumference.toFixed(1)),
+          inseam_cm: parseFloat(measurements.legLength.toFixed(1)),
+          bust_depth_cm: parseFloat((measurements.chestDepth || 0).toFixed(1)),
+          waist_depth_cm: parseFloat((measurements.waistDepth || 0).toFixed(1)),
+          hip_depth_cm: parseFloat((measurements.hipDepth || 0).toFixed(1)),
+          recommended_size: recommendation.size,
+          confidence_pct: recommendation.matchPercentage,
+          landmarks_front: processedFrontLandmarks,
+          landmarks_side: processedSideLandmarks
+        };
+
+        const updated = [sessionToSave, ...prev];
+        localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(updated));
+        return updated;
+      }
     });
 
     setSyncState('saved');
@@ -757,8 +813,10 @@ function App() {
     setSavedAt(now);
 
     // Save to backends in background
-    saveBackendSession(newSession as any).catch(() => {});
-    saveMeasurementSession(newSession as any).catch(() => {});
+    if (sessionToSave) {
+      saveBackendSession(sessionToSave as any).catch(() => {});
+      saveMeasurementSession(sessionToSave as any).catch(() => {});
+    }
   };
 
   const handlePrint = () => {
@@ -768,6 +826,10 @@ function App() {
   const handleNewCustomer = () => {
     setCustomerName('');
     setCustomerPhone('');
+    setUploadedImageFront('');
+    setUploadedImageSide('');
+    setUploadedVideo(null);
+    setInputSource('mannequin');
     if (inputSource === 'webcam') {
       handleResetScan();
     } else if (inputSource === 'mannequin') {

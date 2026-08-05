@@ -209,80 +209,81 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     // Scale height based on physical height in cm (relative to baseline 165cm)
     const heightVal = measurements?.height || 165;
     const heightScale = heightVal / 165;
+    const scaleMult = gender === 'female' ? 0.82 : 0.95;
     
-    return [weightFactor * 0.95, heightScale * 0.95, weightFactor * 0.95] as [number, number, number];
+    return [weightFactor * scaleMult, heightScale * scaleMult, weightFactor * scaleMult] as [number, number, number];
   }, [gender, weight, measurements]);
 
   // 5 key measurement ring heights on the body (Y coordinates relative to model origin)
   const measureRings = useMemo(() => [
-    { id: 'neck',  y: gender === 'female' ? 1.38 : 1.58, color: '#22d3ee', radius: gender === 'female' ? 0.09 : 0.10 },
-    { id: 'chest', y: gender === 'female' ? 1.20 : 1.40, color: '#22d3ee', radius: gender === 'female' ? 0.15 : 0.17 },
-    { id: 'waist', y: gender === 'female' ? 1.00 : 1.18, color: '#a78bfa', radius: gender === 'female' ? 0.12 : 0.14 },
-    { id: 'hips',  y: gender === 'female' ? 0.82 : 0.97, color: '#f59e0b', radius: gender === 'female' ? 0.16 : 0.17 },
-    { id: 'thigh', y: gender === 'female' ? 0.68 : 0.80, color: '#34d399', radius: gender === 'female' ? 0.10 : 0.11 },
+    { id: 'neck',  y: 1.58, color: '#22d3ee', radius: gender === 'female' ? 0.09 : 0.10 },
+    { id: 'chest', y: 1.40, color: '#22d3ee', radius: gender === 'female' ? 0.15 : 0.17 },
+    { id: 'waist', y: 1.18, color: '#a78bfa', radius: gender === 'female' ? 0.12 : 0.14 },
+    { id: 'hips',  y: 0.97, color: '#f59e0b', radius: gender === 'female' ? 0.16 : 0.17 },
+    { id: 'thigh', y: 0.80, color: '#34d399', radius: gender === 'female' ? 0.10 : 0.11 },
   ], [gender]);
 
   // Position for futuristic wrist radar ring (Wrist joint level)
   const wristRingPos = useMemo(() => [
     gender === 'female' ? 0.44 : 0.50,
-    gender === 'female' ? 1.24 : 1.38,
+    1.38,
     0
   ] as [number, number, number], [gender]);
 
   // Derived Y positions for 3D HTML labels to align with exact anatomical landmarks
   const neckPos = useMemo(() => [
-    gender === 'female' ? -0.06 : -0.05,
-    gender === 'female' ? 1.56 : 1.68,
+    -0.05,
+    1.68,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const shoulderPos = useMemo(() => [
-    gender === 'female' ? 0.16 : 0.19,
-    gender === 'female' ? 1.50 : 1.62,
+    gender === 'female' ? 0.17 : 0.19,
+    1.62,
     0
   ] as [number, number, number], [gender]);
 
   const chestPos = useMemo(() => [
-    gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 1.32 : 1.44,
+    -0.17,
+    1.44,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const armPos = useMemo(() => [
     gender === 'female' ? 0.44 : 0.50,
-    gender === 'female' ? 1.24 : 1.38,
+    1.38,
     0
   ] as [number, number, number], [gender]);
 
   const waistPos = useMemo(() => [
-    gender === 'female' ? -0.12 : -0.14,
-    gender === 'female' ? 1.00 : 1.18,
+    -0.14,
+    1.18,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const hipsPos = useMemo(() => [
-    gender === 'female' ? 0.16 : 0.17,
-    gender === 'female' ? 0.82 : 0.97,
+    0.17,
+    0.97,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const thighPos = useMemo(() => [
-    gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 0.68 : 0.80,
+    -0.17,
+    0.80,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const calfPos = useMemo(() => [
-    gender === 'female' ? -0.15 : -0.17,
-    gender === 'female' ? 0.30 : 0.38,
+    -0.17,
+    0.38,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const legPos = useMemo(() => [
-    gender === 'female' ? 0.12 : 0.14,
-    gender === 'female' ? 0.44 : 0.52,
+    0.14,
+    0.52,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   // Derived measurement values
   const neckVal = measurements?.chestCircumference ? (measurements.chestCircumference * (gender === 'female' ? 0.38 : 0.41)).toFixed(1) : '36.0';
@@ -294,24 +295,25 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   const legVal = measurements?.legLength ? measurements.legLength.toFixed(1) : '80.0';
   const thighVal = measurements?.hipCircumference ? (measurements.hipCircumference * (gender === 'female' ? 0.58 : 0.55)).toFixed(1) : '55.0';
   const calfVal = measurements?.hipCircumference ? (measurements.hipCircumference * 0.38).toFixed(1) : '36.0';
+
   // Side view positions
   const chestDepthPos = useMemo(() => [
-    gender === 'female' ? 0.14 : 0.16,
-    gender === 'female' ? 1.20 : 1.40,
+    0.16,
+    1.40,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const waistDepthPos = useMemo(() => [
-    gender === 'female' ? 0.10 : 0.12,
-    gender === 'female' ? 1.00 : 1.18,
+    0.12,
+    1.18,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   const hipsDepthPos = useMemo(() => [
-    gender === 'female' ? -0.16 : -0.17,
-    gender === 'female' ? 0.82 : 0.97,
+    -0.17,
+    0.97,
     0
-  ] as [number, number, number], [gender]);
+  ] as [number, number, number], []);
 
   // Derived side depth values
   const chestDepthVal = measurements?.chestDepth ? measurements.chestDepth.toFixed(1) : '24.0';

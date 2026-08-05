@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { BodyMeasurements, SizeRecommendation, Gender } from '../types';
 import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
+import { analyzeBodyWithGemini } from '../lib/api';
+import type { GeminiTailoringAdvice } from '../lib/api';
 
 interface ResultPanelProps {
   gender: Gender;
@@ -174,6 +176,44 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
     return { bodyShape: shape, shapeDesc, easeAdvice: ease, seamAdvice: seam, fabricAdvice: fabric };
   }, [gender, measurements, bodyFat, isScanned]);
 
+  // Gemini 2.5 Flash API Key Pool State
+  const [geminiData, setGeminiData] = useState<GeminiTailoringAdvice | null>(null);
+  const [isAnalyzingGemini, setIsAnalyzingGemini] = useState<boolean>(false);
+
+  const handleRunGeminiAnalysis = async () => {
+    if (!isScanned) return;
+    setIsAnalyzingGemini(true);
+    try {
+      const payload = {
+        gender,
+        height_cm: parseFloat(measurements.height.toFixed(1)),
+        weight_kg: weight,
+        chest_cm: parseFloat(measurements.chestCircumference.toFixed(1)),
+        waist_cm: parseFloat(measurements.waistCircumference.toFixed(1)),
+        hip_cm: parseFloat(measurements.hipCircumference.toFixed(1)),
+        shoulder_cm: parseFloat(measurements.shoulderWidth.toFixed(1)),
+        arm_length_cm: parseFloat(measurements.armLength.toFixed(1)),
+        inseam_cm: parseFloat(measurements.legLength.toFixed(1))
+      };
+
+      const res = await analyzeBodyWithGemini(payload);
+      if (res.data) {
+        setGeminiData(res.data);
+      }
+    } catch (err) {
+      console.error('Gemini Analysis Failed:', err);
+    } finally {
+      setIsAnalyzingGemini(false);
+    }
+  };
+
+  // Auto run Gemini analysis when scan completes
+  useEffect(() => {
+    if (isScanned) {
+      handleRunGeminiAnalysis();
+    }
+  }, [isScanned, measurements.height, measurements.chestCircumference, measurements.waistCircumference, measurements.hipCircumference]);
+
   // Sync indicator badge
   const SyncIndicator = () => {
     const custLabel = customerName ? ` (${customerName}${customerPhone ? ` - ${customerPhone}` : ''})` : '';
@@ -292,21 +332,56 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         {/* AI Tailoring Agent Advice Card (For Tailors) */}
         <div className="ai-tailoring-card" style={{
           marginTop: '1.25rem',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.95) 100%)',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%)',
+          border: '1px solid rgba(56, 189, 248, 0.35)',
           borderRadius: 'var(--radius-md)',
           padding: '1rem',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
-          color: '#f8fafc'
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+          color: '#f8fafc',
+          position: 'relative'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h3 style={{ fontSize: '0.82rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
               <Scissors size={15} style={{ color: '#38bdf8' }} />
               Lời Khuyên May Đo Từ AI Agent (Cho Thợ May)
             </h3>
-            <span style={{ fontSize: '0.58rem', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '9999px', padding: '2px 8px', color: '#7dd3fc', fontWeight: 600 }}>
-              AI TAILOR ASSISTANT
-            </span>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                onClick={handleRunGeminiAnalysis}
+                disabled={isAnalyzingGemini}
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  border: '1px solid rgba(56, 189, 248, 0.5)',
+                  borderRadius: '9999px',
+                  padding: '3px 10px',
+                  color: '#ffffff',
+                  fontSize: '0.60rem',
+                  fontWeight: 700,
+                  cursor: isAnalyzingGemini ? 'wait' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
+                }}
+              >
+                {isAnalyzingGemini ? (
+                  <>
+                    <Loader size={10} className="spin-anim" />
+                    <span>Gemini đang suy luận...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✨ Gemini 2.5 Flash</span>
+                  </>
+                )}
+              </button>
+
+              <span style={{ fontSize: '0.55rem', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '9999px', padding: '2px 8px', color: '#7dd3fc', fontWeight: 600 }}>
+                {geminiData?.keyUsedIndex ? `⚡ KEY #${geminiData.keyUsedIndex}/5` : '⚡ 5 KEYS ROTATION'}
+              </span>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.72rem' }}>
@@ -314,8 +389,12 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               <span style={{ fontSize: '0.9rem' }}>👤</span>
               <div>
                 <strong style={{ color: '#7dd3fc' }}>Dáng Người (Body Type):</strong>{' '}
-                <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{tailoringAdvice.bodyShape}</span>
-                <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '0.66rem' }}>{tailoringAdvice.shapeDesc}</p>
+                <span style={{ color: '#f1f5f9', fontWeight: 600 }}>
+                  {geminiData ? geminiData.body_type : tailoringAdvice.bodyShape}
+                </span>
+                <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '0.66rem' }}>
+                  {geminiData ? geminiData.shape_desc : tailoringAdvice.shapeDesc}
+                </p>
               </div>
             </div>
 
@@ -323,7 +402,9 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               <span style={{ fontSize: '0.9rem' }}>✂️</span>
               <div>
                 <strong style={{ color: '#4ade80' }}>Chít Ly & Đường Kéo Nách:</strong>{' '}
-                <span style={{ color: '#e2e8f0' }}>{tailoringAdvice.seamAdvice}</span>
+                <span style={{ color: '#e2e8f0' }}>
+                  {geminiData ? geminiData.seam_advice : tailoringAdvice.seamAdvice}
+                </span>
               </div>
             </div>
 
@@ -331,7 +412,9 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               <span style={{ fontSize: '0.9rem' }}>📏</span>
               <div>
                 <strong style={{ color: '#fde047' }}>Độ Cử Động Vải (Ease Allowance):</strong>{' '}
-                <span style={{ color: '#e2e8f0' }}>{tailoringAdvice.easeAdvice}</span>
+                <span style={{ color: '#e2e8f0' }}>
+                  {geminiData ? geminiData.ease_advice : tailoringAdvice.easeAdvice}
+                </span>
               </div>
             </div>
 
@@ -339,7 +422,9 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
               <span style={{ fontSize: '0.9rem' }}>🧵</span>
               <div>
                 <strong style={{ color: '#c084fc' }}>Khuyên Dùng Chất Liệu:</strong>{' '}
-                <span style={{ color: '#e2e8f0' }}>{tailoringAdvice.fabricAdvice}</span>
+                <span style={{ color: '#e2e8f0' }}>
+                  {geminiData ? geminiData.fabric_advice : tailoringAdvice.fabricAdvice}
+                </span>
               </div>
             </div>
           </div>

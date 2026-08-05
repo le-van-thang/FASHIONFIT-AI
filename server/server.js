@@ -119,6 +119,93 @@ app.delete('/api/measurements/:id', async (req, res) => {
   }
 });
 
+// ─── Gemini 2.5 Flash Key Pool & Body Analysis API ──────────────
+const GEMINI_API_KEYS = [
+  'AIzaSyBRLnzBRL0wDyXu7xpl0fooRSX0iXWyElc',
+  'AIzaSyDNLVyvhB4pxSAzuZqtEdFF7zB0hnTjNNM',
+  'AIzaSyBzcb_v6jqr_HNTXb7f7GDn91ADzxD2GmU',
+  'AIzaSyDilndJMrA_ttKroSd-Vv96bJYj1pjO74c',
+  'AIzaSyBjmBfjGTTJSjQR_hwwTho2h8Y1xjuCrGw'
+];
+
+let currentKeyIndex = 0;
+
+// POST /api/analyze-body - Gemini 2.5 Flash Anthropometric Analysis
+app.post('/api/analyze-body', async (req, res) => {
+  try {
+    const { gender, height_cm, weight_kg, chest_cm, waist_cm, hip_cm, shoulder_cm, arm_length_cm, inseam_cm } = req.body;
+
+    const prompt = `Bạn là FashionFit AI Agent - Chuyên gia Nhân trắc học và Kỹ thuật May đo Cao cấp.
+Dựa vào chỉ số nhân trắc học của khách hàng:
+- Giới tính: ${gender === 'male' ? 'Nam' : 'Nữ'}
+- Chiều cao: ${height_cm} cm
+- Cân nặng: ${weight_kg} kg
+- Vòng ngực: ${chest_cm} cm
+- Vòng eo: ${waist_cm} cm
+- Vòng mông: ${hip_cm} cm
+- Rộng vai: ${shoulder_cm || '--'} cm
+- Dài tay: ${arm_length_cm || '--'} cm
+- Dài chân: ${inseam_cm || '--'} cm
+
+Hãy phân tích kiểu dáng người chuẩn xác (như Đồng hồ cát, Tam giác ngược, Dáng chữ V thể thao, Dáng quả lê, Dáng bụng tròn, Dáng cân đối...) và đưa ra lời khuyên kỹ thuật cắt may chuyên sâu cho thợ may (chiết ly, hạ nách, độ cử động vải, chất liệu phù hợp).
+
+BẮT BUỘC trả về duy nhất định dạng JSON nguyên bản (không dùng markdown code fence):
+{
+  "body_type": "Tên dáng người chính xác",
+  "shape_desc": "Mô tả tỷ lệ thân người trong 1 câu ngắn gọn",
+  "seam_advice": "Hướng dẫn chít ly eo, nẹp vai, nếp gấu và hạ nách áo cho thợ may",
+  "ease_advice": "Độ dư cử động vải (Ease Allowance) khuyến nghị cho ngực/eo/hông",
+  "fabric_advice": "Khuyên dùng loại chất liệu vải phù hợp để tôn phom dáng"
+}`;
+
+    let lastError = null;
+    let attempts = 0;
+
+    while (attempts < GEMINI_API_KEYS.length) {
+      const apiKey = GEMINI_API_KEYS[currentKeyIndex];
+      attempts++;
+
+      try {
+        console.log(`[Gemini API] Trying Key #${currentKeyIndex + 1} (Attempt ${attempts}/${GEMINI_API_KEYS.length})...`);
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json' }
+          })
+        });
+
+        if (!geminiRes.ok) {
+          const errData = await geminiRes.text();
+          console.warn(`[Gemini API] Key #${currentKeyIndex + 1} failed (${geminiRes.status}):`, errData);
+          currentKeyIndex = (currentKeyIndex + 1) % GEMINI_API_KEYS.length;
+          lastError = `Status ${geminiRes.status}: ${errData}`;
+          continue;
+        }
+
+        const data = await geminiRes.json();
+        const textRes = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (textRes) {
+          const parsed = JSON.parse(textRes);
+          const activeKeyIdx = currentKeyIndex;
+          currentKeyIndex = (currentKeyIndex + 1) % GEMINI_API_KEYS.length;
+          return res.json({ success: true, keyUsedIndex: activeKeyIdx + 1, data: parsed });
+        }
+      } catch (err) {
+        console.warn(`[Gemini API] Key #${currentKeyIndex + 1} error:`, err.message);
+        currentKeyIndex = (currentKeyIndex + 1) % GEMINI_API_KEYS.length;
+        lastError = err.message;
+      }
+    }
+
+    res.status(500).json({ error: `All ${GEMINI_API_KEYS.length} Gemini API keys exhausted: ${lastError}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 FashionFit AI Server running on port ${PORT}`);
 });

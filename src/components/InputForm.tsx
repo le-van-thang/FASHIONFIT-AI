@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import type { Gender, CalibrationType, UserInput } from '../types';
 import { User, Scale, Eye, FileText, CreditCard, Info, X, Camera, Ruler, ArrowRight, CheckCircle, Shirt, Save } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
@@ -773,8 +774,8 @@ export const InputForm: React.FC<InputFormProps> = ({
         )}
       </div>
 
-      {/* Mobile Connection Modal */}
-      {showMobileModal && (
+      {/* Mobile Connection Modal (Rendered via Portal directly on document.body to avoid stacking context traps) */}
+      {showMobileModal && ReactDOM.createPortal(
         <div className="calib-modal-overlay" onClick={() => setShowMobileModal(false)}>
           <div className="calib-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
             <div className="calib-modal-header" style={{ background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }}>
@@ -869,7 +870,8 @@ export const InputForm: React.FC<InputFormProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

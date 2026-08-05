@@ -241,11 +241,32 @@ function App() {
     webcam: boolean;
     video: boolean;
   }>({
-    mannequin: true,
+    mannequin: false,
     image: false,
     webcam: false,
     video: false,
   });
+
+  const [toast, setToast] = useState<{
+    show: boolean;
+    type: 'warning' | 'success' | 'info';
+    title: string;
+    message: string;
+  }>({
+    show: false,
+    type: 'warning',
+    title: '',
+    message: ''
+  });
+
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => {
+        setToast(prev => ({ ...prev, show: false }));
+      }, 4500);
+      return () => clearTimeout(timer);
+    }
+  }, [toast.show]);
 
   const handleScanComplete = (source: string) => {
     setScannedSources(prev => ({
@@ -692,9 +713,16 @@ function App() {
 
   // Manual save handler triggered when clicking "Lưu Hồ Sơ Khách Hàng"
   const handleSaveSession = async () => {
-    // Check Rule 1: Must have AI scanned data (images/webcam/video)
-    if (inputSource === 'mannequin' && !uploadedImageFront && !processedFrontLandmarks) {
-      alert('⚠️ Khách hàng chưa thực hiện quét số đo AI. Vui lòng chuyển sang tab "Ảnh mẫu", "Webcam AI" hoặc "Video AI" để quét số đo thực tế trước khi lưu hồ sơ.');
+    const hasRealAIScan = scannedSources.image || scannedSources.webcam || scannedSources.video || Boolean(uploadedImageFront || uploadedImageSide);
+
+    // Rule 1: Must have AI scanned data (images/webcam/video)
+    if (inputSource === 'mannequin' && !hasRealAIScan) {
+      setToast({
+        show: true,
+        type: 'warning',
+        title: 'Chưa Có Số Đo AI Thực Tế!',
+        message: 'Bạn đang ở chế độ Mô hình 3D mặc định. Vui lòng chuyển sang tab "Ảnh mẫu", "Webcam AI" hoặc "Video AI" để quét số đo thực tế trước khi lưu hồ sơ.'
+      });
       return;
     }
 
@@ -704,6 +732,7 @@ function App() {
     const formattedPhone = customerPhone.trim();
 
     let sessionToSave: MeasurementSession | null = null;
+    let isExistingUpdate = false;
 
     setHistory(prev => {
       // Find existing customer session by phone (if provided) or by name
@@ -715,6 +744,7 @@ function App() {
       });
 
       if (existingIndex >= 0) {
+        isExistingUpdate = true;
         // Upsert: Update existing customer record in-place with latest AI measurements
         const existing = prev[existingIndex];
         sessionToSave = {
@@ -787,6 +817,13 @@ function App() {
     const now = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
     setSavedAt(now);
 
+    setToast({
+      show: true,
+      type: 'success',
+      title: isExistingUpdate ? 'Đã Cập Nhật Hồ Sơ Khách Hàng!' : 'Đã Lưu Hồ Sơ Mới!',
+      message: `${isExistingUpdate ? 'Đã cập nhật đè bộ số đo AI mới nhất cho' : 'Tạo mới thành công hồ sơ khách hàng'} ${formattedName} (${formattedPhone || 'Chưa nhập SĐT'}).`
+    });
+
     // Save to backends in background
     if (sessionToSave) {
       saveBackendSession(sessionToSave as any).catch(() => {});
@@ -814,6 +851,57 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Floating Toast Notification Alert */}
+      {toast.show && (
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 99999,
+          background: 'rgba(15, 23, 42, 0.96)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          border: toast.type === 'warning' ? '1.5px solid #eab308' : '1.5px solid #22c55e',
+          borderRadius: '12px',
+          padding: '12px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
+          maxWidth: '480px',
+          color: '#ffffff',
+          pointerEvents: 'auto'
+        }}>
+          <div style={{ fontSize: '1.4rem', lineHeight: 1 }}>
+            {toast.type === 'warning' ? '⚠️' : '🟢'}
+          </div>
+          <div style={{ flex: 1 }}>
+            <strong style={{ display: 'block', fontSize: '0.85rem', color: toast.type === 'warning' ? '#fef08a' : '#4ade80', marginBottom: '2px' }}>
+              {toast.title}
+            </strong>
+            <span style={{ fontSize: '0.74rem', color: '#cbd5e1', lineHeight: 1.4 }}>
+              {toast.message}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToast(prev => ({ ...prev, show: false }))}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              fontSize: '1.1rem',
+              padding: '2px 6px',
+              marginLeft: '4px'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <header className="app-header">
         <div className="header-logo-group">

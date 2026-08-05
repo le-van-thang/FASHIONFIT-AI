@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import type { BodyMeasurements, SizeRecommendation, Gender } from '../types';
 import { AlertCircle, FileSpreadsheet, Ruler, MoveHorizontal, Scissors, Shirt, Layers, CheckCircle, Loader } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
@@ -106,6 +107,72 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
   };
 
   const { bodyFat, fatMass, muscleMass } = calculateBodyComposition();
+
+  // Dynamic Body Shape & AI Tailoring Recommendation Engine
+  const tailoringAdvice = useMemo(() => {
+    if (!isScanned) {
+      return {
+        bodyShape: 'Đang chờ quét...',
+        shapeDesc: 'Vui lòng thực hiện quét hoặc nhập số đo',
+        easeAdvice: '---',
+        seamAdvice: '---',
+        fabricAdvice: '---'
+      };
+    }
+
+    const { chestCircumference: chest, waistCircumference: waist, hipCircumference: hips, shoulderWidth: shoulder } = measurements;
+    
+    let shape = 'Cân Đối (Balanced)';
+    let shapeDesc = 'Tỷ lệ thân người cân đối giữa ngực, eo và hông.';
+    let ease = 'Cộng độ cử động chuẩn (Ease Allowance): Áo cộng 4 - 6cm vòng ngực, Quần cộng 2 - 3cm vòng eo.';
+    let seam = 'Chít ly eo nhẹ 1cm hai bên hông. Hạ nách áo tiêu chuẩn.';
+    let fabric = 'Phù hợp mọi chất liệu: Kaki, Wool, Cotton, Spandex.';
+
+    if (gender === 'female') {
+      const waistToHip = waist / (hips || 1);
+      const chestToHip = chest / (hips || 1);
+
+      if (waistToHip < 0.76) {
+        shape = 'Đồng Hồ Cát (Hourglass)';
+        shapeDesc = 'Thắt eo nhỏ nổi bật so với vòng ngực và hông.';
+        ease = 'Cộng cử động vừa ôm (Slim/Regular Fit): Áo cộng 3-4cm ngực, 1-2cm eo.';
+        seam = 'Chiết ly nách & chít sâu ly eo 1.5 - 2cm để tôn phom thắt eo.';
+        fabric = 'Nên chọn vải có độ rũ tốt hoặc co giãn nhẹ (Lụa, Crepe, Cotton Spandex).';
+      } else if (chestToHip < 0.92) {
+        shape = 'Dáng Quả Lê (Pear Shape)';
+        shapeDesc = 'Vòng hông & mông nẩy đà rộng hơn vòng ngực.';
+        ease = 'Áo cộng cử động 4cm ngực; Quần/Váy cộng 3-4cm vòng hông.';
+        seam = 'Nên làm nẹp vai (shoulder pad) nhẹ để cân đối với hông.';
+        fabric = 'Vải áo mỏng nhẹ đứng phom kết hợp quần/váy gam màu tối.';
+      } else if (chestToHip > 1.05) {
+        shape = 'Dáng Tam Giác Ngược (Inverted Triangle)';
+        shapeDesc = 'Rộng vai và vòng ngực lớn hơn vòng hông.';
+        ease = 'Cộng 5cm cử động ngực, hạ cổ áo chữ V hoặc hạ nách sâu.';
+        seam = 'Chít ly xuôi nhẹ từ ngực xuống eo, hạ vai mềm mại.';
+        fabric = 'Vải mềm rũ (Chiffon, Satin) để tạo nét thanh thoát.';
+      }
+    } else {
+      // Male
+      const chestToWaist = chest / (waist || 1);
+      const waistToHip = waist / (hips || 1);
+
+      if (chestToWaist > 1.22 || (shoulder / (waist || 1)) > 0.48) {
+        shape = 'Dáng Chữ V Thể Thao (V-Taper Athletic)';
+        shapeDesc = 'Rộng vai và vòm ngực nở, eo thắt thon.';
+        ease = 'Áo phom Tailored Fit - cộng 4cm ngực, chiết nẹp eo áo sơ mi / vest.';
+        seam = 'Chiết 2 ly sống sau lưng áo (back darts) để ôm phom vòm lưng.';
+        fabric = 'Vải Wool pha Spandex co giãn nhẹ hoặc Cotton Twill cao cấp.';
+      } else if (waistToHip > 0.96 || bodyFat > 24) {
+        shape = 'Dáng Bụng Tròn (O-Shape / Round)';
+        shapeDesc = 'Vòng eo tích tụ thể tích phồng nhẹ.';
+        ease = 'Áo phom Regular/Comfort Fit - cộng 6-8cm cử động eo để che bụng.';
+        seam = 'May nẹp áo vạt suông, bỏ ly chiết eo, hạ nếp gấu quần vừa vặn.';
+        fabric = 'Vải đứng dáng trung bình (Kaki Wool, Linen dày) chống nhăn.';
+      }
+    }
+
+    return { bodyShape: shape, shapeDesc, easeAdvice: ease, seamAdvice: seam, fabricAdvice: fabric };
+  }, [gender, measurements, bodyFat, isScanned]);
 
   // Sync indicator badge
   const SyncIndicator = () => {

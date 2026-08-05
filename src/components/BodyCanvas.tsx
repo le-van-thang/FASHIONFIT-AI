@@ -104,7 +104,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const [videoDeviceCount, setVideoDeviceCount] = useState<number>(1);
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
   const [cameraErrorMsg, setCameraErrorMsg] = useState<string | null>(null);

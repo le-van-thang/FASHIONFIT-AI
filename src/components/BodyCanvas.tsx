@@ -3127,9 +3127,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               <span>Kéo thả các chấm đỏ để căn chỉnh mốc giải phẫu.</span>
             </div>
           </div>
-        </div>
+        )}
       </div>
       </div>
+      </div>
+
 
       <input
         type="file"
@@ -3210,3 +3212,4 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     </>
   );
 };
+// Export BodyCanvas component

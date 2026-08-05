@@ -1062,18 +1062,18 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
 
   const effectiveRotationAngle = (rotationAngle !== undefined && rotationAngle !== 0) ? rotationAngle : (view === 'side' ? 90 : 0);
 
-  // Refs for camera focus target interpolation (default centered at body height Y = 0.92)
+  // Refs for camera focus target interpolation (default centered at body height Y = 0.88)
   const controlsRef = useRef<any>(null);
-  const targetPoint = useRef(new THREE.Vector3(0, 0.92, 0));
+  const targetPoint = useRef(new THREE.Vector3(0, 0.88, 0));
 
   // Reset camera view when counter changes
   useEffect(() => {
     if (cameraResetCounter > 0) {
       if (controlsRef.current) {
         controlsRef.current.reset();
-        controlsRef.current.target.set(0, 0.92, 0);
+        controlsRef.current.target.set(0, 0.88, 0);
       }
-      targetPoint.current.set(0, 0.92, 0);
+      targetPoint.current.set(0, 0.88, 0);
     }
   }, [cameraResetCounter]);
 
@@ -1098,13 +1098,13 @@ export const Mannequin3DView: React.FC<Mannequin3DViewProps> = ({
         style={{ width: '100%', height: '100%' }}
         gl={{ antialias: true, alpha: false }}
         onPointerMissed={() => {
-          targetPoint.current.set(0, 0.92, 0);
+          targetPoint.current.set(0, 0.88, 0);
         }}
       >
         <color attach="background" args={['#090d16']} />
         
-        {/* Camera (Framed at Y = 0.92 so full body and HUD cards fit 100% centered) */}
-        <PerspectiveCamera makeDefault position={[0, 0.92, showLabels ? 5.2 : 5.4]} fov={36} />
+        {/* Camera (Framed at Y = 0.88 so head-to-toe full body mannequin fits 100% centered inside canvas) */}
+        <PerspectiveCamera makeDefault position={[0, 0.88, showLabels ? 5.85 : 6.0]} fov={35} />
         
         <CameraController targetPoint={targetPoint} controlsRef={controlsRef} interactive={interactive} />
 

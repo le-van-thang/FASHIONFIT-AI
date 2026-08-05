@@ -226,20 +226,20 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   // Position for futuristic wrist radar ring (Wrist joint level)
   const wristRingPos = useMemo(() => [
     gender === 'female' ? -0.25 : 0.50,
-    gender === 'female' ? 1.54 : 1.38,
+    gender === 'female' ? 1.58 : 1.38,
     0
   ] as [number, number, number], [gender]);
 
   // Derived Y positions for 3D HTML labels to align with exact anatomical landmarks
   const neckPos = useMemo(() => [
     gender === 'female' ? 0.03 : -0.05,
-    gender === 'female' ? 1.74 : 1.68,
+    gender === 'female' ? 1.70 : 1.68,
     0
   ] as [number, number, number], [gender]);
 
   const shoulderPos = useMemo(() => [
     gender === 'female' ? -0.19 : 0.19,
-    gender === 'female' ? 1.68 : 1.62,
+    gender === 'female' ? 1.64 : 1.62,
     0
   ] as [number, number, number], [gender]);
 
@@ -251,7 +251,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
 
   const armPos = useMemo(() => [
     gender === 'female' ? 0.25 : 0.50,
-    gender === 'female' ? 1.54 : 1.38,
+    gender === 'female' ? 1.58 : 1.38,
     0
   ] as [number, number, number], [gender]);
 

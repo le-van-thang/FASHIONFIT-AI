@@ -1761,58 +1761,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   )}
                 </div>
               )}
-
-              {/* Reset 3D Model button */}
-              {inputSource === 'mannequin' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCameraResetCounter(c => c + 1);
-                    if (onResetModel) onResetModel();
-                  }}
-                  title="Đặt lại góc quay & số đo 3D"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: 'rgba(15, 23, 42, 0.78)',
-                    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(56, 189, 248, 0.45)',
-                    borderRadius: '20px', padding: '0.28rem 0.65rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#38bdf8', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <RefreshCw size={11} />
-                  <span>Reset 3D</span>
-                </button>
-              )}
             </div>
-
-            {/* Top-Left Viewport Overlay: PIP 3D Toggle Pill */}
-            {inputSource !== 'mannequin' && hasMediaBackground && (
-              <div style={{
-                position: 'absolute',
-                top: '10px',
-                left: '10px',
-                zIndex: 70
-              }}>
-                <button
-                  type="button"
-                  onClick={() => setShowPip3D(!showPip3D)}
-                  title="Ẩn/Hiện mô hình 3D mini"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.25rem',
-                    background: showPip3D ? 'rgba(14, 165, 233, 0.85)' : 'rgba(15, 23, 42, 0.78)',
-                    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-                    border: showPip3D ? '1px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.25)',
-                    borderRadius: '20px', padding: '0.28rem 0.6rem', fontSize: '0.68rem', fontWeight: 600,
-                    color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <span>{showPip3D ? '👁️ Ẩn 3D Mini' : '👁️ 3D Mini'}</span>
-                </button>
-              </div>
-            )}
           {/* Top-Right Badge: Sleek 3D WebGL Status Pill */}
           {inputSource === 'mannequin' && (
             <div style={{
@@ -2940,6 +2889,32 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               }}
             >
               Nhiệt (AI)
+            </button>
+            <span style={{ color: 'rgba(255, 255, 255, 0.3)', margin: '0 0.1rem' }}>|</span>
+            <button
+              type="button"
+              onClick={() => {
+                setCameraResetCounter(c => c + 1);
+                if (onResetModel) onResetModel();
+              }}
+              title="Đặt lại góc quay & số đo 3D về mặc định"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.2rem',
+                background: 'rgba(56, 189, 248, 0.15)',
+                color: '#38bdf8',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '20px',
+                fontSize: '0.68rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <RefreshCw size={11} />
+              <span>Reset 3D</span>
             </button>
           </div>
         )}

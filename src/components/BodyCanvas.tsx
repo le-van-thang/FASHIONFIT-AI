@@ -104,7 +104,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const [videoDeviceCount, setVideoDeviceCount] = useState<number>(1);
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
   const [cameraErrorMsg, setCameraErrorMsg] = useState<string | null>(null);
@@ -1615,7 +1614,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             gap: '0.4rem',
             width: '100%'
           }}>
@@ -1725,7 +1724,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            justify: 'space-between',
+            justifyContent: 'space-between',
             gap: '0.4rem',
             width: '100%'
           }}>
@@ -1941,7 +1940,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 borderBottom: '1px solid rgba(34, 211, 238, 0.2)',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 letterSpacing: '0.4px',
                 whiteSpace: 'nowrap'
               }}>

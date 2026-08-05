@@ -6,7 +6,7 @@ import { ResultPanel } from './components/ResultPanel';
 import { Mannequin3DView } from './components/Mannequin3DView';
 import { estimateCircumferences, getRecommendedSize, getSizeLimits, calculateScaleFactor, AVERAGE_NASION_TO_HIP_RATIO } from './utils/anthropometry';
 import { Activity, History as HistoryIcon, X, Clock, Trash2, FolderOpen, UserPlus, Layers, Sliders, Camera, Shirt } from 'lucide-react';
-import { saveMeasurementSession, fetchRecentSessions, deleteSession, clearAllSessions } from './lib/supabase';
+import { saveMeasurementSession, deleteSession, clearAllSessions } from './lib/supabase';
 import type { MeasurementSession } from './lib/supabase';
 import { saveBackendSession, fetchBackendSessions, deleteBackendSession, clearAllBackendSessions } from './lib/api';
 
@@ -690,31 +690,6 @@ function App() {
     return null;
   }, [measurements]);
 
-  const savePayload = useMemo(() => ({
-    customer_name: customerName,
-    customer_phone: customerPhone,
-    source: inputSource,
-    snapshot_img: uploadedImageFront || '',
-    gender: input.gender,
-    weight_kg: input.weight,
-    calibration_type: input.calibrationType,
-    reference_pixels: referencePixels,
-    height_cm: parseFloat(measurements.height.toFixed(1)),
-    shoulder_width_cm: parseFloat(measurements.shoulderWidth.toFixed(1)),
-    arm_length_cm: parseFloat(measurements.armLength.toFixed(1)),
-    bust_cm: parseFloat(measurements.chestCircumference.toFixed(1)),
-    waist_cm: parseFloat(measurements.waistCircumference.toFixed(1)),
-    hip_cm: parseFloat(measurements.hipCircumference.toFixed(1)),
-    inseam_cm: parseFloat(measurements.legLength.toFixed(1)),
-    bust_depth_cm: parseFloat((measurements.chestDepth || 0).toFixed(1)),
-    waist_depth_cm: parseFloat((measurements.waistDepth || 0).toFixed(1)),
-    hip_depth_cm: parseFloat((measurements.hipDepth || 0).toFixed(1)),
-    recommended_size: recommendation.size,
-    confidence_pct: recommendation.matchPercentage,
-    landmarks_front: processedFrontLandmarks,
-    landmarks_side: processedSideLandmarks,
-  }), [customerName, customerPhone, inputSource, uploadedImageFront, input, referencePixels, measurements, recommendation, processedFrontLandmarks, processedSideLandmarks]);
-
   // Manual save handler triggered when clicking "Lưu Hồ Sơ Khách Hàng"
   const handleSaveSession = async () => {
     // Check Rule 1: Must have AI scanned data (images/webcam/video)
@@ -828,7 +803,6 @@ function App() {
     setCustomerPhone('');
     setUploadedImageFront('');
     setUploadedImageSide('');
-    setUploadedVideo(null);
     setInputSource('mannequin');
     if (inputSource === 'webcam') {
       handleResetScan();

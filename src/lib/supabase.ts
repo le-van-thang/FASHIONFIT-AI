@@ -9,6 +9,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export interface MeasurementSession {
   id?: string;
   created_at?: string;
+  updated_at?: string;
   session_name?: string;
   customer_name?: string;
   customer_phone?: string;

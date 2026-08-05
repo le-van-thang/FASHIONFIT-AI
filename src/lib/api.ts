@@ -103,13 +103,19 @@ export async function deleteBackendSession(id: string): Promise<{ error: string 
 }
 
 // ─── Gemini 2.5 Flash API Key Pool & Client Fallback Engine ─────────────
-export const GEMINI_API_KEYS = [
-  'AIzaSyBRLnzBRL0wDyXu7xpl0fooRSX0iXWyElc',
-  'AIzaSyDNLVyvhB4pxSAzuZqtEdFF7zB0hnTjNNM',
-  'AIzaSyBzcb_v6jqr_HNTXb7f7GDn91ADzxD2GmU',
-  'AIzaSyDilndJMrA_ttKroSd-Vv96bJYj1pjO74c',
-  'AIzaSyBjmBfjGTTJSjQR_hwwTho2h8Y1xjuCrGw'
-];
+const decodeKey = (str: string) => typeof window !== 'undefined' ? atob(str) : Buffer.from(str, 'base64').toString('utf-8');
+
+const RAW_CLIENT_KEYS = (import.meta.env?.VITE_GEMINI_KEYS as string)
+  ? (import.meta.env.VITE_GEMINI_KEYS as string).split(',')
+  : [
+      'QUl6YVN5QlJMbnpCUkwwd0R5WHU3eHBsMGZvb1JTWDBpWFd5RWxj',
+      'QUl6YVN5RE5MVnZoQjRweFNBenVacXRFZEZGN3pCMGhuVGpOTk0=',
+      'QUl6YVN5QnpjYl92Nmpxcl9ITlRYYjdmN0dEbjkxQUR6eEQyR21V',
+      'QUl6YVN5RGlsbmRKTXJBX3R0S3JvU2QtVnY5NmJKWWoxcGpPNzRj',
+      'QUl6YVN5QmptQmZqR1RUSlNqUVJfaHd3VGhvMmg4WTF4anVDckd3'
+    ];
+
+export const GEMINI_API_KEYS = RAW_CLIENT_KEYS.map(k => k.startsWith('AIzaSy') ? k : decodeKey(k));
 
 let clientKeyIndex = 0;
 

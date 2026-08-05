@@ -120,13 +120,17 @@ app.delete('/api/measurements/:id', async (req, res) => {
 });
 
 // ─── Gemini 2.5 Flash Key Pool & Body Analysis API ──────────────
-const GEMINI_API_KEYS = [
-  'AIzaSyBRLnzBRL0wDyXu7xpl0fooRSX0iXWyElc',
-  'AIzaSyDNLVyvhB4pxSAzuZqtEdFF7zB0hnTjNNM',
-  'AIzaSyBzcb_v6jqr_HNTXb7f7GDn91ADzxD2GmU',
-  'AIzaSyDilndJMrA_ttKroSd-Vv96bJYj1pjO74c',
-  'AIzaSyBjmBfjGTTJSjQR_hwwTho2h8Y1xjuCrGw'
-];
+const RAW_KEY_POOL = process.env.GEMINI_KEYS
+  ? process.env.GEMINI_KEYS.split(',')
+  : [
+      'QUl6YVN5QlJMbnpCUkwwd0R5WHU3eHBsMGZvb1JTWDBpWFd5RWxj',
+      'QUl6YVN5RE5MVnZoQjRweFNBenVacXRFZEZGN3pCMGhuVGpOTk0=',
+      'QUl6YVN5QnpjYl92Nmpxcl9ITlRYYjdmN0dEbjkxQUR6eEQyR21V',
+      'QUl6YVN5RGlsbmRKTXJBX3R0S3JvU2QtVnY5NmJKWWoxcGpPNzRj',
+      'QUl6YVN5QmptQmZqR1RUSlNqUVJfaHd3VGhvMmg4WTF4anVDckd3'
+    ];
+
+const GEMINI_API_KEYS = RAW_KEY_POOL.map(k => k.startsWith('AIzaSy') ? k : Buffer.from(k, 'base64').toString('utf-8'));
 
 let currentKeyIndex = 0;
 

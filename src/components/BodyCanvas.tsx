@@ -2219,9 +2219,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     padding: '0.22rem 0.4rem',
                     cursor: 'pointer',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backdropFilter: 'blur(8px)',
                     boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
                   }}
                 >
@@ -2230,48 +2227,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               )}
             </div>
           )}
-            {/* Synchronized 3D Model Status Badge */}
-            {inputSource === 'mannequin' && (
-              <div style={{
-                position: 'absolute',
-                top: '12px',
-                left: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                zIndex: 50,
-                background: 'rgba(15, 23, 42, 0.85)',
-                border: '1px solid rgba(34, 211, 238, 0.35)',
-                borderRadius: '20px',
-                padding: '0.35rem 0.75rem',
-                fontSize: '0.62rem',
-                fontWeight: 700,
-                color: '#fff',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                fontFamily: 'system-ui, sans-serif',
-                backdropFilter: 'blur(6px)',
-                pointerEvents: 'none'
-              }}>
-                {uploadedImage && (
-                  <>
-                    <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
-                    <span style={{ color: '#22d3ee' }}>ĐỒNG BỘ VỚI ẢNH MẪU</span>
-                  </>
-                )}
-                {!uploadedImage && uploadedVideo && (
-                  <>
-                    <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
-                    <span style={{ color: '#22d3ee' }}>ĐỒNG BỘ VỚI VIDEO AI</span>
-                  </>
-                )}
-                {!uploadedImage && !uploadedVideo && (
-                  <>
-                    <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#94a3b8' }} />
-                    <span style={{ color: '#94a3b8' }}>MÔ HÌNH MẶC ĐỊNH (NHẬP TAY)</span>
-                  </>
-                )}
-              </div>
-            )}
 
           {isModelLoading && (
             <div className="model-loading-overlay">

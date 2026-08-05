@@ -1915,6 +1915,47 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
+          {/* Bottom-Left: Heatmap Color Spectrum Legend Bar (Only shown when meshStyle === 'heatmap') */}
+          {inputSource === 'mannequin' && meshStyle === 'heatmap' && (
+            <div style={{
+              position: 'absolute',
+              bottom: '12px',
+              left: '12px',
+              zIndex: 60,
+              background: 'rgba(15, 23, 42, 0.85)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: 'var(--radius-md)',
+              padding: '6px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px',
+              boxShadow: '0 8px 20px rgba(0, 0, 0, 0.4)',
+              maxWidth: '300px',
+              pointerEvents: 'none'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.55rem', color: '#94a3b8', fontWeight: 600 }}>
+                <span>BẢN ĐỒ PHÂN BỔ THỂ TÍCH & MỠ</span>
+                <span style={{ color: '#38bdf8' }}>AI HEATMAP</span>
+              </div>
+              {/* Horizontal Color Bar Gradient */}
+              <div style={{
+                height: '6px',
+                width: '100%',
+                borderRadius: '3px',
+                background: 'linear-gradient(to right, #00bfff 0%, #22c55e 35%, #eab308 65%, #ef4444 100%)',
+                boxShadow: '0 0 8px rgba(0, 0, 0, 0.5)'
+              }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.52rem', color: '#cbd5e1', fontWeight: 500, gap: '4px', marginTop: '1px' }}>
+                <span>🟦 Xanh Cyan: Thon gọn</span>
+                <span>🟩 Vừa vặn</span>
+                <span>🟨 Ôm phom</span>
+                <span>🟥 Đỏ: Tập trung mỡ/cơ lớn</span>
+              </div>
+            </div>
+          )}
+
           {/* Bottom-Left: Picture-in-Picture (PiP) Mini 3D Model Window */}
           {inputSource !== 'mannequin' && hasMediaBackground && (
             <div style={{

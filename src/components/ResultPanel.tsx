@@ -222,6 +222,62 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
           </div>
         </div>
 
+        {/* AI Tailoring Agent Advice Card (For Tailors) */}
+        <div className="ai-tailoring-card" style={{
+          marginTop: '1.25rem',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 41, 59, 0.95) 100%)',
+          border: '1px solid rgba(56, 189, 248, 0.3)',
+          borderRadius: 'var(--radius-md)',
+          padding: '1rem',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.15)',
+          color: '#f8fafc'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem' }}>
+            <h3 style={{ fontSize: '0.82rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+              <Scissors size={15} style={{ color: '#38bdf8' }} />
+              Lời Khuyên May Đo Từ AI Agent (Cho Thợ May)
+            </h3>
+            <span style={{ fontSize: '0.58rem', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '9999px', padding: '2px 8px', color: '#7dd3fc', fontWeight: 600 }}>
+              AI TAILOR ASSISTANT
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.72rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #38bdf8' }}>
+              <span style={{ fontSize: '0.9rem' }}>👤</span>
+              <div>
+                <strong style={{ color: '#7dd3fc' }}>Dáng Người (Body Type):</strong>{' '}
+                <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{tailoringAdvice.bodyShape}</span>
+                <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '0.66rem' }}>{tailoringAdvice.shapeDesc}</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #22c55e' }}>
+              <span style={{ fontSize: '0.9rem' }}>✂️</span>
+              <div>
+                <strong style={{ color: '#4ade80' }}>Chít Ly & Đường Kéo Nách:</strong>{' '}
+                <span style={{ color: '#e2e8f0' }}>{tailoringAdvice.seamAdvice}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #eab308' }}>
+              <span style={{ fontSize: '0.9rem' }}>📏</span>
+              <div>
+                <strong style={{ color: '#fde047' }}>Độ Cử Động Vải (Ease Allowance):</strong>{' '}
+                <span style={{ color: '#e2e8f0' }}>{tailoringAdvice.easeAdvice}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #a855f7' }}>
+              <span style={{ fontSize: '0.9rem' }}>🧵</span>
+              <div>
+                <strong style={{ color: '#c084fc' }}>Khuyên Dùng Chất Liệu:</strong>{' '}
+                <span style={{ color: '#e2e8f0' }}>{tailoringAdvice.fabricAdvice}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Advanced Biometrics Card */}
         <div className="advanced-biometrics-card" style={{ marginTop: '1.25rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem' }}>
           <h3 className="fit-details-title" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38bdf8' }}>

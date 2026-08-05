@@ -250,24 +250,26 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
 
       {!isScanned && (
         <div style={{
-          background: 'rgba(15, 23, 42, 0.85)',
-          border: '1px solid rgba(234, 179, 8, 0.45)',
+          background: 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)',
+          border: '1.5px solid #fde68a',
           borderRadius: 'var(--radius-md)',
           padding: '0.75rem 1rem',
           marginBottom: '1rem',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.6rem',
-          color: '#fef08a',
-          fontSize: '0.75rem',
+          gap: '0.65rem',
+          color: '#92400e',
+          fontSize: '0.74rem',
+          fontWeight: 600,
           lineHeight: 1.45,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          boxShadow: '0 4px 12px rgba(217, 119, 6, 0.08)'
         }}>
-          <AlertCircle size={20} style={{ color: '#eab308', flexShrink: 0 }} />
+          <AlertCircle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
           <span>
-            {inputSource === 'webcam' && 'Chưa thực hiện quét Webcam AI. Nhấn "⚡ BẮT ĐẦU QUÉT AI (5S)" trên camera để đo và lấy số đo thực tế của bạn.'}
-            {inputSource === 'image' && 'Chưa tải ảnh mẫu. Vui lòng chọn tệp ảnh để AI tự động trích xuất số đo.'}
-            {inputSource === 'video' && 'Chưa tải video AI. Vui lòng chọn tệp video để AI quét số đo.'}
+            {inputSource === 'mannequin' && 'Bạn đang ở chế độ Mô hình 3D mặc định. Vui lòng chuyển sang tab "Ảnh mẫu", "Webcam AI" hoặc "Video AI" để quét số đo thực tế.'}
+            {inputSource === 'webcam' && 'Chưa thực hiện quét Webcam AI. Nhấn "⚡ BẮT ĐẦU QUÉT AI (5S)" trên camera để lấy số đo thực tế.'}
+            {inputSource === 'image' && 'Chưa tải ảnh mẫu. Vui lòng chọn tệp ảnh chụp toàn thân để AI trích xuất số đo.'}
+            {inputSource === 'video' && 'Chưa tải video AI. Vui lòng chọn tệp video để AI quét lấy số đo thực tế.'}
           </span>
         </div>
       )}

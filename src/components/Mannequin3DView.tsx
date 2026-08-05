@@ -51,18 +51,14 @@ const HeatmapShaderMaterial = {
       // Combine tension curves
       float tension = clamp(bustTension * 1.0 + shoulderTension * 0.90 + hipTension * 0.88 + waistTension * 0.45, 0.0, 1.0);
       
-      // Head & Neck Attenuation (MUST BE ZERO TENSION / 100% COOL CYAN BLUE for normY > 0.89!)
-      if (normY > 0.89) {
+      // Head & Neck Attenuation (MUST BE ZERO TENSION / 100% COOL CYAN BLUE for normY > 0.85!)
+      if (normY > 0.85) {
         tension = 0.0;
-      } else if (normY > 0.86) {
-        tension *= (0.89 - normY) / 0.03;
       }
       
-      // Lower Legs & Feet Attenuation (MUST BE ZERO TENSION / 100% COOL CYAN BLUE for normY < 0.42!)
-      if (normY < 0.42) {
+      // Lower Legs & Feet Attenuation (MUST BE ZERO TENSION / 100% COOL CYAN BLUE for normY < 0.45!)
+      if (normY < 0.45) {
         tension = 0.0;
-      } else if (normY < 0.46) {
-        tension *= (normY - 0.42) / 0.04;
       }
 
       // Color Spectrum (CLO 3D Standard):
@@ -236,15 +232,15 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
     });
   }, [baseScene, wireframeScene, viewMode, solidMaterial, neonMaterial, heatmapMaterial]);
 
-  // Dynamic Y-scale adjustment for heatmap based on heightScale
+  // Dynamic Y-scale adjustment for heatmap based on scale[1]
   useEffect(() => {
     if (heatmapMaterial && heatmapMaterial.uniforms) {
-      const heightVal = measurements?.height || 165;
-      const heightScale = (heightVal / 165) * 0.95;
-      heatmapMaterial.uniforms.minY.value = bounds.min * heightScale;
-      heatmapMaterial.uniforms.maxY.value = bounds.max * heightScale;
+      const scaleY = scale[1];
+      const actualHeight = bounds.max * scaleY;
+      heatmapMaterial.uniforms.minY.value = 0;
+      heatmapMaterial.uniforms.maxY.value = actualHeight;
     }
-  }, [heatmapMaterial, bounds, measurements?.height]);
+  }, [heatmapMaterial, bounds, scale]);
 
   // Apply Y-rotation (supporting front/side view angle and breathing rotation effect)
   const meshRef = useRef<THREE.Group>(null);

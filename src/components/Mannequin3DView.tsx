@@ -9,8 +9,8 @@ import type { Landmark, Gender, BodyMeasurements } from '../types';
 // Custom Shader Material for Heatmap Mode (Anatomical Pressure / Fit Tension Map)
 const HeatmapShaderMaterial = {
   uniforms: {
-    minY: { value: -1.0 },
-    maxY: { value: 1.0 }
+    minY: { value: 0.0 },
+    maxY: { value: 1.8 }
   },
   vertexShader: `
     varying vec3 vWorldPosition;
@@ -28,29 +28,33 @@ const HeatmapShaderMaterial = {
       float y = vWorldPosition.y;
       float x = vWorldPosition.x;
       
-      // X attenuation: torso body width is ~0.28. Extended arms (|x| > 0.28) have low fabric tension!
-      float torsoFactor = exp(-pow(x / 0.26, 2.0));
+      // Normalize Y height relative to actual mannequin model height (minY to maxY bounds)
+      float modelHeight = max(0.1, maxY);
+      float normY = clamp(y / modelHeight, 0.0, 1.0);
       
-      // Anatomical Garment Fit Tension (CLO 3D & Browzwear Industry Standard):
-      // Bust / Chest peak tension at Y ≈ 1.40 (centered on torso)
-      // Shoulder Acromion tension at Y ≈ 1.60
-      // Hip / Seat peak tension at Y ≈ 0.95
-      // Waistband fit tension at Y ≈ 1.15
-      float bustTension     = exp(-pow((y - 1.40) / 0.14, 2.0)) * torsoFactor;
-      float shoulderTension = exp(-pow((y - 1.60) / 0.08, 2.0)) * clamp(abs(x) / 0.18, 0.0, 1.0) * exp(-pow(x / 0.32, 2.0));
-      float hipTension      = exp(-pow((y - 0.95) / 0.15, 2.0)) * torsoFactor;
-      float waistTension    = exp(-pow((y - 1.15) / 0.10, 2.0)) * torsoFactor;
+      // X attenuation: torso body width factor. Extended arms (|x| > 0.22) have low fabric tension!
+      float torsoFactor = exp(-pow(x / 0.22, 2.0));
+      
+      // Anatomical Garment Fit Tension (CLO 3D & Browzwear Industry Standard - Height Normalized):
+      // Bust / Chest Peak Tension: normY ≈ 0.78 (0.72 - 0.84)
+      // Shoulder Acromion Tension: normY ≈ 0.86 (0.82 - 0.89)
+      // Hip / Seat Peak Tension: normY ≈ 0.52 (0.44 - 0.60)
+      // Waistband Fit Tension: normY ≈ 0.65 (0.60 - 0.70)
+      float bustTension     = exp(-pow((normY - 0.78) / 0.07, 2.0)) * torsoFactor;
+      float shoulderTension = exp(-pow((normY - 0.86) / 0.04, 2.0)) * clamp(abs(x) / 0.14, 0.0, 1.0) * exp(-pow(x / 0.28, 2.0));
+      float hipTension      = exp(-pow((normY - 0.52) / 0.08, 2.0)) * torsoFactor;
+      float waistTension    = exp(-pow((normY - 0.65) / 0.05, 2.0)) * torsoFactor;
       
       // Combine tension curves
       float tension = clamp(bustTension * 0.95 + shoulderTension * 0.85 + hipTension * 0.85 + waistTension * 0.45, 0.0, 1.0);
       
-      // Head & Neck attenuation (Force cool blue for Y > 1.62 - zero clothing pressure on head)
-      if (y > 1.62) {
-        tension *= max(0.0, 1.0 - (y - 1.62) / 0.12);
+      // Head & Neck attenuation (Force 100% cool cyan blue for normY > 0.89 - ZERO clothing tension on head!)
+      if (normY > 0.89) {
+        tension *= max(0.0, 1.0 - (normY - 0.89) / 0.08);
       }
-      // Lower Leg & Foot attenuation (Force cool blue for Y < 0.55)
-      if (y < 0.55) {
-        tension *= max(0.0, (y - 0.15) / 0.40);
+      // Lower Leg & Foot attenuation (Force 100% cool cyan blue for normY < 0.40)
+      if (normY < 0.40) {
+        tension *= max(0.0, normY / 0.40);
       }
 
       // Color Spectrum (CLO 3D Standard): Cool Cyan (Relaxed) -> Green (Normal) -> Yellow (Snug) -> Crimson Red (Tight Peak)

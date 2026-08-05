@@ -332,97 +332,73 @@ export const ResultPanel: React.FC<ResultPanelProps> = ({
         {/* AI Tailoring Agent Advice Card (For Tailors) */}
         <div className="ai-tailoring-card" style={{
           marginTop: '1.25rem',
-          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.98) 100%)',
-          border: '1px solid rgba(56, 189, 248, 0.35)',
+          background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+          border: '1.5px solid #bae6fd',
           borderRadius: 'var(--radius-md)',
           padding: '1rem',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
-          color: '#f8fafc',
+          boxShadow: '0 6px 20px rgba(2, 132, 199, 0.08)',
+          color: '#0f172a',
           position: 'relative'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <h3 style={{ fontSize: '0.82rem', fontWeight: 700, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
-              <Scissors size={15} style={{ color: '#38bdf8' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', borderBottom: '1px solid #cbd5e1', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0369a1', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+              <Scissors size={16} style={{ color: '#0284c7' }} />
               Lời Khuyên May Đo Từ AI Agent (Cho Thợ May)
             </h3>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                type="button"
-                onClick={handleRunGeminiAnalysis}
-                disabled={isAnalyzingGemini}
-                style={{
-                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                  border: '1px solid rgba(56, 189, 248, 0.5)',
-                  borderRadius: '9999px',
-                  padding: '3px 10px',
-                  color: '#ffffff',
-                  fontSize: '0.60rem',
-                  fontWeight: 700,
-                  cursor: isAnalyzingGemini ? 'wait' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)'
-                }}
-              >
-                {isAnalyzingGemini ? (
-                  <>
-                    <Loader size={10} className="spin-anim" />
-                    <span>Gemini đang suy luận...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>✨ Gemini 2.5 Flash</span>
-                  </>
-                )}
-              </button>
-
-              <span style={{ fontSize: '0.55rem', background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '9999px', padding: '2px 8px', color: '#7dd3fc', fontWeight: 600 }}>
-                {geminiData?.keyUsedIndex ? `⚡ KEY #${geminiData.keyUsedIndex}/5` : '⚡ 5 KEYS ROTATION'}
-              </span>
+              {isAnalyzingGemini ? (
+                <span style={{ fontSize: '0.62rem', background: '#dbeafe', border: '1px solid #93c5fd', borderRadius: '9999px', padding: '2px 9px', color: '#1d4ed8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Loader size={10} className="spin-anim" />
+                  <span>AI đang phân tích...</span>
+                </span>
+              ) : (
+                <span style={{ fontSize: '0.62rem', background: '#dbeafe', border: '1px solid #93c5fd', borderRadius: '9999px', padding: '2px 9px', color: '#1e40af', fontWeight: 700 }}>
+                  🤖 AI CHUYÊN GIA
+                </span>
+              )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.72rem' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #38bdf8' }}>
-              <span style={{ fontSize: '0.9rem' }}>👤</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.74rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: '#ffffff', padding: '0.55rem 0.7rem', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid #0284c7', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+              <span style={{ fontSize: '0.95rem' }}>👤</span>
               <div>
-                <strong style={{ color: '#7dd3fc' }}>Dáng Người (Body Type):</strong>{' '}
-                <span style={{ color: '#f1f5f9', fontWeight: 600 }}>
+                <strong style={{ color: '#0369a1', fontWeight: 700 }}>Dáng Người (Body Type):</strong>{' '}
+                <span style={{ color: '#0f172a', fontWeight: 700 }}>
                   {geminiData ? geminiData.body_type : tailoringAdvice.bodyShape}
                 </span>
-                <p style={{ margin: '2px 0 0 0', color: '#94a3b8', fontSize: '0.66rem' }}>
+                <p style={{ margin: '2px 0 0 0', color: '#475569', fontSize: '0.68rem', fontWeight: 500 }}>
                   {geminiData ? geminiData.shape_desc : tailoringAdvice.shapeDesc}
                 </p>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #22c55e' }}>
-              <span style={{ fontSize: '0.9rem' }}>✂️</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: '#ffffff', padding: '0.55rem 0.7rem', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid #16a34a', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+              <span style={{ fontSize: '0.95rem' }}>✂️</span>
               <div>
-                <strong style={{ color: '#4ade80' }}>Chít Ly & Đường Kéo Nách:</strong>{' '}
-                <span style={{ color: '#e2e8f0' }}>
+                <strong style={{ color: '#15803d', fontWeight: 700 }}>Chít Ly & Đường Kéo Nách:</strong>{' '}
+                <span style={{ color: '#1e293b', fontWeight: 600 }}>
                   {geminiData ? geminiData.seam_advice : tailoringAdvice.seamAdvice}
                 </span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #eab308' }}>
-              <span style={{ fontSize: '0.9rem' }}>📏</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: '#ffffff', padding: '0.55rem 0.7rem', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid #d97706', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+              <span style={{ fontSize: '0.95rem' }}>📏</span>
               <div>
-                <strong style={{ color: '#fde047' }}>Độ Cử Động Vải (Ease Allowance):</strong>{' '}
-                <span style={{ color: '#e2e8f0' }}>
+                <strong style={{ color: '#b45309', fontWeight: 700 }}>Độ Cử Động Vải (Ease Allowance):</strong>{' '}
+                <span style={{ color: '#1e293b', fontWeight: 600 }}>
                   {geminiData ? geminiData.ease_advice : tailoringAdvice.easeAdvice}
                 </span>
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.04)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid #a855f7' }}>
-              <span style={{ fontSize: '0.9rem' }}>🧵</span>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', background: '#ffffff', padding: '0.55rem 0.7rem', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid #9333ea', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
+              <span style={{ fontSize: '0.95rem' }}>🧵</span>
               <div>
-                <strong style={{ color: '#c084fc' }}>Khuyên Dùng Chất Liệu:</strong>{' '}
-                <span style={{ color: '#e2e8f0' }}>
+                <strong style={{ color: '#7e22ce', fontWeight: 700 }}>Khuyên Dùng Chất Liệu:</strong>{' '}
+                <span style={{ color: '#1e293b', fontWeight: 600 }}>
                   {geminiData ? geminiData.fabric_advice : tailoringAdvice.fabricAdvice}
                 </span>
               </div>

@@ -103,7 +103,13 @@ export async function deleteBackendSession(id: string): Promise<{ error: string 
 }
 
 // ─── Gemini 2.5 Flash API Key Pool & Client Fallback Engine ─────────────
-const decodeKey = (str: string) => typeof window !== 'undefined' ? atob(str) : Buffer.from(str, 'base64').toString('utf-8');
+const decodeKey = (str: string) => {
+  try {
+    return atob(str);
+  } catch (e) {
+    return str;
+  }
+};
 
 const RAW_CLIENT_KEYS = (import.meta.env?.VITE_GEMINI_KEYS as string)
   ? (import.meta.env.VITE_GEMINI_KEYS as string).split(',')

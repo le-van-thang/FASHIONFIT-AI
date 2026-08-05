@@ -28,48 +28,60 @@ const HeatmapShaderMaterial = {
       float y = vWorldPosition.y;
       float x = vWorldPosition.x;
       
-      // Normalize Y height relative to actual mannequin model height (minY to maxY bounds)
+      // Height ratio relative to actual scaled 3D mannequin model height (maxY)
       float modelHeight = max(0.1, maxY);
       float normY = clamp(y / modelHeight, 0.0, 1.0);
       
-      // X attenuation: torso body width factor. Extended arms (|x| > 0.22) have low fabric tension!
+      // Torso X attenuation: torso body width factor (~0.22). Extended arms (|x| > 0.22) have zero fabric tension!
       float torsoFactor = exp(-pow(x / 0.22, 2.0));
       
-      // Anatomical Garment Fit Tension (CLO 3D & Browzwear Industry Standard - Height Normalized):
-      // Bust / Chest Peak Tension: normY ≈ 0.78 (0.72 - 0.84)
-      // Shoulder Acromion Tension: normY ≈ 0.86 (0.82 - 0.89)
-      // Hip / Seat Peak Tension: normY ≈ 0.52 (0.44 - 0.60)
-      // Waistband Fit Tension: normY ≈ 0.65 (0.60 - 0.70)
-      float bustTension     = exp(-pow((normY - 0.78) / 0.07, 2.0)) * torsoFactor;
-      float shoulderTension = exp(-pow((normY - 0.86) / 0.04, 2.0)) * clamp(abs(x) / 0.14, 0.0, 1.0) * exp(-pow(x / 0.28, 2.0));
-      float hipTension      = exp(-pow((normY - 0.52) / 0.08, 2.0)) * torsoFactor;
-      float waistTension    = exp(-pow((normY - 0.65) / 0.05, 2.0)) * torsoFactor;
+      // CLO 3D & Browzwear Standard Anatomical Fit Tension Curves:
+      // 1. Bust / Chest Peak Tension (normY ≈ 0.76 - 0.82) -> INTENSE CRIMSON RED PEAK (1.0)
+      float bustTension = exp(-pow((normY - 0.78) / 0.05, 2.0)) * torsoFactor;
+      
+      // 2. Shoulder Acromion Seam Tension (normY ≈ 0.84 - 0.88) -> INTENSE CRIMSON RED PEAK (0.90)
+      float shoulderTension = exp(-pow((normY - 0.85) / 0.035, 2.0)) * clamp(abs(x) / 0.12, 0.0, 1.0) * exp(-pow(x / 0.28, 2.0));
+      
+      // 3. Hip & Seat Curve Peak Tension (normY ≈ 0.50 - 0.58) -> INTENSE CRIMSON RED PEAK (0.88)
+      float hipTension = exp(-pow((normY - 0.53) / 0.06, 2.0)) * torsoFactor;
+      
+      // 4. Waistband Cinch Fit (normY ≈ 0.63 - 0.69) -> VIBRANT LIME GREEN / YELLOW (0.45)
+      float waistTension = exp(-pow((normY - 0.66) / 0.04, 2.0)) * torsoFactor;
       
       // Combine tension curves
-      float tension = clamp(bustTension * 0.95 + shoulderTension * 0.85 + hipTension * 0.85 + waistTension * 0.45, 0.0, 1.0);
+      float tension = clamp(bustTension * 1.0 + shoulderTension * 0.90 + hipTension * 0.88 + waistTension * 0.45, 0.0, 1.0);
       
-      // Head & Neck attenuation (Force 100% cool cyan blue for normY > 0.89 - ZERO clothing tension on head!)
+      // Head & Neck Attenuation (MUST BE ZERO TENSION / 100% COOL CYAN BLUE for normY > 0.89!)
       if (normY > 0.89) {
-        tension *= max(0.0, 1.0 - (normY - 0.89) / 0.08);
+        tension = 0.0;
+      } else if (normY > 0.86) {
+        tension *= (0.89 - normY) / 0.03;
       }
-      // Lower Leg & Foot attenuation (Force 100% cool cyan blue for normY < 0.40)
-      if (normY < 0.40) {
-        tension *= max(0.0, normY / 0.40);
+      
+      // Lower Legs & Feet Attenuation (MUST BE ZERO TENSION / 100% COOL CYAN BLUE for normY < 0.42!)
+      if (normY < 0.42) {
+        tension = 0.0;
+      } else if (normY < 0.46) {
+        tension *= (normY - 0.42) / 0.04;
       }
 
-      // Color Spectrum (CLO 3D Standard): Cool Cyan (Relaxed) -> Green (Normal) -> Yellow (Snug) -> Crimson Red (Tight Peak)
+      // Color Spectrum (CLO 3D Standard):
+      // Tension = 0.0  -> Cool Cyan Blue (#00bfff)
+      // Tension = 0.35 -> Vibrant Lime Green (#32cd32)
+      // Tension = 0.65 -> Bright Yellow (#ffd700)
+      // Tension = 1.0  -> Intense Crimson Red (#ff1a1a)
       vec3 colorCyan   = vec3(0.0, 0.75, 1.0);
-      vec3 colorGreen  = vec3(0.2, 0.95, 0.35);
+      vec3 colorGreen  = vec3(0.15, 0.95, 0.25);
       vec3 colorYellow = vec3(1.0, 0.85, 0.0);
-      vec3 colorRed    = vec3(0.95, 0.15, 0.25);
+      vec3 colorRed    = vec3(1.0, 0.10, 0.15);
       
       vec3 finalColor;
       if (tension < 0.35) {
         finalColor = mix(colorCyan, colorGreen, tension / 0.35);
-      } else if (tension < 0.70) {
-        finalColor = mix(colorGreen, colorYellow, (tension - 0.35) / 0.35);
+      } else if (tension < 0.65) {
+        finalColor = mix(colorGreen, colorYellow, (tension - 0.35) / 0.30);
       } else {
-        finalColor = mix(colorYellow, colorRed, (tension - 0.70) / 0.30);
+        finalColor = mix(colorYellow, colorRed, (tension - 0.65) / 0.35);
       }
       
       gl_FragColor = vec4(finalColor, 0.88);
@@ -156,10 +168,12 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
   }, []);
 
   const heatmapMaterial = useMemo(() => {
+    const scaleY = scale[1];
+    const actualHeight = bounds.max * scaleY;
     return new THREE.ShaderMaterial({
       uniforms: {
-        minY: { value: bounds.min },
-        maxY: { value: bounds.max }
+        minY: { value: 0 },
+        maxY: { value: actualHeight }
       },
       vertexShader: HeatmapShaderMaterial.vertexShader,
       fragmentShader: HeatmapShaderMaterial.fragmentShader,
@@ -167,7 +181,7 @@ const Model: React.FC<ModelProps> = ({ path, viewMode, gender, weight, measureme
       depthWrite: true,
       side: THREE.DoubleSide
     });
-  }, [bounds]);
+  }, [bounds, scale]);
 
   // Apply materials dynamically to both base body and wireframe scene
   useEffect(() => {

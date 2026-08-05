@@ -1611,153 +1611,168 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       {/* Main Canvas Card wrapper */}
       <div className={isMaximized ? "" : "canvas-wrapper"} style={isMaximized ? {} : { margin: 0 }}>
         <div className="canvas-header" style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '0.5rem' }}>
-          {/* ROW 1: Source tabs full width + upload action as compact right icon button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%' }}>
-            {/* Source Tabs - full width pill group */}
-            <div className="source-select-tabs" style={{ flex: 1, margin: 0 }}>
-              <button
-                type="button"
-                className={`source-tab ${inputSource === 'mannequin' ? 'active' : ''}`}
-                onClick={() => onInputSourceChange('mannequin')}
-              >
-                Mô hình 3D
-              </button>
-              <button
-                type="button"
-                className={`source-tab ${inputSource === 'image' ? 'active' : ''}`}
-                onClick={() => onInputSourceChange('image')}
-              >
-                Ảnh mẫu
-              </button>
-              <button
-                type="button"
-                className={`source-tab ${inputSource === 'webcam' ? 'active' : ''}`}
-                onClick={() => onInputSourceChange('webcam')}
-              >
-                Webcam
-              </button>
-              <button
-                type="button"
-                className={`source-tab ${inputSource === 'video' ? 'active' : ''}`}
-                onClick={() => onInputSourceChange('video')}
-              >
-                Video AI
-              </button>
-            </div>
-
-            {/* Compact upload / delete icon button */}
-            {inputSource === 'image' && (
-              <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  title={uploadedImage ? 'Đổi ảnh' : 'Chọn ảnh'}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.22rem',
-                    background: 'linear-gradient(135deg, rgba(6,182,212,0.12), rgba(59,130,246,0.12))',
-                    border: '1px solid rgba(6,182,212,0.4)',
-                    borderRadius: '20px', padding: '0.28rem 0.6rem',
-                    fontSize: '0.69rem', fontWeight: 700,
-                    color: '#0284c7', cursor: 'pointer', whiteSpace: 'nowrap',
-                    transition: 'all 0.15s'
-                  }}
-                >
-                  <Upload size={11} />
-                  <span>{uploadedImage ? 'Đổi' : 'Chọn ảnh'}</span>
-                </button>
-                {uploadedImage && onClearImage && (
-                  <button
-                    type="button"
-                    onClick={onClearImage}
-                    title="Xóa ảnh"
-                    style={{
-                      display: 'flex', alignItems: 'center',
-                      background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-                      borderRadius: '20px', padding: '0.28rem 0.4rem',
-                      fontSize: '0.69rem', color: '#dc2626', cursor: 'pointer'
-                    }}
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                )}
-              </div>
-            )}
-            {inputSource === 'video' && (
-              <div style={{ display: 'flex', gap: '0.2rem', alignItems: 'center', flexShrink: 0 }}>
-                <button
-                  type="button"
-                  onClick={() => fileInputVideoRef.current?.click()}
-                  title={uploadedVideo ? 'Đổi video' : 'Chọn video'}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '0.22rem',
-                    background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(99,102,241,0.12))',
-                    border: '1px solid rgba(168,85,247,0.4)',
-                    borderRadius: '20px', padding: '0.28rem 0.6rem',
-                    fontSize: '0.69rem', fontWeight: 700,
-                    color: '#9333ea', cursor: 'pointer', whiteSpace: 'nowrap',
-                  }}
-                >
-                  <Upload size={11} />
-                  <span>{uploadedVideo ? 'Đổi' : 'Chọn video'}</span>
-                </button>
-                {uploadedVideo && (
-                  <button
-                    type="button"
-                    onClick={() => { setUploadedVideo(null); setIsScanning(false); }}
-                    title="Xóa video"
-                    style={{
-                      display: 'flex', alignItems: 'center',
-                      background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
-                      borderRadius: '20px', padding: '0.28rem 0.4rem',
-                      fontSize: '0.69rem', color: '#dc2626', cursor: 'pointer'
-                    }}
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                )}
-              </div>
-            )}
+          {/* ROW 1: Source select tabs - 100% FULL WIDTH */}
+          <div className="source-select-tabs" style={{ margin: 0, width: '100%' }}>
+            <button
+              type="button"
+              className={`source-tab ${inputSource === 'mannequin' ? 'active' : ''}`}
+              onClick={() => onInputSourceChange('mannequin')}
+            >
+              Mô hình 3D
+            </button>
+            <button
+              type="button"
+              className={`source-tab ${inputSource === 'image' ? 'active' : ''}`}
+              onClick={() => onInputSourceChange('image')}
+            >
+              Ảnh mẫu
+            </button>
+            <button
+              type="button"
+              className={`source-tab ${inputSource === 'webcam' ? 'active' : ''}`}
+              onClick={() => onInputSourceChange('webcam')}
+            >
+              Webcam AI
+            </button>
+            <button
+              type="button"
+              className={`source-tab ${inputSource === 'video' ? 'active' : ''}`}
+              onClick={() => onInputSourceChange('video')}
+            >
+              Video AI
+            </button>
           </div>
 
-          {/* ROW 2: View tabs (left) + action buttons (right) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', width: '100%' }}>
-            {/* View toggle tabs */}
-            <div className="view-toggle-tabs" style={{ margin: 0, flex: 1 }}>
+          {/* ROW 2: View toggle tabs (Left) & Control Action Buttons (Right) */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.35rem',
+            width: '100%'
+          }}>
+            {/* View toggle tabs (Mặt trước / Mặt nghiêng) */}
+            <div className="view-toggle-tabs" style={{ margin: 0, flexShrink: 0 }}>
               <button
                 type="button"
                 className={`tab-btn ${view === 'front' ? 'active' : ''}`}
-                onClick={() => { setRotationAngle(0); onViewChange('front'); }}
+                style={{ padding: '0.22rem 0.55rem', fontSize: '0.68rem' }}
+                onClick={() => {
+                  setRotationAngle(0);
+                  onViewChange('front');
+                }}
               >
                 Mặt trước
               </button>
               <button
                 type="button"
                 className={`tab-btn ${view === 'side' ? 'active' : ''}`}
-                onClick={() => { setRotationAngle(90); onViewChange('side'); }}
+                style={{ padding: '0.22rem 0.55rem', fontSize: '0.68rem' }}
+                onClick={() => {
+                  setRotationAngle(90);
+                  onViewChange('side');
+                }}
               >
                 Mặt nghiêng
               </button>
             </div>
 
-            {/* Action buttons group */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0 }}>
-              {inputSource === 'mannequin' ? (
+            {/* Action buttons (Tải ảnh, Reset số đo, Reset mốc, 3D Mini) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', flexShrink: 0, flexWrap: 'nowrap' }}>
+              {/* Image upload / clear buttons */}
+              {inputSource === 'image' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Tải lên ảnh mẫu"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.2rem',
+                      background: 'rgba(6, 182, 212, 0.1)', border: '1px solid rgba(6, 182, 212, 0.35)',
+                      borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.45rem', fontSize: '0.68rem', fontWeight: 600,
+                      color: '#0284c7', cursor: 'pointer', whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <Upload size={11} />
+                    <span>{uploadedImage ? 'Đổi ảnh' : 'Chọn ảnh'}</span>
+                  </button>
+                  {uploadedImage && onClearImage && (
+                    <button
+                      type="button"
+                      onClick={onClearImage}
+                      title="Xóa ảnh"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.2rem',
+                        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.35)',
+                        borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.4rem', fontSize: '0.68rem', fontWeight: 600,
+                        color: '#dc2626', cursor: 'pointer', whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Video upload / clear buttons */}
+              {inputSource === 'video' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => fileInputVideoRef.current?.click()}
+                    title="Tải lên video"
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.2rem',
+                      background: 'rgba(168, 85, 247, 0.1)', border: '1px solid rgba(168, 85, 247, 0.35)',
+                      borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.45rem', fontSize: '0.68rem', fontWeight: 600,
+                      color: '#9333ea', cursor: 'pointer', whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <Upload size={11} />
+                    <span>{uploadedVideo ? 'Đổi video' : 'Chọn video'}</span>
+                  </button>
+                  {uploadedVideo && (
+                    <button
+                      type="button"
+                      onClick={() => { setUploadedVideo(null); setIsScanning(false); }}
+                      title="Xóa video"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '0.2rem',
+                        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.35)',
+                        borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.4rem', fontSize: '0.68rem', fontWeight: 600,
+                        color: '#dc2626', cursor: 'pointer', whiteSpace: 'nowrap'
+                      }}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* Reset model (3D Mode) */}
+              {inputSource === 'mannequin' && (
                 <button
                   type="button"
-                  onClick={() => { setCameraResetCounter(c => c + 1); if (onResetModel) onResetModel(); }}
+                  onClick={() => {
+                    setCameraResetCounter(c => c + 1);
+                    if (onResetModel) onResetModel();
+                  }}
                   title="Đặt lại mô hình 3D"
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.2rem',
-                    background: '#f1f5f9', border: '1px solid #cbd5e1',
-                    borderRadius: '20px', padding: '0.28rem 0.55rem',
+                    background: '#ffffff', border: '1px solid #cbd5e1',
+                    borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.45rem',
                     fontSize: '0.68rem', fontWeight: 600, color: '#0284c7',
                     cursor: 'pointer', whiteSpace: 'nowrap'
                   }}
                 >
-                  <RefreshCw size={10} />
+                  <RefreshCw size={11} />
                   <span>Reset 3D</span>
                 </button>
-              ) : (
+              )}
+
+              {/* Reset scan & landmarks (Image / Webcam / Video Modes) */}
+              {inputSource !== 'mannequin' && (
                 <>
                   {onResetScan && (
                     <button
@@ -1765,14 +1780,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       onClick={onResetScan}
                       title="Đặt lại số đo"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '0.18rem',
-                        background: '#fff1f2', border: '1px solid #fca5a5',
-                        borderRadius: '20px', padding: '0.28rem 0.5rem',
+                        display: 'flex', alignItems: 'center', gap: '0.2rem',
+                        background: '#ffffff', border: '1px solid #fca5a5',
+                        borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.45rem',
                         fontSize: '0.68rem', fontWeight: 600, color: '#dc2626',
                         cursor: 'pointer', whiteSpace: 'nowrap'
                       }}
                     >
-                      <RefreshCw size={10} />
+                      <RefreshCw size={11} />
                       <span>Reset đo</span>
                     </button>
                   )}
@@ -1782,14 +1797,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       onClick={onResetLandmarks}
                       title="Đặt lại các chấm mốc"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '0.18rem',
-                        background: '#eff6ff', border: '1px solid #7dd3fc',
-                        borderRadius: '20px', padding: '0.28rem 0.5rem',
+                        display: 'flex', alignItems: 'center', gap: '0.2rem',
+                        background: '#ffffff', border: '1px solid #7dd3fc',
+                        borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.45rem',
                         fontSize: '0.68rem', fontWeight: 600, color: '#0284c7',
                         cursor: 'pointer', whiteSpace: 'nowrap'
                       }}
                     >
-                      <RefreshCw size={10} />
+                      <RefreshCw size={11} />
                       <span>Reset chấm</span>
                     </button>
                   )}
@@ -1799,16 +1814,16 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       onClick={() => setShowPip3D(!showPip3D)}
                       title="Ẩn/Hiện mô hình 3D mini"
                       style={{
-                        display: 'flex', alignItems: 'center', gap: '0.18rem',
-                        background: showPip3D ? '#e0f2fe' : '#f8fafc',
+                        display: 'flex', alignItems: 'center', gap: '0.2rem',
+                        background: showPip3D ? '#e0f2fe' : '#ffffff',
                         border: showPip3D ? '1px solid #38bdf8' : '1px solid #cbd5e1',
-                        borderRadius: '20px', padding: '0.28rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)', padding: '0.22rem 0.45rem',
                         fontSize: '0.68rem', fontWeight: 600,
-                        color: showPip3D ? '#0284c7' : '#64748b',
+                        color: showPip3D ? '#0284c7' : '#475569',
                         cursor: 'pointer', whiteSpace: 'nowrap'
                       }}
                     >
-                      <span>{showPip3D ? '👁 Ẩn 3D' : '3D Mini'}</span>
+                      <span>{showPip3D ? '👁️ Ẩn 3D' : '👁️ 3D Mini'}</span>
                     </button>
                   )}
                 </>
@@ -1816,11 +1831,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
-
-      <div className="canvas-container">
-        <div className="media-viewport">
+        <div className="canvas-container">
+          <div className="media-viewport">
           {/* Top-Right Badge: Sleek 3D WebGL Status Pill */}
           {inputSource === 'mannequin' && (
             <div style={{
@@ -3114,7 +3127,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               <span>Kéo thả các chấm đỏ để căn chỉnh mốc giải phẫu.</span>
             </div>
           </div>
-        )}
+        </div>
       </div>
       </div>
 

@@ -491,10 +491,11 @@ body {
 .source-select-tabs, .view-toggle-tabs {
   display: flex;
   background-color: #f1f5f9;
-  padding: 0.2rem;
+  padding: 0.22rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
-  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .source-tab, .view-toggle-tabs .tab-btn {
@@ -502,8 +503,8 @@ body {
   text-align: center;
   background: none;
   border: none;
-  padding: 0.32rem 0.15rem;
-  font-size: 0.69rem;
+  padding: 0.38rem 0.25rem;
+  font-size: 0.71rem;
   font-weight: 600;
   color: var(--text-muted);
   border-radius: var(--radius-sm);

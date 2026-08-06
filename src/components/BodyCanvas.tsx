@@ -1636,7 +1636,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* ROW 2: Header controls: In Maximized mode show Title + View Toggle + Big Exit Button */}
+          {/* ROW 2: Header controls: In Maximized mode show View Toggle + Big Exit Button */}
           {isMaximized ? (
             <div style={{
               display: 'flex',
@@ -1645,28 +1645,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               width: '100%',
               padding: '0.2rem 0.25rem'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span>📷</span> QUÉT AI NHÂN TRẮC HỌC CHẤT LƯỢNG CAO (HIGH DEFINITION)
-                </span>
-                <div className="view-toggle-tabs" style={{ width: 'auto', margin: 0, padding: '0.15rem' }}>
-                  <button
-                    type="button"
-                    className={`tab-btn ${view === 'front' ? 'active' : ''}`}
-                    onClick={() => { setRotationAngle(0); onViewChange('front'); }}
-                    style={{ padding: '0.2rem 0.65rem', fontSize: '0.7rem' }}
-                  >
-                    Mặt trước
-                  </button>
-                  <button
-                    type="button"
-                    className={`tab-btn ${view === 'side' ? 'active' : ''}`}
-                    onClick={() => { setRotationAngle(90); onViewChange('side'); }}
-                    style={{ padding: '0.2rem 0.65rem', fontSize: '0.7rem' }}
-                  >
-                    Mặt nghiêng
-                  </button>
-                </div>
+              <div className="view-toggle-tabs" style={{ width: 'auto', margin: 0, padding: '0.15rem' }}>
+                <button
+                  type="button"
+                  className={`tab-btn ${view === 'front' ? 'active' : ''}`}
+                  onClick={() => { setRotationAngle(0); onViewChange('front'); }}
+                  style={{ padding: '0.3rem 0.85rem', fontSize: '0.75rem' }}
+                >
+                  Mặt trước
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${view === 'side' ? 'active' : ''}`}
+                  onClick={() => { setRotationAngle(90); onViewChange('side'); }}
+                  style={{ padding: '0.3rem 0.85rem', fontSize: '0.75rem' }}
+                >
+                  Mặt nghiêng
+                </button>
               </div>
 
               <button

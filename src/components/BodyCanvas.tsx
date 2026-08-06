@@ -1614,63 +1614,123 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       {/* Main Canvas Card wrapper */}
       <div className={isMaximized ? "" : "canvas-wrapper"} style={isMaximized ? {} : { margin: 0 }}>
         <div className="canvas-header" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.5rem' }}>
-          {/* ROW 1: Source select tabs - 100% FULL WIDTH */}
-          <div className="source-select-tabs" style={{ margin: 0, width: '100%' }}>
-            <button
-              type="button"
-              className={`source-tab ${inputSource === 'mannequin' ? 'active' : ''}`}
-              onClick={() => onInputSourceChange('mannequin')}
-            >
-              Mô hình 3D
-            </button>
-            <button
-              type="button"
-              className={`source-tab ${inputSource === 'image' ? 'active' : ''}`}
-              onClick={() => onInputSourceChange('image')}
-            >
-              Ảnh mẫu
-            </button>
-            <button
-              type="button"
-              className={`source-tab ${inputSource === 'webcam' ? 'active' : ''}`}
-              onClick={() => onInputSourceChange('webcam')}
-            >
-              Webcam AI
-            </button>
-            <button
-              type="button"
-              className={`source-tab ${inputSource === 'video' ? 'active' : ''}`}
-              onClick={() => onInputSourceChange('video')}
-            >
-              Video AI
-            </button>
-          </div>
+          {/* ROW 1: Source select tabs - Hide in Maximized Mode */}
+          {!isMaximized && (
+            <div className="source-select-tabs" style={{ margin: 0, width: '100%' }}>
+              <button
+                type="button"
+                className={`source-tab ${inputSource === 'mannequin' ? 'active' : ''}`}
+                onClick={() => onInputSourceChange('mannequin')}
+              >
+                Mô hình 3D
+              </button>
+              <button
+                type="button"
+                className={`source-tab ${inputSource === 'image' ? 'active' : ''}`}
+                onClick={() => onInputSourceChange('image')}
+              >
+                Ảnh mẫu
+              </button>
+              <button
+                type="button"
+                className={`source-tab ${inputSource === 'webcam' ? 'active' : ''}`}
+                onClick={() => onInputSourceChange('webcam')}
+              >
+                Webcam AI
+              </button>
+              <button
+                type="button"
+                className={`source-tab ${inputSource === 'video' ? 'active' : ''}`}
+                onClick={() => onInputSourceChange('video')}
+              >
+                Video AI
+              </button>
+            </div>
+          )}
 
-          {/* ROW 2: View toggle tabs (Mặt trước / Mặt nghiêng) - 100% FULL WIDTH */}
-          <div className="view-toggle-tabs" style={{ margin: 0, width: '100%' }}>
-            <button
-              type="button"
-              className={`tab-btn ${view === 'front' ? 'active' : ''}`}
-              style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
-              onClick={() => {
-                setRotationAngle(0);
-                onViewChange('front');
-              }}
-            >
-              Mặt trước
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${view === 'side' ? 'active' : ''}`}
-              style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
-              onClick={() => {
-                setRotationAngle(90);
-                onViewChange('side');
-              }}
-            >
-              Mặt nghiêng
-            </button>
-          </div>
+          {/* ROW 2: Header controls: In Maximized mode show Title + View Toggle + Big Exit Button */}
+          {isMaximized ? (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              padding: '0.2rem 0.25rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#38bdf8', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>📷</span> QUÉT AI NHÂN TRẮC HỌC CHẤT LƯỢNG CAO (HIGH DEFINITION)
+                </span>
+                <div className="view-toggle-tabs" style={{ width: 'auto', margin: 0, padding: '0.15rem' }}>
+                  <button
+                    type="button"
+                    className={`tab-btn ${view === 'front' ? 'active' : ''}`}
+                    onClick={() => { setRotationAngle(0); onViewChange('front'); }}
+                    style={{ padding: '0.2rem 0.65rem', fontSize: '0.7rem' }}
+                  >
+                    Mặt trước
+                  </button>
+                  <button
+                    type="button"
+                    className={`tab-btn ${view === 'side' ? 'active' : ''}`}
+                    onClick={() => { setRotationAngle(90); onViewChange('side'); }}
+                    style={{ padding: '0.2rem 0.65rem', fontSize: '0.7rem' }}
+                  >
+                    Mặt nghiêng
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsMaximized(false)}
+                title="Đóng chế độ phóng to toàn màn hình"
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  border: 'none',
+                  borderRadius: '20px',
+                  color: '#ffffff',
+                  padding: '0.35rem 1.1rem',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 0 15px rgba(239, 68, 68, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Minimize2 size={13} />
+                <span>✕ THOÁT PHÓNG TO</span>
+              </button>
+            </div>
+          ) : (
+            <div className="view-toggle-tabs" style={{ margin: 0, width: '100%' }}>
+              <button
+                type="button"
+                className={`tab-btn ${view === 'front' ? 'active' : ''}`}
+                style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
+                onClick={() => {
+                  setRotationAngle(0);
+                  onViewChange('front');
+                }}
+              >
+                Mặt trước
+              </button>
+              <button
+                type="button"
+                className={`tab-btn ${view === 'side' ? 'active' : ''}`}
+                style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
+                onClick={() => {
+                  setRotationAngle(90);
+                  onViewChange('side');
+                }}
+              >
+                Mặt nghiêng
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="canvas-container">
@@ -2927,8 +2987,28 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
 
         {isMaximized ? (
-          <div className="maximized-sidebar">
-            <div className="maximized-dashboard">
+          <>
+            {/* LEFT SIDEBAR: Measurements Table & Size Recommendation */}
+            <div className="maximized-left-sidebar" style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '300px',
+              maxHeight: 'calc(100vh - 120px)',
+              overflowY: 'auto',
+              zIndex: 80,
+              background: 'rgba(15, 23, 42, 0.9)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              borderRadius: '14px',
+              padding: '0.8rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.6rem',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
+            }}>
               <div className="dashboard-section-header">
                 <h3>📊 Kết Quả Đo Nhân Trắc Học (AI)</h3>
               </div>
@@ -2982,46 +3062,55 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 )}
                 <div className="max-metric-card highlight">
                   <span className="lbl">Gợi ý Size</span>
-                  <span className="val size">{recommendation?.size}</span>
+                  <span className="val size">{recommendation?.size || 'XXL'}</span>
                 </div>
               </div>
             </div>
 
-            {inputSource === 'webcam' && (
-              <div className="max-accordion-card">
-                <button
-                  type="button"
-                  className="accordion-header"
-                  onClick={() => setShowInlineGuide(!showInlineGuide)}
-                >
-                  <span>📖 Hướng Dẫn Căn Chỉnh Camera</span>
-                  <span>{showInlineGuide ? '▲' : '▼'}</span>
-                </button>
-                {showInlineGuide && (
-                  <div className="accordion-content">
-                    {scanRange === 'half' ? (
-                      <p>Di chuyển đứng gần sao cho <strong>Đỉnh đầu</strong> và <strong>Hông</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
-                    ) : (
-                      <p>Di chuyển đứng lùi xa sao cho <strong>Đỉnh đầu</strong> và <strong>Gót chân</strong> khớp với vạch giới hạn màu xanh trên camera.</p>
-                    )}
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.68rem', color: '#94a3b8' }}>
-                      💡 <strong>Mẹo:</strong> AI sẽ tự động ghim và lưu số đo khi bạn đứng yên ổn định trong 4 giây.
-                    </p>
-                  </div>
-                )}
+            {/* RIGHT SIDEBAR: Tailor Advice & Recommendations */}
+            <div className="maximized-right-sidebar" style={{
+              position: 'absolute',
+              right: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: '320px',
+              maxHeight: 'calc(100vh - 120px)',
+              overflowY: 'auto',
+              zIndex: 80,
+              background: 'rgba(15, 23, 42, 0.9)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              borderRadius: '14px',
+              padding: '0.8rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.6rem',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
+            }}>
+              <div className="dashboard-section-header">
+                <h3>✂️ Lời Khuyên May Đo Từ AI Agent</h3>
               </div>
-            )}
-
-            {warning && (
-              <div className="anatomical-warning-inline">
-                <span>⚠️ {warning}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Dáng Người (Body Type)</span>
+                  <strong style={{ fontSize: '0.8rem', color: '#38bdf8' }}>{recommendation?.fitType || 'Chờ quét...'}</strong>
+                </div>
+                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Chịt Ly & Đường Kéo Nách</span>
+                  <strong style={{ fontSize: '0.73rem', color: '#f1f5f9' }}>{recommendation?.dartAdvice || 'Chiết ly eo nhẹ để tôn dáng'}</strong>
+                </div>
+                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Độ Cử Động Vải (Ease Allowance)</span>
+                  <strong style={{ fontSize: '0.73rem', color: '#f1f5f9' }}>{recommendation?.easeAllowance || 'Cử động ngực +4cm, Eo +2cm'}</strong>
+                </div>
+                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Khuyên Dùng Chất Liệu</span>
+                  <strong style={{ fontSize: '0.73rem', color: '#f1f5f9' }}>{recommendation?.fabricAdvice || 'Vải Cotton pha Spandex co giãn nhẹ'}</strong>
+                </div>
               </div>
-            )}
-            <div className="canvas-helper-text" style={{ color: '#94a3b8', border: 'none', background: 'transparent' }}>
-              <RefreshCw size={12} className="spin-hover" />
-              <span>Kéo thả các chấm đỏ để căn chỉnh mốc giải phẫu.</span>
             </div>
-          </div>
+          </>
         ) : (
           <div className="canvas-footer">
             {inputSource === 'webcam' && (

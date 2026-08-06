@@ -115,17 +115,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     setRotationAngle(view === 'side' ? 90 : 0);
   }, [view]);
 
-  // Detect number of camera devices available on system
-  useEffect(() => {
-    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-      navigator.mediaDevices.enumerateDevices().then(devices => {
-        const videoDevs = devices.filter(d => d.kind === 'videoinput');
-        setVideoDeviceCount(videoDevs.length || 1);
-      }).catch(() => {
-        setVideoDeviceCount(1);
-      });
-    }
-  }, []);
+
 
   const updatePoseState = (valid: boolean, warningMsg: string | null = null) => {
     isPoseValidRef.current = valid;

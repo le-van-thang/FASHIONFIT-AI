@@ -104,7 +104,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [cameraResetCounter, setCameraResetCounter] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
-  const [videoDeviceCount, setVideoDeviceCount] = useState<number>(1);
   const [isPoseValid, setIsPoseValid] = useState<boolean>(true);
   const [poseWarning, setPoseWarning] = useState<string | null>(null);
   const [cameraErrorMsg, setCameraErrorMsg] = useState<string | null>(null);
@@ -742,7 +741,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   };
 
   const [isMaximized, setIsMaximized] = useState<boolean>(false);
-  const [showInlineGuide, setShowInlineGuide] = useState<boolean>(false);
   const [scanProgress, setScanProgress] = useState<number>(0);
   const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success'>('idle');
   const dragStartRef = useRef<{ x: number; angle: number }>({ x: 0, angle: 0 });

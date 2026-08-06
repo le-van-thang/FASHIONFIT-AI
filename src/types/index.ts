@@ -44,4 +44,8 @@ export interface SizeRecommendation {
     waist: 'tight' | 'fit' | 'loose';
     hips: 'tight' | 'fit' | 'loose';
   };
+  fitType?: string;
+  dartAdvice?: string;
+  easeAllowance?: string;
+  fabricAdvice?: string;
 }

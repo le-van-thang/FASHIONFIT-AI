@@ -478,8 +478,9 @@ body {
 .media-viewport {
   position: relative;
   width: 100%;
-  aspect-ratio: 400 / 680;
-  min-height: 540px;
+  aspect-ratio: 400 / 580;
+  max-height: calc(100vh - 180px);
+  min-height: 460px;
   background: #090d16; /* deep cyber black */
   border-radius: var(--radius-md);
   overflow: hidden;

@@ -112,7 +112,7 @@ function App() {
       calibrationType: 'height',
       customHeight: 165,
       sizeSystem: 'vietnam',
-      scanRange: savedSource === 'webcam' ? 'half' : 'full'
+      scanRange: 'full'
     };
   });
 
@@ -203,11 +203,7 @@ function App() {
 
   const handleInputSourceChange = (source: 'mannequin' | 'image' | 'webcam' | 'video') => {
     setInputSource(source);
-    if (source === 'webcam') {
-      setInput(prev => ({ ...prev, scanRange: 'half', calibrationType: 'height' }));
-    } else if (source === 'mannequin') {
-      setInput(prev => ({ ...prev, scanRange: 'full', calibrationType: 'height' }));
-    } else if (source === 'image' || source === 'video') {
+    if (source === 'mannequin' || source === 'image' || source === 'video' || source === 'webcam') {
       setInput(prev => ({ ...prev, calibrationType: 'height' }));
     }
   };

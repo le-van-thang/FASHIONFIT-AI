@@ -474,7 +474,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(e => console.warn("Video play error on tab switch:", e));
+        };
+        videoRef.current.play().catch(() => {});
       }
 
       if (!poseInstanceRef.current) {
@@ -2493,7 +2496,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               position: 'absolute',
               top: '12px',
               left: '12px',
-              right: '160px', // Leave ample space for top right camera control buttons
+              maxWidth: 'calc(100% - 130px)',
               zIndex: 55,
               pointerEvents: 'none',
               display: 'flex',
@@ -2548,36 +2551,39 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             <div className="webcam-scanner-laser-line" />
           )}
 
-          {/* Compact Non-Blocking Scanning Progress HUD overlay */}
+          {/* Centered Glassmorphism Scanning Progress HUD Overlay (100% readable, zero overflow) */}
           {scanStatus === 'scanning' && (
             <div className="camera-scanning-hud" style={{
               position: 'absolute',
               top: '12px',
-              left: '12px',
-              right: '160px',
-              background: 'rgba(9, 13, 22, 0.88)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(0, 245, 255, 0.4)',
-              borderRadius: 'var(--radius-md)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: '92%',
+              maxWidth: '380px',
+              background: 'rgba(9, 13, 22, 0.92)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(0, 245, 255, 0.45)',
+              borderRadius: '14px',
               padding: '0.5rem 0.75rem',
-              zIndex: 55,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
+              zIndex: 90,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.6)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <div className="scanning-pulse-circle"></div>
-                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px', fontSize: '0.72rem' }}>
+                  <div className="scanning-pulse-circle" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f5ff', boxShadow: '0 0 8px #00f5ff' }}></div>
+                  <strong style={{ color: '#00f5ff', letterSpacing: '0.5px', fontSize: '0.72rem', fontWeight: 800 }}>
                     {view === 'front' ? 'QUÉT MẶT TRƯỚC' : 'QUÉT MẶT NGHIÊNG'} ({scanProgress}%)
                   </strong>
                 </div>
-                <span style={{ fontSize: '0.58rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.1rem 0.4rem', borderRadius: '10px' }}>
+                <span style={{ fontSize: '0.58rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.1rem 0.4rem', borderRadius: '10px', fontWeight: 600 }}>
                   {!isPoseValid ? 'PAUSED' : 'SCANNING'}
                 </span>
               </div>
               <div className="scanning-progress-bar-bg" style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%`, height: '100%', background: 'linear-gradient(90deg, #0055ff, #00f5ff)', boxShadow: '0 0 10px #00f5ff' }}></div>
+                <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%`, height: '100%', background: 'linear-gradient(90deg, #0055ff, #00f5ff)', boxShadow: '0 0 10px #00f5ff', transition: 'width 0.2s ease' }}></div>
               </div>
-              <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.66rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
+              <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.66rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {!isPoseValid 
                   ? '⚠️ Vui lòng đứng thẳng trước camera...'
                   : (scanProgress < 35 ? '🔍 AI đang định vị 14 mốc khớp xương...' : (scanProgress < 70 ? '⚡ Đang đo chu vi Ngực, Eo, Hông...' : '📐 Đang tính chiều dài chân & cổ chân...'))

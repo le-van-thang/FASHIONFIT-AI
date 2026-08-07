@@ -162,6 +162,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [showLightingMenu, setShowLightingMenu] = useState<boolean>(false);
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+  const [webcamSnapshotUrl, setWebcamSnapshotUrl] = useState<string | null>(null);
   const [showPip3D, setShowPip3D] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -554,6 +555,87 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     }
   };
 
+  const captureWebcamSnapshot = useCallback(() => {
+    if (videoRef.current && isWebcamActive) {
+      try {
+        const video = videoRef.current;
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          if (facingMode === 'user') {
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+          }
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+          setWebcamSnapshotUrl(dataUrl);
+        }
+      } catch (e) {
+        console.warn('Could not capture webcam snapshot frame:', e);
+      }
+    }
+  }, [isWebcamActive, facingMode]);
+
+  const tailoringAdvice = useMemo(() => {
+    if (!measurements) {
+      return {
+        bodyShape: 'Chờ quét...',
+        seamAdvice: 'Chiết ly eo nhẹ để tôn dáng',
+        easeAdvice: 'Cử động ngực +4cm, Eo +2cm',
+        fabricAdvice: 'Vải Cotton pha Spandex co giãn nhẹ'
+      };
+    }
+
+    const { chestCircumference: chest, waistCircumference: waist, hipCircumference: hips, shoulderWidth: shoulder } = measurements;
+    
+    let shape = 'Cân Đối (Balanced)';
+    let ease = 'Áo phom Tailored Fit - cộng 4cm ngực, Eo +2cm';
+    let seam = 'Chít ly eo nhẹ 1cm hai bên hông';
+    let fabric = 'Phù hợp mọi chất liệu: Kaki, Wool, Cotton, Spandex';
+
+    if (gender === 'female') {
+      const waistToHip = waist / (hips || 1);
+      const chestToHip = chest / (hips || 1);
+
+      if (waistToHip < 0.76) {
+        shape = 'Đồng Hồ Cát (Hourglass)';
+        ease = 'Cộng cử động vừa ôm (Slim/Regular Fit): Áo cộng 3-4cm ngực, 1-2cm eo';
+        seam = 'Chiết ly nách & chít sâu ly eo 1.5 - 2cm';
+        fabric = 'Vải rũ tốt hoặc co giãn nhẹ (Lụa, Crepe, Cotton Spandex)';
+      } else if (chestToHip < 0.92) {
+        shape = 'Dáng Quả Lê (Pear Shape)';
+        ease = 'Áo cộng cử động 4cm ngực; Quần/Váy cộng 3-4cm hông';
+        seam = 'May nẹp vai nhẹ để cân đối với hông';
+        fabric = 'Vải áo mỏng nhẹ đứng phom, quần/váy tối màu';
+      } else if (chestToHip > 1.05) {
+        shape = 'Dáng Tam Giác Ngược (Inverted Triangle)';
+        ease = 'Cộng 5cm cử động ngực, cổ chữ V / nách sâu';
+        seam = 'Chít ly xuôi nhẹ từ ngực xuống eo';
+        fabric = 'Vải mềm rũ (Chiffon, Satin) tạo nét thanh thoát';
+      }
+    } else {
+      // Male
+      const chestToWaist = chest / (waist || 1);
+      const waistToHip = waist / (hips || 1);
+
+      if (chestToWaist > 1.22 || (shoulder / (waist || 1)) > 0.48) {
+        shape = 'Dáng Chữ V Thể Thao (V-Taper Athletic)';
+        ease = 'Áo phom Tailored Fit - cộng 4cm ngực, chiết nẹp eo';
+        seam = 'Chiết 2 ly sống sau lưng áo (back darts)';
+        fabric = 'Vải Wool pha Spandex co giãn nhẹ hoặc Cotton Twill cao cấp';
+      } else if (waistToHip > 0.96) {
+        shape = 'Dáng Bụng Tròn (O-Shape / Round)';
+        ease = 'Áo phom Regular/Comfort Fit - cộng 6-8cm cử động eo';
+        seam = 'May nẹp áo vạt suông, bỏ ly chiết eo';
+        fabric = 'Vải đứng dáng trung bình (Kaki Wool, Linen dày)';
+      }
+    }
+
+    return { bodyShape: shape, easeAdvice: ease, seamAdvice: seam, fabricAdvice: fabric };
+  }, [gender, measurements]);
+
   const toggleFacingMode = () => {
     const nextMode = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(nextMode);
@@ -862,6 +944,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             setIsScanning(false);
             setScanStatus('success');
             playAudioBeep('double');
+            captureWebcamSnapshot();
             if (onScanComplete) {
               onScanComplete(inputSource);
             }
@@ -2264,19 +2347,19 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
               <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.6rem 0.75rem', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Dáng Người (Body Type)</span>
-                <strong style={{ fontSize: '0.82rem', color: '#38bdf8' }}>{recommendation?.fitType || 'Chờ quét...'}</strong>
+                <strong style={{ fontSize: '0.82rem', color: '#38bdf8' }}>{hasFinalMeasurements ? tailoringAdvice.bodyShape : 'Chờ quét...'}</strong>
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.6rem 0.75rem', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Chịt Ly & Đường Kéo Nách</span>
-                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{recommendation?.dartAdvice || 'Chiết ly eo nhẹ để tôn dáng'}</strong>
+                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{hasFinalMeasurements ? tailoringAdvice.seamAdvice : 'Chờ quét...'}</strong>
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.6rem 0.75rem', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Độ Cử Động Vải (Ease Allowance)</span>
-                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{recommendation?.easeAllowance || 'Cử động ngực +4cm, Eo +2cm'}</strong>
+                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{hasFinalMeasurements ? tailoringAdvice.easeAdvice : 'Chờ quét...'}</strong>
               </div>
               <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
                 <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Khuyên Dùng Chất Liệu</span>
-                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{recommendation?.fabricAdvice || 'Vải Cotton pha Spandex co giãn nhẹ'}</strong>
+                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{hasFinalMeasurements ? tailoringAdvice.fabricAdvice : 'Chờ quét...'}</strong>
               </div>
             </div>
           </div>
@@ -3790,7 +3873,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         <div 
           className="calib-modal-overlay" 
           onClick={() => setShowSnapshotModal(false)}
-          style={{ zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(9, 13, 22, 0.9)' }}
+          style={{ zIndex: 100000, position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(9, 13, 22, 0.92)', backdropFilter: 'blur(10px)' }}
         >
           <div 
             className="calib-modal" 
@@ -3813,7 +3896,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               {inputSource === 'image' && uploadedImage && (
                 <img src={uploadedImage} alt="Snapshot review" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               )}
-              {inputSource === 'webcam' && (
+              {inputSource === 'webcam' && webcamSnapshotUrl && (
+                <img src={webcamSnapshotUrl} alt="Webcam snapshot review" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+              {inputSource === 'webcam' && !webcamSnapshotUrl && (
                 <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#090d16', color: '#38bdf8' }}>
                   <p style={{ textAlign: 'center', padding: '1rem', fontSize: '0.85rem' }}>
                     ✅ AI đã kiểm tra định vị thành công 14 mốc giải phẫu trên cơ thể bạn!

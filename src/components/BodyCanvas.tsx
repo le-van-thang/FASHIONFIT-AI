@@ -1911,7 +1911,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               )}
 
               {/* Floating Bottom Scan Action Bar for Maximized View */}
-              {inputSource === 'webcam' && isWebcamActive && (
+              {inputSource === 'webcam' && isWebcamActive && scanStatus !== 'success' && (
                 <div style={{
                   position: 'absolute',
                   bottom: '1.2rem',
@@ -1961,6 +1961,138 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       <span>⚡ BẮT ĐẦU QUÉT AI (5S)</span>
                     </button>
                   )}
+                </div>
+              )}
+
+              {/* Centered Scanning HUD for Maximized Portal */}
+              {scanStatus === 'scanning' && (
+                <div className="camera-scanning-hud" style={{
+                  position: 'absolute',
+                  top: '4.2rem',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: '92%',
+                  maxWidth: '420px',
+                  background: 'rgba(9, 13, 22, 0.94)',
+                  backdropFilter: 'blur(12px)',
+                  border: '1px solid rgba(0, 245, 255, 0.45)',
+                  borderRadius: '16px',
+                  padding: '0.65rem 1rem',
+                  zIndex: 90,
+                  boxShadow: '0 8px 30px rgba(0,0,0,0.7)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', width: '100%', marginBottom: '0.3rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <div className="scanning-pulse-circle" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#00f5ff', boxShadow: '0 0 8px #00f5ff' }}></div>
+                      <strong style={{ color: '#00f5ff', letterSpacing: '0.5px', fontSize: '0.8rem', fontWeight: 800 }}>
+                        {view === 'front' ? 'QUÉT MẶT TRƯỚC' : 'QUÉT MẶT NGHIÊNG'} ({scanProgress}%)
+                      </strong>
+                    </div>
+                    <span style={{ fontSize: '0.65rem', color: '#94a3b8', background: 'rgba(255,255,255,0.08)', padding: '0.12rem 0.5rem', borderRadius: '10px', fontWeight: 600 }}>
+                      {!isPoseValid ? 'PAUSED' : 'SCANNING'}
+                    </span>
+                  </div>
+                  <div className="scanning-progress-bar-bg" style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div className="scanning-progress-bar-fill" style={{ width: `${scanProgress}%`, height: '100%', background: 'linear-gradient(90deg, #0055ff, #00f5ff)', boxShadow: '0 0 10px #00f5ff', transition: 'width 0.2s ease' }}></div>
+                  </div>
+                  <p style={{ margin: '0.35rem 0 0 0', fontSize: '0.7rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>
+                    {!isPoseValid 
+                      ? '⚠️ Vui lòng đứng thẳng trước camera...'
+                      : (scanProgress < 35 ? '🔍 AI đang định vị 14 mốc khớp xương...' : (scanProgress < 70 ? '⚡ Đang đo chu vi Ngực, Eo, Hông...' : '📐 Đang tính chiều dài chân & cổ chân...'))
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Success Guided Scanning overlay for Maximized Portal */}
+              {scanStatus === 'success' && (
+                <div className="camera-success-overlay" style={{ zIndex: 95, backdropFilter: 'blur(10px)' }}>
+                  <div className="success-icon">✓</div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>
+                    {view === 'front' ? '🎉 BƯỚC 1: QUÉT MẶT TRƯỚC THÀNH CÔNG!' : '🏆 HOÀN THÀNH TOÀN BỘ ĐO ĐẠC HÌNH THỂ 3D!'}
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: '#cbd5e1', maxWidth: '420px', margin: '0 auto 1.2rem auto' }}>
+                    {view === 'front' 
+                      ? "Đã ghi nhận số đo mặt trước. Vui lòng quay nghiêng người 90° để đo độ sâu Ngực - Eo - Mông." 
+                      : "Hệ thống đã phân tích toàn bộ số đo 2D/3D & dựng mô hình nhân trắc học hoàn chỉnh."
+                    }
+                  </p>
+                  <div className="success-actions" style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', gap: '0.65rem', alignItems: 'center' }}>
+                    {view === 'front' ? (
+                      <button
+                        type="button"
+                        className="view-change-cta-btn"
+                        onClick={() => {
+                          onViewChange('side');
+                          setScanProgress(0);
+                          setScanStatus('idle');
+                          setCountdown(3);
+                        }}
+                        style={{ padding: '0.75rem 1.8rem', fontSize: '0.9rem', fontWeight: 800 }}
+                      >
+                        👉 TIẾP TỤC BƯỚC 2: QUÉT MẶT NGHIÊNG
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="view-change-cta-btn finish"
+                        onClick={() => {
+                          setIsMaximized(false);
+                          setTimeout(() => {
+                            const el = document.querySelector('.result-panel-card');
+                            if (el) {
+                              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              el.classList.add('pulse-highlight');
+                              setTimeout(() => {
+                                el.classList.remove('pulse-highlight');
+                              }, 3000);
+                            }
+                          }, 120);
+                        }}
+                        style={{ padding: '0.75rem 1.8rem', fontSize: '0.9rem', fontWeight: 800 }}
+                      >
+                        🎉 XEM MÔ HÌNH 3D & BÁO CÁO CHI TIẾT
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="rescan-btn"
+                      onClick={() => setShowSnapshotModal(true)}
+                      style={{
+                        background: 'rgba(34, 211, 238, 0.18)',
+                        border: '1px solid #22d3ee',
+                        color: '#22d3ee',
+                        padding: '0.6rem 1.5rem',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        borderRadius: '24px',
+                        cursor: 'pointer',
+                        boxShadow: '0 0 15px rgba(34, 211, 238, 0.3)'
+                      }}
+                    >
+                      📷 Xem Ảnh Quét AI (Xem tất cả số đo)
+                    </button>
+                    <button
+                      type="button"
+                      className="rescan-btn"
+                      onClick={() => {
+                        setScanProgress(0);
+                        setScanStatus('idle');
+                        setCountdown(5);
+                      }}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#94a3b8',
+                        padding: '0.45rem 1.2rem',
+                        fontSize: '0.78rem',
+                        borderRadius: '20px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Quét Lại (Rescan)
+                    </button>
+                  </div>
                 </div>
               )}
 

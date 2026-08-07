@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
 import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2, Sun, Moon, Sparkles } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
@@ -149,17 +150,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  useEffect(() => {
-    if (view === 'side') {
-      setRotationAngle(90);
-    } else {
-      setRotationAngle(0);
-    }
-  }, [view]);
-
-
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isModelLoading, setIsModelLoading] = useState<boolean>(false);
+  const [isWebcamActive, setIsWebcamActive] = useState<boolean>(false);
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const [scanProgress, setScanProgress] = useState<number>(0);
+  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success'>('idle');
+  const [meshStyle, setMeshStyle] = useState<'solid' | 'neon' | 'heatmap'>('solid');
+  const [lightingMode, setLightingMode] = useState<'auto' | 'bright' | 'dark' | 'normal'>('auto');
+  const [isRotating, setIsRotating] = useState<boolean>(false);
+  const [showLightingMenu, setShowLightingMenu] = useState<boolean>(false);
+  const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [showPip3D, setShowPip3D] = useState<boolean>(false);
 
@@ -445,22 +446,46 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     setIsModelLoading(true);
     try {
       await loadMediaPipeScripts();
-      stopWebcam();
+
+      // Warm Stream Reuse: If camera stream is already active, reuse it instantly (0ms delay, no black screen!)
+      const isStreamAlive = streamRef.current && 
+        streamRef.current.active && 
+        streamRef.current.getVideoTracks().some(t => t.readyState === 'live');
 
       let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: targetMode }
-        });
-      } catch (modeErr) {
-        console.warn(`Camera mode '${targetMode}' not supported, falling back to default camera:`, modeErr);
-        setFacingMode('user');
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
+      if (isStreamAlive && !overrideMode) {
+        stream = streamRef.current!;
+      } else {
+        if (overrideMode) {
+          stopWebcam(true); // Force kill old stream only when toggling front/back camera lens
+        }
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 60, min: 30 },
+              facingMode: targetMode
+            }
+          });
+        } catch (modeErr) {
+          console.warn(`Camera mode '${targetMode}' not supported, falling back to default camera:`, modeErr);
+          setFacingMode('user');
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 60, min: 30 }
+            }
+          });
+        }
+        streamRef.current = stream;
       }
 
-      streamRef.current = stream;
+      setIsWebcamActive(true);
+      setCameraErrorMsg(null);
+      setIsModelLoading(false);
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.onloadedmetadata = () => {
@@ -497,10 +522,12 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         const camera = new CameraHelper(videoRef.current, {
           onFrame: async () => {
             if (poseInstanceRef.current && videoRef.current && streamRef.current) {
-              try {
-                await poseInstanceRef.current.send({ image: videoRef.current });
-              } catch (e) {
-                // Ignore send errors during transitions
+              if (videoRef.current.videoWidth > 0 && videoRef.current.videoHeight > 0) {
+                try {
+                  await poseInstanceRef.current.send({ image: videoRef.current });
+                } catch (e) {
+                  // Ignore send errors during transitions
+                }
               }
             }
           },
@@ -511,8 +538,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         cameraInstanceRef.current = camera;
       }
 
-      setIsWebcamActive(true);
-      setCameraErrorMsg(null);
       setIsScanning(false); // Wait for user to click scan button to start countdown
     } catch (err: any) {
       console.error("Camera error:", err);
@@ -535,19 +560,19 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     startWebcam(nextMode);
   };
 
-  const stopWebcam = () => {
+  const stopWebcam = (forceKillHardware = false) => {
     setIsScanning(false);
     setIsWebcamActive(false);
     if (cameraInstanceRef.current) {
-      cameraInstanceRef.current.stop();
+      try { cameraInstanceRef.current.stop(); } catch(e) {}
       cameraInstanceRef.current = null;
     }
-    if (streamRef.current) {
+    if (forceKillHardware && streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     }
   };
 
@@ -591,34 +616,63 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     }
   };
 
-  // Video Frame Loop
+  // Real-Time AI Frame Loop (Webcam Live Tracking & Video Scanning)
   useEffect(() => {
     let active = true;
     let animationFrameId: number;
+    let isSending = false;
 
-    const processVideoFrame = async () => {
+    const processFrame = async () => {
       if (!active) return;
-      if (inputSource === 'video' && videoRef.current && !videoRef.current.paused && !videoRef.current.ended && poseInstanceRef.current && isScanning) {
-        try {
-          await poseInstanceRef.current.send({ image: videoRef.current });
-        } catch (e) {
-          // Ignore frame skip errors
+      const videoEl = videoRef.current;
+
+      if (
+        videoEl &&
+        videoEl.readyState >= 2 &&
+        videoEl.videoWidth > 0 &&
+        videoEl.videoHeight > 0 &&
+        poseInstanceRef.current &&
+        !isSending
+      ) {
+        const isWebcamLive = inputSource === 'webcam' && isWebcamActive;
+        const isVideoScanning = inputSource === 'video' && !videoEl.paused && !videoEl.ended && isScanning;
+
+        if (isWebcamLive || isVideoScanning) {
+          isSending = true;
+          try {
+            await poseInstanceRef.current.send({ image: videoEl });
+          } catch (e) {
+            // Ignore frame skip errors during transitions
+          } finally {
+            isSending = false;
+          }
         }
       }
-      if (inputSource === 'video') {
-        animationFrameId = requestAnimationFrame(processVideoFrame);
+
+      if (inputSource === 'webcam' || inputSource === 'video') {
+        animationFrameId = requestAnimationFrame(processFrame);
       }
     };
 
-    if (inputSource === 'video' && isScanning) {
-      processVideoFrame();
+    if ((inputSource === 'webcam' && isWebcamActive) || (inputSource === 'video' && isScanning)) {
+      processFrame();
     }
 
     return () => {
       active = false;
       cancelAnimationFrame(animationFrameId);
     };
-  }, [inputSource, isScanning]);
+  }, [inputSource, isWebcamActive, isScanning, isMaximized]);
+
+  // Ensure video element receives stream and plays seamlessly across modal & tab switches
+  useEffect(() => {
+    if (inputSource === 'webcam' && streamRef.current && videoRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.play().catch(() => {});
+    }
+  }, [inputSource, isWebcamActive, isMaximized]);
 
   // Input source triggers and webcam safety lifecycle
   useEffect(() => {
@@ -706,13 +760,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     startVideoScanning(file);
   };
 
-  const [isRotating, setIsRotating] = useState<boolean>(false);
-  const [meshStyle, setMeshStyle] = useState<'solid' | 'neon' | 'heatmap'>('solid');
-  const [isWebcamActive, setIsWebcamActive] = useState<boolean>(false);
-  const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
-  const [lightingMode, setLightingMode] = useState<'auto' | 'bright' | 'dark' | 'normal'>('auto');
-  const [showLightingMenu, setShowLightingMenu] = useState<boolean>(false);
-
   // Real-time Adaptive Lighting & Anti-Overexposure / Anti-Underexposed Filter
   const getVideoFilterStyle = () => {
     switch (lightingMode) {
@@ -730,9 +777,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     }
   };
 
-  const [isMaximized, setIsMaximized] = useState<boolean>(false);
-  const [scanProgress, setScanProgress] = useState<number>(0);
-  const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success'>('idle');
   const dragStartRef = useRef<{ x: number; angle: number }>({ x: 0, angle: 0 });
 
   // Audio Feedback Synthesizer using Web Audio API
@@ -1595,6 +1639,518 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     (inputSource === 'image') || 
     (inputSource === 'webcam' && isWebcamActive) || 
     (inputSource === 'video' && !!uploadedVideo);
+
+
+  const renderMaximizedPortal = () => {
+    if (!isMaximized) return null;
+    return createPortal(
+      <div className="maximized-portal-overlay">
+        <div className="maximized-portal-header">
+          <div className="view-toggle-tabs" style={{ width: 'auto', margin: 0, padding: '0.15rem' }}>
+            <button
+              type="button"
+              className={`tab-btn ${view === 'front' ? 'active' : ''}`}
+              onClick={() => { setRotationAngle(0); onViewChange('front'); }}
+              style={{ padding: '0.35rem 0.95rem', fontSize: '0.78rem' }}
+            >
+              Mặt trước
+            </button>
+            <button
+              type="button"
+              className={`tab-btn ${view === 'side' ? 'active' : ''}`}
+              onClick={() => { setRotationAngle(90); onViewChange('side'); }}
+              style={{ padding: '0.35rem 0.95rem', fontSize: '0.78rem' }}
+            >
+              Mặt nghiêng
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsMaximized(false)}
+            title="Đóng chế độ phóng to toàn màn hình"
+            style={{
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              border: 'none',
+              borderRadius: '20px',
+              color: '#ffffff',
+              padding: '0.45rem 1.35rem',
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              cursor: 'pointer',
+              boxShadow: '0 0 15px rgba(239, 68, 68, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <Minimize2 size={14} />
+            <span>✕ THOÁT PHÓNG TO</span>
+          </button>
+        </div>
+
+        <div className="maximized-portal-body">
+          <div className="maximized-left-col">
+            <div className="dashboard-section-header">
+              <h3>📊 Kết Quả Đo Nhân Trắc Học (AI)</h3>
+            </div>
+            <div className="maximized-metrics-grid">
+              <div className="max-metric-card">
+                <span className="lbl">Chiều cao</span>
+                <span className="val">{(measurements?.height || 0).toFixed(1)} <small>cm</small></span>
+              </div>
+              {view === 'front' ? (
+                <>
+                  <div className="max-metric-card">
+                    <span className="lbl">Vòng ngực</span>
+                    <span className="val">{(measurements?.chestCircumference || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                  <div className="max-metric-card">
+                    <span className="lbl">Vòng eo</span>
+                    <span className="val">{(measurements?.waistCircumference || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                  <div className="max-metric-card">
+                    <span className="lbl">Vòng mông</span>
+                    <span className="val">{(measurements?.hipCircumference || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                  <div className="max-metric-card">
+                    <span className="lbl">Rộng vai</span>
+                    <span className="val">{(measurements?.shoulderWidth || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                  <div className="max-metric-card">
+                    <span className="lbl">Dài tay</span>
+                    <span className="val">{(measurements?.armLength || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                  <div className="max-metric-card">
+                    <span className="lbl">Dài chân</span>
+                    <span className="val">{(measurements?.legLength || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="max-metric-card">
+                    <span className="lbl">Độ sâu Ngực</span>
+                    <span className="val">{(measurements?.chestDepth || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                  <div className="max-metric-card">
+                    <span className="lbl">Độ sâu Eo</span>
+                    <span className="val">{(measurements?.waistDepth || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                  <div className="max-metric-card">
+                    <span className="lbl">Độ sâu Mông</span>
+                    <span className="val">{(measurements?.hipDepth || 0).toFixed(1)} <small>cm</small></span>
+                  </div>
+                </>
+              )}
+              <div className="max-metric-card highlight">
+                <span className="lbl">Gợi ý Size</span>
+                <span className="val size">{recommendation?.size || 'XXL'}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="maximized-center-col">
+            <div className="media-viewport" style={{ 
+              position: 'relative', 
+              width: '100%', 
+              height: '100%',
+              borderRadius: '24px',
+              border: '1px solid rgba(0, 245, 255, 0.35)',
+              boxShadow: '0 0 35px rgba(0, 245, 255, 0.15), 0 25px 50px rgba(0, 0, 0, 0.85)',
+              overflow: 'hidden',
+              background: '#090d16'
+            }}>
+              {/* Floating Top Control Toolbar for Maximized View */}
+              {inputSource === 'webcam' && isWebcamActive && (
+                <div style={{
+                  position: 'absolute',
+                  top: '1rem',
+                  left: '1rem',
+                  right: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  zIndex: 35,
+                  pointerEvents: 'auto'
+                }}>
+                  <div style={{
+                    background: 'rgba(15, 23, 42, 0.85)',
+                    border: '1px solid rgba(0, 245, 255, 0.4)',
+                    borderRadius: '20px',
+                    padding: '0.4rem 0.85rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                  }}>
+                    <span style={{
+                      width: '8px', height: '8px', borderRadius: '50%', background: '#00f5ff',
+                      boxShadow: '0 0 10px #00f5ff', animation: 'neonPulse 2s infinite ease-in-out'
+                    }} />
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#e2e8f0', letterSpacing: '0.5px' }}>
+                      LIVE AI TRACKING
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {/* Adaptive Lighting Dropdown */}
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowLightingMenu(!showLightingMenu)}
+                        style={{
+                          background: 'rgba(15, 23, 42, 0.85)',
+                          border: '1px solid rgba(234, 179, 8, 0.45)',
+                          borderRadius: '16px',
+                          color: '#facc15',
+                          padding: '0.35rem 0.75rem',
+                          fontSize: '0.75rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          backdropFilter: 'blur(10px)',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.4)'
+                        }}
+                      >
+                        <Sparkles size={13} />
+                        <span>{lightingMode === 'auto' ? 'Auto 🪄' : lightingMode === 'bright' ? 'Chống chói' : lightingMode === 'dark' ? 'Khử tối AI' : 'Gốc'}</span>
+                      </button>
+
+                      {showLightingMenu && (
+                        <div style={{
+                          position: 'absolute',
+                          top: '110%',
+                          right: 0,
+                          background: 'rgba(15, 23, 42, 0.95)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          borderRadius: '14px',
+                          padding: '0.35rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.25rem',
+                          minWidth: '175px',
+                          zIndex: 50,
+                          backdropFilter: 'blur(12px)',
+                          boxShadow: '0 10px 25px rgba(0,0,0,0.6)'
+                        }}>
+                          <button
+                            type="button"
+                            onClick={() => { setLightingMode('auto'); setShowLightingMenu(false); }}
+                            style={{
+                              background: lightingMode === 'auto' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
+                              border: 'none', borderRadius: '8px', color: '#fff', padding: '0.35rem 0.6rem',
+                              fontSize: '0.75rem', textAlign: 'left', cursor: 'pointer'
+                            }}
+                          >
+                            Auto AI (Thích ứng)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setLightingMode('bright'); setShowLightingMenu(false); }}
+                            style={{
+                              background: lightingMode === 'bright' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
+                              border: 'none', borderRadius: '8px', color: '#fff', padding: '0.35rem 0.6rem',
+                              fontSize: '0.75rem', textAlign: 'left', cursor: 'pointer'
+                            }}
+                          >
+                            Chống Chói (Phòng sáng)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setLightingMode('dark'); setShowLightingMenu(false); }}
+                            style={{
+                              background: lightingMode === 'dark' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
+                              border: 'none', borderRadius: '8px', color: '#fff', padding: '0.35rem 0.6rem',
+                              fontSize: '0.75rem', textAlign: 'left', cursor: 'pointer'
+                            }}
+                          >
+                            Khử Tối AI (Phòng tối)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setLightingMode('normal'); setShowLightingMenu(false); }}
+                            style={{
+                              background: lightingMode === 'normal' ? 'rgba(37, 99, 235, 0.3)' : 'transparent',
+                              border: 'none', borderRadius: '8px', color: '#fff', padding: '0.35rem 0.6rem',
+                              fontSize: '0.75rem', textAlign: 'left', cursor: 'pointer'
+                            }}
+                          >
+                            Camera Gốc (Tắt AI)
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Flip Camera Button */}
+                    <button
+                      type="button"
+                      onClick={toggleFacingMode}
+                      title={`Lật camera (Đang dùng: ${facingMode === 'user' ? 'Trước' : 'Sau'})`}
+                      style={{
+                        background: 'rgba(15, 23, 42, 0.85)',
+                        border: '1px solid rgba(34, 211, 238, 0.45)',
+                        borderRadius: '16px',
+                        color: '#22d3ee',
+                        padding: '0.35rem 0.6rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backdropFilter: 'blur(10px)',
+                        boxShadow: '0 4px 15px rgba(0,0,0,0.4)'
+                      }}
+                    >
+                      <RefreshCw size={13} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Floating Bottom Scan Action Bar for Maximized View */}
+              {inputSource === 'webcam' && isWebcamActive && (
+                <div style={{
+                  position: 'absolute',
+                  bottom: '1.2rem',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 35,
+                  pointerEvents: 'auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  {countdown !== null ? (
+                    <div style={{
+                      background: 'rgba(15, 23, 42, 0.92)',
+                      border: '2px solid #00f5ff',
+                      borderRadius: '30px',
+                      padding: '0.6rem 2rem',
+                      color: '#00f5ff',
+                      fontSize: '1.3rem',
+                      fontWeight: 900,
+                      boxShadow: '0 0 30px rgba(0, 245, 255, 0.6)',
+                      animation: 'neonPulse 1s infinite ease-in-out'
+                    }}>
+                      QUÉT SAU: {countdown}S
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setCountdown(5)}
+                      style={{
+                        background: 'linear-gradient(135deg, #06b6d4, #2563eb)',
+                        border: 'none',
+                        borderRadius: '30px',
+                        color: '#ffffff',
+                        padding: '0.65rem 1.8rem',
+                        fontSize: '0.9rem',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        boxShadow: '0 0 25px rgba(6, 182, 212, 0.5), 0 4px 15px rgba(0, 0, 0, 0.4)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        letterSpacing: '0.5px'
+                      }}
+                    >
+                      <span>⚡ BẮT ĐẦU QUÉT AI (5S)</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {inputSource === 'mannequin' && (
+                <Mannequin3DView
+                  gender={gender}
+                  weight={weight}
+                  scaleFactor={scaleFactor}
+                  landmarks={landmarks}
+                  rotationAngle={rotationAngle}
+                  view={view}
+                  meshStyle={meshStyle}
+                  width={400}
+                  height={650}
+                  scanRange={scanRange}
+                  measurements={measurements}
+                  cameraResetCounter={cameraResetCounter}
+                  showLabels={true}
+                  interactive={true}
+                  key={`max-mannequin-portal-${view}-${inputSource}`}
+                />
+              )}
+
+              {inputSource === 'image' && (
+                uploadedImage ? (
+                  <img
+                    src={uploadedImage}
+                    alt="Sample model"
+                    className="source-image"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    height: '100%', color: '#94a3b8', gap: '0.75rem'
+                  }}>
+                    <Upload size={36} color="#38bdf8" />
+                    <p style={{ fontSize: '0.85rem' }}>Vui lòng tải lên ảnh mẫu mặt trước / nghiêng</p>
+                  </div>
+                )
+              )}
+
+              {inputSource === 'webcam' && (
+                <div style={{ position: 'relative', width: '100%', height: '100%', background: '#090d16' }}>
+                  <video
+                    ref={(el) => {
+                      videoRef.current = el;
+                      if (el && streamRef.current && el.srcObject !== streamRef.current) {
+                        el.srcObject = streamRef.current;
+                        el.play().catch(() => {});
+                      }
+                    }}
+                    className="webcam-video"
+                    playsInline
+                    muted
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      transform: facingMode === 'user' ? 'scaleX(-1)' : 'none',
+                      filter: getVideoFilterStyle(),
+                      imageRendering: '-webkit-optimize-contrast'
+                    }}
+                  />
+                  {!isWebcamActive && (
+                    <div style={{
+                      position: 'absolute', inset: 0, background: 'rgba(9, 13, 22, 0.9)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.85rem'
+                    }}>
+                      <Camera size={44} color="#38bdf8" />
+                      <button
+                        type="button"
+                        onClick={() => startWebcam()}
+                        style={{
+                          background: 'linear-gradient(135deg, #06b6d4, #2563eb)',
+                          border: 'none', borderRadius: '24px', color: '#fff',
+                          padding: '0.65rem 1.4rem', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer',
+                          boxShadow: '0 4px 15px rgba(6, 182, 212, 0.4)'
+                        }}
+                      >
+                        Bật Camera AI
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {inputSource === 'video' && (
+                <div style={{ position: 'relative', width: '100%', height: '100%', background: '#090d16' }}>
+                  {uploadedVideo ? (
+                    <video
+                      ref={videoRef}
+                      src={uploadedVideo}
+                      controls
+                      loop
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      height: '100%', color: '#94a3b8', gap: '0.75rem'
+                    }}>
+                      <Upload size={36} color="#38bdf8" />
+                      <p style={{ fontSize: '0.85rem' }}>Vui lòng tải lên Video AI mẫu</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <svg
+                viewBox="0 0 400 650"
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  pointerEvents: 'none',
+                  zIndex: 25
+                }}
+              >
+                {getBones()}
+                {landmarks.map((point) => {
+                  const isLowerJoint = ['left_knee', 'right_knee', 'left_ankle', 'right_ankle', 'knee', 'ankle'].includes(point.id);
+                  if (isLowerJoint && scanRange === 'half') {
+                    return null;
+                  }
+                  const vis = (point as any).visibility ?? 1;
+                  if (inputSource === 'webcam' && vis < 0.35) {
+                    return null;
+                  }
+                  return (
+                    <g key={`max-point-${point.id}`} className="landmark-group">
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r={7}
+                        className="landmark-pulse"
+                        style={{
+                          fill: 'none',
+                          stroke: '#00f5ff',
+                          strokeWidth: 1.5,
+                          pointerEvents: 'none'
+                        }}
+                      />
+                      <circle
+                        cx={point.x}
+                        cy={point.y}
+                        r={4}
+                        style={{
+                          fill: '#00f5ff',
+                          stroke: '#ffffff',
+                          strokeWidth: 1,
+                          filter: 'drop-shadow(0 0 6px #00f5ff)'
+                        }}
+                      />
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+          </div>
+
+          <div className="maximized-right-col">
+            <div className="dashboard-section-header">
+              <h3>✂️ LỜI KHUYÊN MAY ĐO TỪ AI AGENT</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+              <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.6rem 0.75rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Dáng Người (Body Type)</span>
+                <strong style={{ fontSize: '0.82rem', color: '#38bdf8' }}>{recommendation?.fitType || 'Chờ quét...'}</strong>
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.6rem 0.75rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Chịt Ly & Đường Kéo Nách</span>
+                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{recommendation?.dartAdvice || 'Chiết ly eo nhẹ để tôn dáng'}</strong>
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.6rem 0.75rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Độ Cử Động Vải (Ease Allowance)</span>
+                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{recommendation?.easeAllowance || 'Cử động ngực +4cm, Eo +2cm'}</strong>
+              </div>
+              <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <span style={{ fontSize: '0.65rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Khuyên Dùng Chất Liệu</span>
+                <strong style={{ fontSize: '0.75rem', color: '#f1f5f9' }}>{recommendation?.fabricAdvice || 'Vải Cotton pha Spandex co giãn nhẹ'}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
 
   return (
     <>
@@ -2969,132 +3525,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         )}
 
 
-        {isMaximized ? (
-          <>
-            {/* LEFT SIDEBAR: Measurements Table & Size Recommendation */}
-            <div className="maximized-left-sidebar" style={{
-              position: 'absolute',
-              left: '1rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '300px',
-              maxHeight: 'calc(100vh - 120px)',
-              overflowY: 'auto',
-              zIndex: 80,
-              background: 'rgba(15, 23, 42, 0.9)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-              borderRadius: '14px',
-              padding: '0.8rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.6rem',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
-            }}>
-              <div className="dashboard-section-header">
-                <h3>📊 Kết Quả Đo Nhân Trắc Học (AI)</h3>
-              </div>
-              <div className="maximized-metrics-grid">
-                <div className="max-metric-card">
-                  <span className="lbl">Chiều cao</span>
-                  <span className="val">{measurements?.height.toFixed(1)} <small>cm</small></span>
-                </div>
-                {view === 'front' ? (
-                  <>
-                    <div className="max-metric-card">
-                      <span className="lbl">Vòng ngực</span>
-                      <span className="val">{measurements?.chestCircumference.toFixed(1)} <small>cm</small></span>
-                    </div>
-                    <div className="max-metric-card">
-                      <span className="lbl">Vòng eo</span>
-                      <span className="val">{measurements?.waistCircumference.toFixed(1)} <small>cm</small></span>
-                    </div>
-                    <div className="max-metric-card">
-                      <span className="lbl">Vòng mông</span>
-                      <span className="val">{measurements?.hipCircumference.toFixed(1)} <small>cm</small></span>
-                    </div>
-                    <div className="max-metric-card">
-                      <span className="lbl">Rộng vai</span>
-                      <span className="val">{measurements?.shoulderWidth.toFixed(1)} <small>cm</small></span>
-                    </div>
-                    <div className="max-metric-card">
-                      <span className="lbl">Dài tay</span>
-                      <span className="val">{measurements?.armLength.toFixed(1)} <small>cm</small></span>
-                    </div>
-                    <div className="max-metric-card">
-                      <span className="lbl">Dài chân</span>
-                      <span className="val">{measurements?.legLength.toFixed(1)} <small>cm</small></span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="max-metric-card">
-                      <span className="lbl">Độ sâu Ngực</span>
-                      <span className="val">{(measurements?.chestDepth || 0).toFixed(1)} <small>cm</small></span>
-                    </div>
-                    <div className="max-metric-card">
-                      <span className="lbl">Độ sâu Eo</span>
-                      <span className="val">{(measurements?.waistDepth || 0).toFixed(1)} <small>cm</small></span>
-                    </div>
-                    <div className="max-metric-card">
-                      <span className="lbl">Độ sâu Mông</span>
-                      <span className="val">{(measurements?.hipDepth || 0).toFixed(1)} <small>cm</small></span>
-                    </div>
-                  </>
-                )}
-                <div className="max-metric-card highlight">
-                  <span className="lbl">Gợi ý Size</span>
-                  <span className="val size">{recommendation?.size || 'XXL'}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT SIDEBAR: Tailor Advice & Recommendations */}
-            <div className="maximized-right-sidebar" style={{
-              position: 'absolute',
-              right: '1rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '320px',
-              maxHeight: 'calc(100vh - 120px)',
-              overflowY: 'auto',
-              zIndex: 80,
-              background: 'rgba(15, 23, 42, 0.9)',
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
-              borderRadius: '14px',
-              padding: '0.8rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.6rem',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
-            }}>
-              <div className="dashboard-section-header">
-                <h3>✂️ Lời Khuyên May Đo Từ AI Agent</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Dáng Người (Body Type)</span>
-                  <strong style={{ fontSize: '0.8rem', color: '#38bdf8' }}>{recommendation?.fitType || 'Chờ quét...'}</strong>
-                </div>
-                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Chịt Ly & Đường Kéo Nách</span>
-                  <strong style={{ fontSize: '0.73rem', color: '#f1f5f9' }}>{recommendation?.dartAdvice || 'Chiết ly eo nhẹ để tôn dáng'}</strong>
-                </div>
-                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Độ Cử Động Vải (Ease Allowance)</span>
-                  <strong style={{ fontSize: '0.73rem', color: '#f1f5f9' }}>{recommendation?.easeAllowance || 'Cử động ngực +4cm, Eo +2cm'}</strong>
-                </div>
-                <div style={{ background: 'rgba(30, 41, 59, 0.6)', borderRadius: '10px', padding: '0.55rem 0.7rem', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <span style={{ fontSize: '0.63rem', color: '#94a3b8', display: 'block', marginBottom: '2px' }}>Khuyên Dùng Chất Liệu</span>
-                  <strong style={{ fontSize: '0.73rem', color: '#f1f5f9' }}>{recommendation?.fabricAdvice || 'Vải Cotton pha Spandex co giãn nhẹ'}</strong>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
           <div className="canvas-footer">
             {inputSource === 'webcam' && (
               <div style={{ width: '100%', marginBottom: '0.35rem' }}>
@@ -3201,7 +3631,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               )}
             </div>
           </div>
-        )}
       </div>
       </div>
       </div>
@@ -3283,7 +3712,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           </div>
         </div>
       )}
+      {renderMaximizedPortal()}
     </>
   );
 };
-// Export BodyCanvas component

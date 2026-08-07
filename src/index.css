@@ -496,7 +496,7 @@ body {
   }
 }
 
-.canvas-wrapper.maximized {
+.maximized-portal-overlay {
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -504,13 +504,10 @@ body {
   bottom: 0 !important;
   width: 100vw !important;
   height: 100vh !important;
-  z-index: 999999 !important;
+  z-index: 9999999 !important;
   background: #070a13 !important;
   padding: 0.75rem 1rem !important;
   margin: 0 !important;
-  border-radius: 0 !important;
-  border: none !important;
-  max-width: 100vw !important;
   box-sizing: border-box !important;
   display: flex !important;
   flex-direction: column !important;
@@ -518,44 +515,77 @@ body {
   overflow: hidden !important;
 }
 
-.canvas-wrapper.maximized .canvas-container {
-  flex: 1 !important;
-  height: calc(100vh - 80px) !important;
+.maximized-portal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 0.45rem 1rem !important;
+  flex-shrink: 0 !important;
+}
+
+.maximized-portal-body {
   display: flex !important;
   flex-direction: row !important;
-  align-items: stretch !important;
-  justify-content: center !important;
+  flex: 1 !important;
+  width: 100% !important;
+  height: calc(100vh - 85px) !important;
   gap: 1rem !important;
+  align-items: stretch !important;
+  overflow: hidden !important;
 }
 
-.canvas-wrapper.maximized .maximized-left-sidebar {
-  position: relative !important;
-  left: auto !important;
-  top: auto !important;
-  transform: none !important;
+.maximized-portal-body .maximized-left-col {
   width: 320px !important;
   flex-shrink: 0 !important;
-  max-height: 100% !important;
-  height: 100% !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-radius: 14px !important;
+  padding: 0.85rem !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.65rem !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
 }
 
-.canvas-wrapper.maximized .maximized-right-sidebar {
-  position: relative !important;
-  right: auto !important;
-  top: auto !important;
-  transform: none !important;
-  width: 330px !important;
-  flex-shrink: 0 !important;
-  max-height: 100% !important;
-  height: 100% !important;
-}
-
-.canvas-wrapper.maximized .media-viewport {
+.maximized-portal-body .maximized-center-col {
   flex: 1 !important;
+  height: 100% !important;
+  position: relative !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  background: #090d16 !important;
+  border: 1px solid rgba(6, 182, 212, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.maximized-portal-body .maximized-center-col .media-viewport {
+  width: 100% !important;
   height: 100% !important;
   max-height: 100% !important;
   aspect-ratio: auto !important;
   border-radius: 14px !important;
+}
+
+.maximized-portal-body .maximized-right-col {
+  width: 330px !important;
+  flex-shrink: 0 !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-radius: 14px !important;
+  padding: 0.85rem !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.65rem !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
 }
 
 .source-select-tabs, .view-toggle-tabs {
@@ -3534,5 +3564,155 @@ body {
     transform: scale(1) translateY(0);
   }
 }
+
+/* ==========================================================================
+   MAXIMIZED PORTAL OVERLAY (FULLSCREEN 3-COLUMN DASHBOARD)
+   ========================================================================== */
+.maximized-portal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: #090d16 !important;
+  z-index: 999999 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  padding: 0.85rem 1.25rem !important;
+  box-sizing: border-box !important;
+  color: #f8fafc !important;
+  font-family: inherit !important;
+}
+
+.maximized-portal-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-bottom: 0.65rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  margin-bottom: 0.65rem !important;
+  flex-shrink: 0 !important;
+}
+
+.maximized-portal-body {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 1.25rem !important;
+  height: calc(100% - 60px) !important;
+  overflow: hidden !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Left Column: Measurements Table */
+.maximized-left-col {
+  width: 310px !important;
+  flex-shrink: 0 !important;
+  height: 100% !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border-radius: 16px !important;
+  padding: 0.9rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  overflow-y: auto !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  box-sizing: border-box !important;
+}
+
+.maximized-metrics-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.45rem !important;
+}
+
+.max-metric-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  background: rgba(30, 41, 59, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  padding: 0.55rem 0.8rem !important;
+}
+
+.max-metric-card .lbl {
+  font-size: 0.75rem !important;
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+.max-metric-card .val {
+  font-size: 0.9rem !important;
+  color: #38bdf8 !important;
+  font-weight: 700 !important;
+}
+
+.max-metric-card .val small {
+  font-size: 0.65rem !important;
+  color: #64748b !important;
+}
+
+.max-metric-card.highlight {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(37, 99, 235, 0.2)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.5) !important;
+}
+
+.max-metric-card.highlight .lbl {
+  color: #f1f5f9 !important;
+  font-weight: 700 !important;
+}
+
+.max-metric-card.highlight .val.size {
+  font-size: 1.15rem !important;
+  color: #00f5ff !important;
+  font-weight: 900 !important;
+}
+
+/* Center Column: Camera Viewport (Middle) */
+.maximized-center-col {
+  flex: 1 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  aspect-ratio: 400 / 650 !important;
+  max-width: calc(100vh * 400 / 650) !important;
+  background: #020617 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+  margin: 0 auto !important;
+}
+
+/* Right Column: Tailor Advice */
+.maximized-right-col {
+  width: 310px !important;
+  flex-shrink: 0 !important;
+  height: 100% !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+  border-radius: 16px !important;
+  padding: 0.9rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  overflow-y: auto !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+  box-sizing: border-box !important;
+}
+
 
 

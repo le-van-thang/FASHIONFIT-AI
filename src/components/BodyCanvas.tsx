@@ -163,6 +163,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [showTiltTips, setShowTiltTips] = useState<boolean>(false);
   const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
   const [webcamSnapshotUrl, setWebcamSnapshotUrl] = useState<string | null>(null);
+  const [snapshotLandmarks, setSnapshotLandmarks] = useState<Landmark[] | null>(null);
   const [showPip3D, setShowPip3D] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -571,12 +572,14 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
           const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
           setWebcamSnapshotUrl(dataUrl);
+          const currentPts = trackingParamsRef.current.landmarks || landmarks;
+          setSnapshotLandmarks(JSON.parse(JSON.stringify(currentPts)));
         }
       } catch (e) {
         console.warn('Could not capture webcam snapshot frame:', e);
       }
     }
-  }, [isWebcamActive, facingMode]);
+  }, [isWebcamActive, facingMode, landmarks]);
 
   const tailoringAdvice = useMemo(() => {
     if (!measurements) {
@@ -1064,7 +1067,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   }, [activePointId, isRotating, onLandmarkChange]);
 
   // Generate bone paths between landmarks (for 2D editing mode)
-  const getBones = () => {
+  const getBones = (targetLandmarks?: Landmark[]) => {
+    const pts = targetLandmarks || landmarks;
     const lines: React.ReactNode[] = [];
     let idx = 0;
 
@@ -1088,31 +1092,30 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     };
 
     if (view === 'front') {
-      const nasion = landmarks.find(l => l.id === 'nasion');
-      const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
-      const rShoulder = landmarks.find(l => l.id === 'right_shoulder');
-      const lElbow = landmarks.find(l => l.id === 'left_elbow');
-      const rElbow = landmarks.find(l => l.id === 'right_elbow');
-      const lWrist = landmarks.find(l => l.id === 'left_wrist');
-      const rWrist = landmarks.find(l => l.id === 'right_wrist');
-      const lHip = landmarks.find(l => l.id === 'left_hip');
-      const rHip = landmarks.find(l => l.id === 'right_hip');
-      const lKnee = landmarks.find(l => l.id === 'left_knee');
-      const rKnee = landmarks.find(l => l.id === 'right_knee');
-      const lAnkle = landmarks.find(l => l.id === 'left_ankle');
-      const rAnkle = landmarks.find(l => l.id === 'right_ankle');
+      const nasion = pts.find(l => l.id === 'nasion');
+      const lShoulder = pts.find(l => l.id === 'left_shoulder');
+      const rShoulder = pts.find(l => l.id === 'right_shoulder');
+      const lElbow = pts.find(l => l.id === 'left_elbow');
+      const rElbow = pts.find(l => l.id === 'right_elbow');
+      const lWrist = pts.find(l => l.id === 'left_wrist');
+      const rWrist = pts.find(l => l.id === 'right_wrist');
+      const lHip = pts.find(l => l.id === 'left_hip');
+      const rHip = pts.find(l => l.id === 'right_hip');
+      const lKnee = pts.find(l => l.id === 'left_knee');
+      const rKnee = pts.find(l => l.id === 'right_knee');
+      const lAnkle = pts.find(l => l.id === 'left_ankle');
+      const rAnkle = pts.find(l => l.id === 'right_ankle');
 
-      // Midpoints for spine
-      let midShoulder: { x: number; y: number } | undefined = undefined;
-      if (lShoulder && rShoulder) {
-        midShoulder = { x: (lShoulder.x + rShoulder.x) / 2, y: (lShoulder.y + rShoulder.y) / 2 };
-      }
-      let midHip: { x: number; y: number } | undefined = undefined;
-      if (lHip && rHip) {
-        midHip = { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 };
-      }
+      // Midpoints
+      const midShoulder = (lShoulder && rShoulder)
+        ? { x: (lShoulder.x + rShoulder.x) / 2, y: (lShoulder.y + rShoulder.y) / 2 }
+        : undefined;
 
-      // 1. Central line from nose (nasion) to feet
+      const midHip = (lHip && rHip)
+        ? { x: (lHip.x + rHip.x) / 2, y: (lHip.y + rHip.y) / 2 }
+        : undefined;
+
+      // 1. Spine (Nasion -> MidShoulder -> MidHip)
       drawLine(nasion, midShoulder);
       drawLine(midShoulder, midHip);
 
@@ -1140,11 +1143,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
     } else {
       // Side view: just connect in a single chain
-      const nasion = landmarks.find(l => l.id === 'nasion');
-      const shoulder = landmarks.find(l => l.id === 'shoulder');
-      const elbow = landmarks.find(l => l.id === 'elbow');
-      const wrist = landmarks.find(l => l.id === 'wrist');
-      const hip = landmarks.find(l => l.id === 'hip');
       const knee = landmarks.find(l => l.id === 'knee');
       const ankle = landmarks.find(l => l.id === 'ankle');
       const chestDepth = landmarks.find(l => l.id === 'chest_depth');
@@ -3906,18 +3904,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   </p>
                 </div>
               )}
-              <svg viewBox="0 0 400 650" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-                {getBones()}
-                {landmarks.map((point) => (
-                  <g key={`rev-${point.id}`}>
-                    <circle cx={point.x} cy={point.y} r="8" fill="none" stroke="#00f5ff" strokeWidth="1.5" />
-                    <circle cx={point.x} cy={point.y} r="4" fill="#00f5ff" />
-                    <text x={point.x} y={point.y - 12} textAnchor="middle" fontSize="9px" fontWeight="bold" fill="#ffffff">
-                      {point.label}
-                    </text>
-                  </g>
-                ))}
-              </svg>
+              {(() => {
+                const activeSnapshotLandmarks = (inputSource === 'webcam' && snapshotLandmarks) ? snapshotLandmarks : landmarks;
+                return (
+                  <svg viewBox="0 0 400 650" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+                    {getBones(activeSnapshotLandmarks)}
+                    {activeSnapshotLandmarks.map((point) => (
+                      <g key={`rev-${point.id}`}>
+                        <circle cx={point.x} cy={point.y} r="8" fill="none" stroke="#00f5ff" strokeWidth="1.5" />
+                        <circle cx={point.x} cy={point.y} r="4" fill="#00f5ff" />
+                        <text x={point.x} y={point.y - 12} textAnchor="middle" fontSize="9px" fontWeight="bold" fill="#ffffff">
+                          {point.label}
+                        </text>
+                      </g>
+                    ))}
+                  </svg>
+                );
+              })()}
             </div>
 
             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>

@@ -56,12 +56,17 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  background-color: #f8fafc;
+  padding: 0.75rem 1.5rem;
+  background-color: rgba(248, 250, 252, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  margin: 1.25rem 1.5rem 0 1.5rem;
+  margin: 0.75rem 1.5rem 0 1.5rem;
   box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0.5rem;
+  z-index: 100;
 }
 
 .header-logo-group {
@@ -122,9 +127,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  position: sticky;
-  top: 1.25rem;
-  align-self: start;
 }
 
 .right-column {
@@ -137,9 +139,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: sticky;
-  top: 1.25rem;
-  align-self: start;
+  width: 100%;
 }
 
 /* Scientific Info Banner */
@@ -479,7 +479,8 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 400 / 660;
-  min-height: 520px;
+  max-height: calc(100vh - 210px);
+  min-height: 380px;
   background: #090d16; /* deep cyber black */
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -489,10 +490,47 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .center-column {
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
     position: sticky;
-    top: 70px;
-    align-self: flex-start;
+    top: 4.8rem;
+    max-height: calc(100vh - 5.8rem);
+    overflow-y: auto;
+    padding-right: 4px;
+    align-self: start;
+  }
+
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    position: sticky;
+    top: 4.8rem;
+    max-height: calc(100vh - 5.8rem);
+    overflow-y: auto;
+    padding-right: 4px;
+    align-self: start;
+  }
+
+  .center-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: sticky;
+    top: 4.8rem;
+    align-self: start;
+  }
+
+  .left-column::-webkit-scrollbar,
+  .right-column::-webkit-scrollbar {
+    width: 4px;
+  }
+  .left-column::-webkit-scrollbar-thumb,
+  .right-column::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 4px;
   }
 }
 

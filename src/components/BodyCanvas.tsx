@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
 import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2, Sun, Moon, Sparkles } from 'lucide-react';

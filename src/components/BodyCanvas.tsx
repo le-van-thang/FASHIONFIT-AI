@@ -1643,6 +1643,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   const renderMaximizedPortal = () => {
     if (!isMaximized) return null;
+    const hasFinalMeasurements = isScanned || scanStatus === 'success';
+
     return createPortal(
       <div className="maximized-portal-overlay">
         <div className="maximized-portal-header">
@@ -1698,54 +1700,54 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             <div className="maximized-metrics-grid">
               <div className="max-metric-card">
                 <span className="lbl">Chiều cao</span>
-                <span className="val">{(measurements?.height || 0).toFixed(1)} <small>cm</small></span>
+                <span className="val">{hasFinalMeasurements ? `${(measurements?.height || 0).toFixed(1)} cm` : '---'}</span>
               </div>
               {view === 'front' ? (
                 <>
                   <div className="max-metric-card">
                     <span className="lbl">Vòng ngực</span>
-                    <span className="val">{(measurements?.chestCircumference || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.chestCircumference || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                   <div className="max-metric-card">
                     <span className="lbl">Vòng eo</span>
-                    <span className="val">{(measurements?.waistCircumference || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.waistCircumference || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                   <div className="max-metric-card">
                     <span className="lbl">Vòng mông</span>
-                    <span className="val">{(measurements?.hipCircumference || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.hipCircumference || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                   <div className="max-metric-card">
                     <span className="lbl">Rộng vai</span>
-                    <span className="val">{(measurements?.shoulderWidth || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.shoulderWidth || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                   <div className="max-metric-card">
                     <span className="lbl">Dài tay</span>
-                    <span className="val">{(measurements?.armLength || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.armLength || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                   <div className="max-metric-card">
                     <span className="lbl">Dài chân</span>
-                    <span className="val">{(measurements?.legLength || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.legLength || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="max-metric-card">
                     <span className="lbl">Độ sâu Ngực</span>
-                    <span className="val">{(measurements?.chestDepth || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.chestDepth || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                   <div className="max-metric-card">
                     <span className="lbl">Độ sâu Eo</span>
-                    <span className="val">{(measurements?.waistDepth || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.waistDepth || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                   <div className="max-metric-card">
                     <span className="lbl">Độ sâu Mông</span>
-                    <span className="val">{(measurements?.hipDepth || 0).toFixed(1)} <small>cm</small></span>
+                    <span className="val">{hasFinalMeasurements ? `${(measurements?.hipDepth || 0).toFixed(1)} cm` : '---'}</span>
                   </div>
                 </>
               )}
               <div className="max-metric-card highlight">
                 <span className="lbl">Gợi ý Size</span>
-                <span className="val size">{recommendation?.size || 'XXL'}</span>
+                <span className="val size">{hasFinalMeasurements ? (recommendation?.size || 'M') : '---'}</span>
               </div>
             </div>
           </div>
@@ -1911,7 +1913,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               )}
 
               {/* Floating Bottom Scan Action Bar for Maximized View */}
-              {inputSource === 'webcam' && isWebcamActive && scanStatus !== 'success' && (
+              {inputSource === 'webcam' && isWebcamActive && scanStatus === 'idle' && !isScanning && (
                 <div style={{
                   position: 'absolute',
                   bottom: '1.2rem',

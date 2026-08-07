@@ -1143,10 +1143,15 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       }
     } else {
       // Side view: just connect in a single chain
-      const knee = landmarks.find(l => l.id === 'knee');
-      const ankle = landmarks.find(l => l.id === 'ankle');
-      const chestDepth = landmarks.find(l => l.id === 'chest_depth');
-      const buttockDepth = landmarks.find(l => l.id === 'buttock_depth');
+      const nasion = pts.find(l => l.id === 'nasion');
+      const shoulder = pts.find(l => l.id === 'shoulder');
+      const elbow = pts.find(l => l.id === 'elbow');
+      const wrist = pts.find(l => l.id === 'wrist');
+      const hip = pts.find(l => l.id === 'hip');
+      const knee = pts.find(l => l.id === 'knee');
+      const ankle = pts.find(l => l.id === 'ankle');
+      const chestDepth = pts.find(l => l.id === 'chest_depth');
+      const buttockDepth = pts.find(l => l.id === 'buttock_depth');
 
       drawLine(nasion, shoulder);
       drawLine(shoulder, elbow);

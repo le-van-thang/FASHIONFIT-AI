@@ -3869,11 +3869,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         style={{ display: 'none' }}
       />
       {/* Snapshot Review Modal */}
-      {showSnapshotModal && (
+      {showSnapshotModal && createPortal(
         <div 
           className="calib-modal-overlay" 
           onClick={() => setShowSnapshotModal(false)}
-          style={{ zIndex: 100000, position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(9, 13, 22, 0.92)', backdropFilter: 'blur(10px)' }}
+          style={{ zIndex: 1000000, position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(9, 13, 22, 0.95)', backdropFilter: 'blur(12px)' }}
         >
           <div 
             className="calib-modal" 
@@ -3930,7 +3930,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {renderMaximizedPortal()}
     </>

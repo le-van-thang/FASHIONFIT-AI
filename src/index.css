@@ -479,8 +479,7 @@ body {
   position: relative;
   width: 100%;
   aspect-ratio: 400 / 660;
-  max-height: calc(100vh - 210px);
-  min-height: 380px;
+  min-height: 580px;
   background: #090d16; /* deep cyber black */
   border-radius: var(--radius-md);
   overflow: hidden;

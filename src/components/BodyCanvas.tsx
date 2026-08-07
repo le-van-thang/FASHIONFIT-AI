@@ -2465,29 +2465,56 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               </button>
             </div>
           ) : (
-            <div className="view-toggle-tabs" style={{ margin: 0, width: '100%' }}>
-              <button
-                type="button"
-                className={`tab-btn ${view === 'front' ? 'active' : ''}`}
-                style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
-                onClick={() => {
-                  setRotationAngle(0);
-                  onViewChange('front');
-                }}
-              >
-                Mặt trước
-              </button>
-              <button
-                type="button"
-                className={`tab-btn ${view === 'side' ? 'active' : ''}`}
-                style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
-                onClick={() => {
-                  setRotationAngle(90);
-                  onViewChange('side');
-                }}
-              >
-                Mặt nghiêng
-              </button>
+            <div className="view-toggle-tabs" style={{ margin: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <button
+                  type="button"
+                  className={`tab-btn ${view === 'front' ? 'active' : ''}`}
+                  style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
+                  onClick={() => {
+                    setRotationAngle(0);
+                    onViewChange('front');
+                  }}
+                >
+                  Mặt trước
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${view === 'side' ? 'active' : ''}`}
+                  style={{ padding: '0.3rem 0.5rem', fontSize: '0.7rem' }}
+                  onClick={() => {
+                    setRotationAngle(90);
+                    onViewChange('side');
+                  }}
+                >
+                  Mặt nghiêng
+                </button>
+              </div>
+
+              {hasMediaBackground && (
+                <button
+                  type="button"
+                  onClick={() => setIsMaximized(true)}
+                  title="Phóng to toàn màn hình Studio Quét AI"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.25))',
+                    border: '1px solid rgba(0, 245, 255, 0.45)',
+                    borderRadius: '20px',
+                    color: '#00f5ff',
+                    padding: '0.28rem 0.65rem',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                    boxShadow: '0 2px 8px rgba(0, 245, 255, 0.2)'
+                  }}
+                >
+                  <Maximize2 size={11} />
+                  <span>Phóng To Studio</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -3482,31 +3509,33 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             </div>
           )}
 
-          {/* Compact Non-Blocking Bottom Start Controls (Webcam active, scan idle, not scanning/counting down) */}
+          {/* Sticky Floating Bottom Start Controls (Webcam active, scan idle) */}
           {inputSource === 'webcam' && isWebcamActive && scanStatus === 'idle' && !isScanning && countdown === null && (
             <div style={{
-              position: 'absolute',
-              bottom: '12px',
+              position: 'sticky',
+              bottom: '16px',
               left: '12px',
               right: '12px',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              zIndex: 50,
-              pointerEvents: 'none'
+              zIndex: 85,
+              pointerEvents: 'none',
+              marginTop: '-54px',
+              marginBottom: '10px'
             }}>
               <div style={{
-                background: 'rgba(9, 13, 22, 0.82)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)',
-                border: '1px solid rgba(0, 245, 255, 0.35)',
+                background: 'rgba(9, 13, 22, 0.92)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(0, 245, 255, 0.5)',
                 borderRadius: '30px',
-                padding: '0.4rem 1.25rem',
+                padding: '0.45rem 1.35rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.7)',
                 pointerEvents: 'auto'
               }}>
                 <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#00f5ff', letterSpacing: '0.5px' }}>
@@ -3520,11 +3549,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     border: 'none',
                     borderRadius: '20px',
                     color: '#fff',
-                    padding: '0.45rem 1.1rem',
-                    fontSize: '0.78rem',
+                    padding: '0.5rem 1.2rem',
+                    fontSize: '0.8rem',
                     fontWeight: 800,
                     cursor: 'pointer',
-                    boxShadow: '0 0 15px rgba(0, 245, 255, 0.4)',
+                    boxShadow: '0 0 20px rgba(0, 245, 255, 0.5)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.4rem',
@@ -3533,11 +3562,11 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   }}
                   onMouseEnter={e => {
                     e.currentTarget.style.transform = 'scale(1.04)';
-                    e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 245, 255, 0.65)';
+                    e.currentTarget.style.boxShadow = '0 0 25px rgba(0, 245, 255, 0.75)';
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 245, 255, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(0, 245, 255, 0.5)';
                   }}
                 >
                   ⚡ BẮT ĐẦU QUÉT AI (5S)

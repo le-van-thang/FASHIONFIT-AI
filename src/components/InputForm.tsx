@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import type { Gender, CalibrationType, UserInput } from '../types';
-import { User, Scale, Eye, FileText, CreditCard, Info, X, Camera, Ruler, ArrowRight, CheckCircle, Shirt, Save } from 'lucide-react';
+import { User, Scale, Eye, FileText, CreditCard, Info, X, Camera, Ruler, ArrowRight, CheckCircle, Shirt, Save, HelpCircle } from 'lucide-react';
 import { formatHeightMeters } from '../utils/anthropometry';
 
 interface InputFormProps {
@@ -37,6 +37,7 @@ export const InputForm: React.FC<InputFormProps> = ({
   const [refPixelsInputVal, setRefPixelsInputVal] = useState<string>(referencePixels.toString());
   const [heightInputVal, setHeightInputVal] = useState<string>((input.customHeight || 165).toString());
   const [showCalibGuide, setShowCalibGuide] = useState(false);
+  const [showCameraGuideModal, setShowCameraGuideModal] = useState(false);
   const [showBanner, setShowBanner] = useState<boolean>(() => {
     return localStorage.getItem('fashionfit_show_banner') !== 'false';
   });
@@ -479,10 +480,40 @@ export const InputForm: React.FC<InputFormProps> = ({
         {/* Scanning Range Selection */}
         {inputSource !== 'mannequin' && (
           <div className="form-group animate-fade-in">
-            <label className="form-label">
-              <Camera size={16} />
-              <span>Phạm vi quét cơ thể (Scanning Range)</span>
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+              <label className="form-label" style={{ margin: 0 }}>
+                <Camera size={16} />
+                <span>Phạm vi quét cơ thể (Scanning Range)</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowCameraGuideModal(true)}
+                title="Xem hướng dẫn khoảng cách & góc đặt camera"
+                style={{
+                  background: 'rgba(56, 189, 248, 0.12)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  borderRadius: '12px',
+                  padding: '0.15rem 0.45rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  color: '#38bdf8',
+                  cursor: 'pointer',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(56, 189, 248, 0.25)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(56, 189, 248, 0.12)';
+                }}
+              >
+                <HelpCircle size={12} />
+                <span>Hướng dẫn đặt máy</span>
+              </button>
+            </div>
             <div className="gender-toggle-wrapper">
               <button
                 type="button"
@@ -498,39 +529,6 @@ export const InputForm: React.FC<InputFormProps> = ({
               >
                 Nửa người (Half Body)
               </button>
-            </div>
-            <div style={{
-              marginTop: '0.45rem',
-              background: 'rgba(15, 23, 42, 0.6)',
-              border: '1px solid rgba(6, 182, 212, 0.25)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '0.65rem 0.8rem',
-              fontSize: '0.71rem',
-              color: '#cbd5e1',
-              lineHeight: 1.5
-            }}>
-              {input.scanRange === 'half' ? (
-                <>
-                  <p style={{ margin: '0 0 0.35rem 0', color: '#38bdf8', fontWeight: 600 }}>
-                    📏 <strong>Khoảng cách đặt camera:</strong> 1.0m – 1.2m (Khung hình từ Đỉnh đầu tới Hông).
-                  </p>
-                  <p style={{ margin: 0 }}>
-                    💻 <strong>Tư thế:</strong> Phù hợp khi ngồi làm việc trước webcam laptop. AI sẽ ước lượng phần dưới theo tỷ lệ nhân trắc.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p style={{ margin: '0 0 0.35rem 0', color: '#38bdf8', fontWeight: 600 }}>
-                    📏 <strong>Khoảng cách đặt camera:</strong> 2.2m – 2.5m (Khung hình thấy trọn từ Đỉnh đầu tới Gót chân).
-                  </p>
-                  <p style={{ margin: '0 0 0.35rem 0' }}>
-                    📐 <strong>Góc nghiêng máy:</strong> Đặt máy cao 80cm – 90cm, gập màn hình laptop ngửa ra sau 95° – 100°.
-                  </p>
-                  <p style={{ margin: 0, color: '#34d399', fontWeight: 600 }}>
-                    ✨ Khuyên dùng cho xưởng may & đo đạc may đo chính xác nhất.
-                  </p>
-                </>
-              )}
             </div>
           </div>
         )}
@@ -868,6 +866,99 @@ export const InputForm: React.FC<InputFormProps> = ({
               <div className="guide-tip-box" style={{ background: '#f8fafc', border: '1px solid var(--border-color)', color: 'var(--text-muted)', padding: '8px 12px' }}>
                 💡 <strong>Mẹo đồng bộ:</strong> Sau khi chụp ảnh và đo đạc trên điện thoại, số đo sẽ tự động được lưu vào **Lịch Sử Đo**. Bạn chỉ cần mở Lịch Sử trên máy tính và bấm chọn để tải lại mô hình 3D trên màn hình lớn!
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Camera Guidance Help Modal */}
+      {showCameraGuideModal && ReactDOM.createPortal(
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.85)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100000,
+          padding: '1rem'
+        }} onClick={() => setShowCameraGuideModal(false)}>
+          <div style={{
+            background: '#0f172a',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            borderRadius: '16px',
+            maxWidth: '460px',
+            width: '100%',
+            padding: '1.25rem 1.5rem',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+            color: '#f8fafc',
+            position: 'relative'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.75rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
+                💡 Hướng Dẫn Đặt Camera & Góc Quay AI
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCameraGuideModal(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.2rem', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.6 }}>
+              <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '10px', padding: '0.85rem' }}>
+                <p style={{ margin: '0 0 0.4rem 0', color: '#38bdf8', fontWeight: 700, fontSize: '0.85rem' }}>
+                  📍 Chế độ Quét Toàn Thân (Full Body):
+                </p>
+                <p style={{ margin: '0 0 0.35rem 0' }}>
+                  📏 <strong>Khoảng cách đặt camera:</strong> 2.2m – 2.5m (Khung hình thấy trọn từ Đỉnh đầu tới Gót chân).
+                </p>
+                <p style={{ margin: '0 0 0.35rem 0' }}>
+                  📐 <strong>Góc nghiêng máy:</strong> Đặt máy cao 80cm – 90cm, gập màn hình laptop ngửa ra sau 95° – 100°.
+                </p>
+                <p style={{ margin: 0, color: '#34d399', fontWeight: 600 }}>
+                  ✨ Khuyên dùng cho xưởng may & đo đạc may đo chính xác nhất.
+                </p>
+              </div>
+
+              <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '0.85rem' }}>
+                <p style={{ margin: '0 0 0.4rem 0', color: '#fbbf24', fontWeight: 700, fontSize: '0.85rem' }}>
+                  📍 Chế độ Quét Nửa Người (Half Body):
+                </p>
+                <p style={{ margin: '0 0 0.35rem 0' }}>
+                  📏 <strong>Khoảng cách đặt camera:</strong> 1.0m – 1.2m (Khung hình từ Đỉnh đầu tới Hông).
+                </p>
+                <p style={{ margin: 0 }}>
+                  💻 <strong>Tư thế:</strong> Phù hợp khi ngồi làm việc trước webcam laptop. AI sẽ ước lượng phần dưới theo tỷ lệ nhân trắc.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowCameraGuideModal(false)}
+                style={{
+                  background: '#2563eb',
+                  border: 'none',
+                  borderRadius: '8px',
+                  color: '#fff',
+                  padding: '0.5rem 1.25rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Đã Hiểu & Đóng
+              </button>
             </div>
           </div>
         </div>,

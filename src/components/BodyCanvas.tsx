@@ -3190,7 +3190,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               />
 
               {/* Render connecting bone lines & interactive landmarks live on media background */}
-              {hasMediaBackground && (
+              {hasMediaBackground && (inputSource === 'image' || isPoseValid) && (
                 <>
                   {getBones()}
                   {landmarks.map((point) => {
@@ -3265,8 +3265,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 </>
               )}
 
-              {/* Floating Measurements Labels on Photo/Video/Webcam View (Only when scanned or scanning) */}
-              {measurements && hasMediaBackground && (inputSource === 'image' || isPoseValid || isScanned || scanStatus === 'success') && (() => {
+              {/* Floating Measurements Labels on Photo/Video/Webcam View (Only when scanned or scanning and pose is valid) */}
+              {measurements && hasMediaBackground && (inputSource === 'image' || (isPoseValid && (isScanned || scanStatus === 'success' || isScanning))) && (() => {
                 const nasion = landmarks.find(l => l.id === 'nasion');
                 const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
                 const rShoulder = landmarks.find(l => l.id === 'right_shoulder');

@@ -232,18 +232,21 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   };
 
   const updateLandmarksFromMediaPipe = (results: any) => {
-    if (!results.poseLandmarks) {
-      if (trackingParamsRef.current.inputSource === 'webcam') {
+    const currentInputSource = trackingParamsRef.current.inputSource;
+
+    if (!results || !results.poseLandmarks || results.poseLandmarks.length === 0) {
+      if (currentInputSource === 'webcam' || currentInputSource === 'video') {
         setIsPoseValid(false);
-        setPoseWarning("Không tìm thấy cơ thể trong camera");
+        isPoseValidRef.current = false;
+        setPoseWarning("Không tìm thấy vóc dáng người trong video/camera");
       }
       return;
     }
     const mp = results.poseLandmarks;
-    const { view, landmarks, onLandmarkChange, inputSource, scanRange } = trackingParamsRef.current;
+    const { view, landmarks, onLandmarkChange, scanRange } = trackingParamsRef.current;
 
-    // Validate standing posture for webcam
-    if (inputSource === 'webcam') {
+    // Validate standing posture for both webcam and video
+    if (currentInputSource === 'webcam' || currentInputSource === 'video') {
       const nose = mp[0];
       const lShoulder = mp[11];
       const rShoulder = mp[12];
@@ -252,23 +255,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       const rShoulderVis = rShoulder?.visibility ?? 0;
 
       // 1. Check if upper body / shoulders are visible with confidence
-      if (lShoulderVis < 0.4 && rShoulderVis < 0.4) {
-        updatePoseState(false, "Vui lòng đứng lùi xa khoảng 2.2m để camera thấy rõ vai & toàn thân");
+      if (lShoulderVis < 0.35 && rShoulderVis < 0.35) {
+        updatePoseState(false, "Không tìm thấy vóc dáng người rõ ràng trong video/camera");
         return;
       }
 
       // 2. Check if user is lying down or tilted horizontally
-      if (lShoulder && rShoulder) {
+      if (lShoulder && rShoulder && lShoulderVis > 0.4 && rShoulderVis > 0.4) {
         const dx = Math.abs(lShoulder.x - rShoulder.x);
         const dy = Math.abs(lShoulder.y - rShoulder.y);
         if (dy > dx * 1.1) {
-          updatePoseState(false, "Phát hiện tư thế nằm! Vui lòng đứng thẳng trước camera");
+          updatePoseState(false, "Phát hiện tư thế nằm! Vui lòng đứng thẳng");
           return;
         }
       }
 
       // 3. Check if nose is below shoulder level (lying down facing camera)
-      if (nose && lShoulder && rShoulder) {
+      if (nose && lShoulder && rShoulder && (nose.visibility ?? 0) > 0.4) {
         const avgShoulderY = (lShoulder.y + rShoulder.y) / 2;
         if (nose.y > avgShoulderY) {
           updatePoseState(false, "Đang nằm hoặc cúi đầu! Vui lòng đứng thẳng");
@@ -683,9 +686,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
         });
 
         pose.onResults((results: any) => {
-          if (results.poseLandmarks) {
-            updateLandmarksFromMediaPipe(results);
-          }
+          updateLandmarksFromMediaPipe(results);
         });
 
         poseInstanceRef.current = pose;

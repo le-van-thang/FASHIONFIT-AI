@@ -3058,11 +3058,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
             />
           )}
 
-          {(inputSource === 'mannequin' ||
-            (inputSource === 'video' && !uploadedVideo)) && (
+          {inputSource === 'mannequin' && (
             <Mannequin3DView
               gender={gender}
-              weight={inputSource === 'mannequin' ? weight : (gender === 'male' ? 75 : 55)}
+              weight={weight}
               scaleFactor={scaleFactor}
               landmarks={landmarks}
               rotationAngle={rotationAngle}
@@ -3076,6 +3075,86 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               showLabels={true}
               interactive={true}
             />
+          )}
+
+          {inputSource === 'video' && !uploadedVideo && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.99) 100%)',
+              color: '#f8fafc',
+              padding: '2rem',
+              textAlign: 'center',
+              zIndex: 5,
+              borderRadius: 'var(--radius-md)'
+            }}>
+              <div style={{
+                background: 'rgba(249, 115, 22, 0.1)',
+                border: '1px solid rgba(249, 115, 22, 0.3)',
+                borderRadius: '50%',
+                padding: '1.5rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 20px rgba(249, 115, 22, 0.15)',
+                animation: 'neonPulse 3s infinite ease-in-out'
+              }}>
+                <Upload size={40} style={{ color: '#fb923c' }} />
+              </div>
+              <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
+                Chưa Tải Tệp Video AI
+              </h3>
+              <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '320px', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+                Vui lòng chọn tệp video quay toàn thân người mẫu để AI tự động trích xuất vóc dáng và tính toán số đo.
+              </p>
+              <button
+                type="button"
+                onClick={() => fileInputVideoRef.current?.click()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  backgroundColor: '#ea580c',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.65rem 1.25rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Upload size={15} />
+                Chọn Tệp Video AI
+              </button>
+            </div>
+          )}
+
+          {inputSource === 'video' && uploadedVideo && !isPoseValid && (
+            <div style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              right: '12px',
+              background: 'rgba(239, 68, 68, 0.92)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              border: '1px solid rgba(239, 68, 68, 0.6)',
+              borderRadius: '12px',
+              padding: '0.5rem 0.8rem',
+              color: '#ffffff',
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              zIndex: 65,
+              textAlign: 'center',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+            }}>
+              ⚠️ Không tìm thấy vóc dáng người trong video. Vui lòng chọn tệp video quay người mẫu rõ ràng.
+            </div>
           )}
 
           {inputSource !== 'mannequin' && (
@@ -3113,8 +3192,8 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                       return null;
                     }
                     const vis = (point as any).visibility ?? 1;
-                    if (inputSource === 'webcam' && vis < 0.45) {
-                      return null; // Do not render joint dot when occluded/outside frame!
+                    if ((inputSource === 'webcam' || inputSource === 'video') && (vis < 0.45 || !isPoseValid)) {
+                      return null; // Do not render joint dot when occluded/outside frame or non-human video!
                     }
 
                     return (

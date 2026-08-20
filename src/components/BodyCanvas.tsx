@@ -2544,13 +2544,13 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                 </div>
               )}
 
-              {/* Video upload / clear buttons */}
-              {inputSource === 'video' && (
+              {/* Video upload / clear buttons (rendered only when uploadedVideo exists) */}
+              {inputSource === 'video' && uploadedVideo && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                   <button
                     type="button"
                     onClick={() => fileInputVideoRef.current?.click()}
-                    title="Tải lên video"
+                    title="Đổi tệp video mới"
                     style={{
                       display: 'flex', alignItems: 'center', gap: '0.25rem',
                       background: 'rgba(15, 23, 42, 0.78)',
@@ -2562,25 +2562,23 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                     }}
                   >
                     <Upload size={11} />
-                    <span>{uploadedVideo ? 'Đổi video' : 'Chọn video'}</span>
+                    <span>Đổi video</span>
                   </button>
-                  {uploadedVideo && (
-                    <button
-                      type="button"
-                      onClick={() => { setUploadedVideo(null); setIsScanning(false); }}
-                      title="Xóa video"
-                      style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(239, 68, 68, 0.2)',
-                        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-                        border: '1px solid rgba(239, 68, 68, 0.5)',
-                        borderRadius: '50%', width: '26px', height: '26px',
-                        color: '#f87171', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-                      }}
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setUploadedVideo(null); setIsScanning(false); }}
+                    title="Xóa video"
+                    style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(239, 68, 68, 0.5)',
+                      borderRadius: '50%', width: '26px', height: '26px',
+                      color: '#f87171', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                    }}
+                  >
+                    <Trash2 size={11} />
+                  </button>
                 </div>
               )}
             </div>
@@ -3078,40 +3076,47 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           )}
 
           {inputSource === 'video' && !uploadedVideo && (
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.92) 0%, rgba(15, 23, 42, 0.99) 100%)',
-              color: '#f8fafc',
-              padding: '2rem',
-              textAlign: 'center',
-              zIndex: 5,
-              borderRadius: 'var(--radius-md)'
-            }}>
+            <div 
+              onClick={() => fileInputVideoRef.current?.click()}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'radial-gradient(circle at center, rgba(15, 23, 42, 0.94) 0%, rgba(15, 23, 42, 0.99) 100%)',
+                color: '#f8fafc',
+                padding: '2rem',
+                textAlign: 'center',
+                zIndex: 40,
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer'
+              }}
+            >
               <div style={{
-                background: 'rgba(249, 115, 22, 0.1)',
-                border: '1px solid rgba(249, 115, 22, 0.3)',
+                background: 'rgba(249, 115, 22, 0.15)',
+                border: '1px solid rgba(249, 115, 22, 0.4)',
                 borderRadius: '50%',
                 padding: '1.5rem',
                 marginBottom: '1rem',
-                boxShadow: '0 0 20px rgba(249, 115, 22, 0.15)',
+                boxShadow: '0 0 25px rgba(249, 115, 22, 0.2)',
                 animation: 'neonPulse 3s infinite ease-in-out'
               }}>
-                <Upload size={40} style={{ color: '#fb923c' }} />
+                <Upload size={42} style={{ color: '#fb923c' }} />
               </div>
               <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f8fafc' }}>
                 Chưa Tải Tệp Video AI
               </h3>
               <p style={{ fontSize: '0.78rem', color: '#94a3b8', maxWidth: '320px', lineHeight: 1.5, marginBottom: '1.5rem' }}>
-                Vui lòng chọn tệp video quay toàn thân người mẫu để AI tự động trích xuất vóc dáng và tính toán số đo.
+                Bấm vào đây để chọn tệp video quay toàn thân người mẫu. AI sẽ tự động trích xuất vóc dáng và tính toán số đo.
               </p>
               <button
                 type="button"
-                onClick={() => fileInputVideoRef.current?.click()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputVideoRef.current?.click();
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -3124,8 +3129,9 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   fontSize: '0.82rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)',
-                  transition: 'all 0.2s ease'
+                  boxShadow: '0 4px 12px rgba(234, 88, 12, 0.35)',
+                  transition: 'all 0.2s ease',
+                  pointerEvents: 'auto'
                 }}
               >
                 <Upload size={15} />
@@ -3259,7 +3265,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               )}
 
               {/* Floating Measurements Labels on Photo/Video/Webcam View (Only when scanned or scanning) */}
-              {measurements && hasMediaBackground && (inputSource !== 'webcam' || isScanned || scanStatus === 'success') && (() => {
+              {measurements && hasMediaBackground && (inputSource === 'image' || isPoseValid || isScanned || scanStatus === 'success') && (() => {
                 const nasion = landmarks.find(l => l.id === 'nasion');
                 const lShoulder = landmarks.find(l => l.id === 'left_shoulder');
                 const rShoulder = landmarks.find(l => l.id === 'right_shoulder');

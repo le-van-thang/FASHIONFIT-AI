@@ -347,15 +347,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           }
 
           const pt = mapMediaPipePoint(rawX, rawY);
-          
-          // Exponential Moving Average (EMA) filter for 60FPS smooth tracking without lag or jitter
-          const prevPt = prevLandmarksMapRef.current[l.id];
-          const alpha = 0.72; // Ultra-responsive tracking weight
-          const smoothedX = prevPt ? Math.round(alpha * pt.x + (1 - alpha) * prevPt.x) : pt.x;
-          const smoothedY = prevPt ? Math.round(alpha * pt.y + (1 - alpha) * prevPt.y) : pt.y;
-
-          prevLandmarksMapRef.current[l.id] = { x: smoothedX, y: smoothedY };
-          return { ...l, x: smoothedX, y: smoothedY, visibility: jointVis };
+          return { ...l, x: pt.x, y: pt.y, visibility: jointVis };
         }
         return { ...l, visibility: 0 };
       });

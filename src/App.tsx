@@ -527,12 +527,101 @@ function App() {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
+        const imgSrc = event.target.result as string;
         if (view === 'front') {
-          setUploadedImageFront(event.target.result as string);
+          setUploadedImageFront(imgSrc);
         } else {
-          setUploadedImageSide(event.target.result as string);
+          setUploadedImageSide(imgSrc);
         }
         setScannedSources(prev => ({ ...prev, image: true }));
+
+        // Run MediaPipe Pose immediately on the newly uploaded image!
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = async () => {
+          try {
+            const Pose = (window as any).Pose;
+            if (!Pose) return;
+            const pose = new Pose({
+              locateFile: (f: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+            });
+            pose.setOptions({
+              modelComplexity: 1,
+              smoothLandmarks: true,
+              enableSegmentation: false,
+              minDetectionConfidence: 0.5,
+              minTrackingConfidence: 0.5
+            });
+            pose.onResults((results: any) => {
+              if (results.poseLandmarks) {
+                const mp = results.poseLandmarks;
+                const mapPt = (rx: number, ry: number) => ({
+                  x: Math.round(rx * 400),
+                  y: Math.round(ry * 650)
+                });
+
+                if (view === 'front') {
+                  const updated = getInitialLandmarks(input.gender, 'front').map(l => {
+                    let mpIndex = -1;
+                    switch (l.id) {
+                      case 'nasion': mpIndex = 0; break;
+                      case 'left_shoulder': mpIndex = 11; break;
+                      case 'right_shoulder': mpIndex = 12; break;
+                      case 'left_elbow': mpIndex = 13; break;
+                      case 'right_elbow': mpIndex = 14; break;
+                      case 'left_wrist': mpIndex = 15; break;
+                      case 'right_wrist': mpIndex = 16; break;
+                      case 'left_hip': mpIndex = 23; break;
+                      case 'right_hip': mpIndex = 24; break;
+                      case 'left_knee': mpIndex = 25; break;
+                      case 'right_knee': mpIndex = 26; break;
+                      case 'left_ankle': mpIndex = 27; break;
+                      case 'right_ankle': mpIndex = 28; break;
+                    }
+                    if (mpIndex !== -1 && mp[mpIndex]) {
+                      const rx = mpIndex === 0 ? mp[0].x : mp[mpIndex].x;
+                      const ry = (mpIndex === 11 || mpIndex === 12) ? mp[mpIndex].y - 0.015 : mp[mpIndex].y;
+                      const pt = mapPt(rx, ry);
+                      return { ...l, x: pt.x, y: pt.y, visibility: mp[mpIndex].visibility ?? 1 };
+                    }
+                    return l;
+                  });
+                  setLandmarksFront(updated);
+                } else {
+                  const shoulderIdx = (mp[11]?.visibility || 0) >= (mp[12]?.visibility || 0) ? 11 : 12;
+                  const elbowIdx = shoulderIdx === 11 ? 13 : 14;
+                  const wristIdx = shoulderIdx === 11 ? 15 : 16;
+                  const hipIdx = shoulderIdx === 11 ? 23 : 24;
+                  const kneeIdx = shoulderIdx === 11 ? 25 : 26;
+                  const ankleIdx = shoulderIdx === 11 ? 27 : 28;
+
+                  const updated = getInitialLandmarks(input.gender, 'side').map(l => {
+                    let mpPt = null;
+                    switch (l.id) {
+                      case 'nasion': mpPt = mp[0]; break;
+                      case 'shoulder': mpPt = mp[shoulderIdx]; break;
+                      case 'elbow': mpPt = mp[elbowIdx]; break;
+                      case 'wrist': mpPt = mp[wristIdx]; break;
+                      case 'hip': mpPt = mp[hipIdx]; break;
+                      case 'knee': mpPt = mp[kneeIdx]; break;
+                      case 'ankle': mpPt = mp[ankleIdx]; break;
+                    }
+                    if (mpPt) {
+                      const pt = mapPt(mpPt.x, mpPt.y);
+                      return { ...l, x: pt.x, y: pt.y };
+                    }
+                    return l;
+                  });
+                  setLandmarksSide(updated);
+                }
+              }
+            });
+            await pose.send({ image: img });
+          } catch (err) {
+            console.error("Auto image upload pose failed:", err);
+          }
+        };
+        img.src = imgSrc;
       }
       e.target.value = ''; // Reset value to allow re-uploading same file!
     };

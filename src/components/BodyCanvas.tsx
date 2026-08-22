@@ -2483,20 +2483,20 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
                   <button
                     type="button"
                     onClick={handleManualImagePoseScan}
-                    title="Tự động quét các khớp xương bằng AI"
+                    title="Định vị lại vóc dáng tự động bằng AI"
                     disabled={isModelLoading}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '0.25rem',
-                      background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.9), rgba(59, 130, 246, 0.9))',
+                      display: 'flex', alignItems: 'center', gap: '0.2rem',
+                      background: 'rgba(15, 23, 42, 0.85)',
                       backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(14, 165, 233, 0.6)',
-                      borderRadius: '20px', padding: '0.28rem 0.65rem', fontSize: '0.68rem', fontWeight: 600,
-                      color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                      transition: 'all 0.15s ease'
+                      border: '1px solid rgba(56, 189, 248, 0.5)',
+                      borderRadius: '16px', padding: '0.2rem 0.5rem', fontSize: '0.63rem', fontWeight: 600,
+                      color: '#38bdf8', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                      whiteSpace: 'nowrap', transition: 'all 0.15s ease'
                     }}
                   >
-                    <Sparkles size={11} className={isModelLoading ? 'spin' : ''} />
-                    <span>{isModelLoading ? 'AI Đang Quét...' : '⚡ AI Quét Khớp Xương'}</span>
+                    <Sparkles size={10} className={isModelLoading ? 'spin' : ''} />
+                    <span>{isModelLoading ? 'Đang Định Vị...' : '⚡ Định Vị Vóc Dáng'}</span>
                   </button>
                   <button
                     type="button"

@@ -108,27 +108,61 @@ export const detectPoseFromImage = async (
 
         if (view === 'front') {
           const updated = getInitialLandmarks(gender, 'front').map(l => {
-            let mpIndex = -1;
-            switch (l.id) {
-              case 'nasion': mpIndex = 0; break;
-              case 'left_shoulder': mpIndex = 11; break;
-              case 'right_shoulder': mpIndex = 12; break;
-              case 'left_elbow': mpIndex = 13; break;
-              case 'right_elbow': mpIndex = 14; break;
-              case 'left_wrist': mpIndex = 15; break;
-              case 'right_wrist': mpIndex = 16; break;
-              case 'left_hip': mpIndex = 23; break;
-              case 'right_hip': mpIndex = 24; break;
-              case 'left_knee': mpIndex = 25; break;
-              case 'right_knee': mpIndex = 26; break;
-              case 'left_ankle': mpIndex = 27; break;
-              case 'right_ankle': mpIndex = 28; break;
+            let rx = 0;
+            let ry = 0;
+            let vis = 1;
+
+            if (l.id === 'nasion') {
+              // Nasion is the midpoint between eyes (mp 1 & 4), or slightly above nose tip (mp 0)
+              if (mp[1] && mp[4]) {
+                rx = (mp[1].x + mp[4].x) / 2;
+                ry = (mp[1].y + mp[4].y) / 2;
+                vis = Math.max(mp[1].visibility ?? 1, mp[4].visibility ?? 1);
+              } else if (mp[0]) {
+                rx = mp[0].x;
+                ry = mp[0].y - 0.015;
+                vis = mp[0].visibility ?? 1;
+              }
+            } else if (l.id === 'left_ankle') {
+              // Heel (mp 29) or Ankle (mp 27)
+              const heelPt = (mp[29] && (mp[29].visibility ?? 0) > 0.3) ? mp[29] : mp[27];
+              if (heelPt) {
+                rx = heelPt.x;
+                ry = heelPt.y;
+                vis = heelPt.visibility ?? 1;
+              }
+            } else if (l.id === 'right_ankle') {
+              // Heel (mp 30) or Ankle (mp 28)
+              const heelPt = (mp[30] && (mp[30].visibility ?? 0) > 0.3) ? mp[30] : mp[28];
+              if (heelPt) {
+                rx = heelPt.x;
+                ry = heelPt.y;
+                vis = heelPt.visibility ?? 1;
+              }
+            } else {
+              let mpIndex = -1;
+              switch (l.id) {
+                case 'left_shoulder': mpIndex = 11; break;
+                case 'right_shoulder': mpIndex = 12; break;
+                case 'left_elbow': mpIndex = 13; break;
+                case 'right_elbow': mpIndex = 14; break;
+                case 'left_wrist': mpIndex = 15; break;
+                case 'right_wrist': mpIndex = 16; break;
+                case 'left_hip': mpIndex = 23; break;
+                case 'right_hip': mpIndex = 24; break;
+                case 'left_knee': mpIndex = 25; break;
+                case 'right_knee': mpIndex = 26; break;
+              }
+              if (mpIndex !== -1 && mp[mpIndex]) {
+                rx = mp[mpIndex].x;
+                ry = (mpIndex === 11 || mpIndex === 12) ? mp[mpIndex].y - 0.015 : mp[mpIndex].y;
+                vis = mp[mpIndex].visibility ?? 1;
+              }
             }
-            if (mpIndex !== -1 && mp[mpIndex]) {
-              const rx = mpIndex === 0 ? mp[0].x : mp[mpIndex].x;
-              const ry = (mpIndex === 11 || mpIndex === 12) ? mp[mpIndex].y - 0.015 : mp[mpIndex].y;
+
+            if (rx > 0 || ry > 0) {
               const pt = mapPt(rx, ry);
-              return { ...l, x: pt.x, y: pt.y, visibility: mp[mpIndex].visibility ?? 1 };
+              return { ...l, x: pt.x, y: pt.y, visibility: vis };
             }
             return l;
           });
@@ -139,18 +173,25 @@ export const detectPoseFromImage = async (
           const wristIdx = shoulderIdx === 11 ? 15 : 16;
           const hipIdx = shoulderIdx === 11 ? 23 : 24;
           const kneeIdx = shoulderIdx === 11 ? 25 : 26;
-          const ankleIdx = shoulderIdx === 11 ? 27 : 28;
+          const heelIdx = shoulderIdx === 11 ? (mp[29] ? 29 : 27) : (mp[30] ? 30 : 28);
 
           const updated = getInitialLandmarks(gender, 'side').map(l => {
             let mpPt = null;
-            switch (l.id) {
-              case 'nasion': mpPt = mp[0]; break;
-              case 'shoulder': mpPt = mp[shoulderIdx]; break;
-              case 'elbow': mpPt = mp[elbowIdx]; break;
-              case 'wrist': mpPt = mp[wristIdx]; break;
-              case 'hip': mpPt = mp[hipIdx]; break;
-              case 'knee': mpPt = mp[kneeIdx]; break;
-              case 'ankle': mpPt = mp[ankleIdx]; break;
+            if (l.id === 'nasion') {
+              if (mp[1] && mp[4]) {
+                mpPt = { x: (mp[1].x + mp[4].x) / 2, y: (mp[1].y + mp[4].y) / 2 };
+              } else if (mp[0]) {
+                mpPt = { x: mp[0].x, y: mp[0].y - 0.015 };
+              }
+            } else {
+              switch (l.id) {
+                case 'shoulder': mpPt = mp[shoulderIdx]; break;
+                case 'elbow': mpPt = mp[elbowIdx]; break;
+                case 'wrist': mpPt = mp[wristIdx]; break;
+                case 'hip': mpPt = mp[hipIdx]; break;
+                case 'knee': mpPt = mp[kneeIdx]; break;
+                case 'ankle': mpPt = mp[heelIdx]; break;
+              }
             }
             if (mpPt) {
               const pt = mapPt(mpPt.x, mpPt.y);

@@ -763,14 +763,17 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     // Note: we do NOT auto-open file dialog here — user presses the button manually
   }, [inputSource]);
 
-  // Trigger MediaPipe Pose detection directly on DOM HTMLImageElement
+  // Trigger MediaPipe Pose detection using off-screen 2D canvas buffer for 100% reliable parsing
   const triggerImagePoseDetection = async () => {
     if (inputSource !== 'image' || !imageRef.current) return;
+    const imgEl = imageRef.current;
+    if (!imgEl.complete || imgEl.naturalWidth === 0) return;
+
     setIsModelLoading(true);
     try {
       await loadMediaPipeScripts();
       const Pose = (window as any).Pose;
-      const pose = poseInstanceRef.current || new Pose({
+      const pose = new Pose({
         locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
       });
 
@@ -789,9 +792,18 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
       });
 
       poseInstanceRef.current = pose;
-      await pose.send({ image: imageRef.current });
+
+      // Render image onto clean off-screen canvas buffer to avoid CORS or DOM decoding issues
+      const canvas = document.createElement('canvas');
+      canvas.width = imgEl.naturalWidth || 400;
+      canvas.height = imgEl.naturalHeight || 650;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(imgEl, 0, 0);
+        await pose.send({ image: canvas });
+      }
     } catch (err) {
-      console.error("Failed to run image pose detection on DOM image:", err);
+      console.error("Failed to run image pose detection on Canvas buffer:", err);
     } finally {
       setIsModelLoading(false);
     }
@@ -799,10 +811,13 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
   // Automatic pose detection trigger on image source/view change
   useEffect(() => {
-    if (inputSource === 'image' && imageRef.current) {
-      if (imageRef.current.complete) {
-        triggerImagePoseDetection();
-      }
+    if (inputSource === 'image') {
+      const timer = setTimeout(() => {
+        if (imageRef.current && imageRef.current.complete) {
+          triggerImagePoseDetection();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [uploadedImage, inputSource, view, gender]);
 

@@ -205,19 +205,29 @@ function App() {
     setInputSource(source);
   };
 
-  // Auto-detect reference card pixels from hand landmarks when in card calibration mode
+  // Auto-detect reference object pixels using exact anthropometric scale ratios
   useEffect(() => {
-    if ((inputSource === 'image' || inputSource === 'webcam') && input.calibrationType === 'card') {
-      const lWrist = processedFrontLandmarks.find(l => l.id === 'left_wrist');
-      const rWrist = processedFrontLandmarks.find(l => l.id === 'right_wrist');
-      if (lWrist && rWrist) {
-        const dx = Math.abs(lWrist.x - rWrist.x);
-        const dy = Math.abs(lWrist.y - rWrist.y);
-        const wristDist = Math.sqrt(dx * dx + dy * dy);
-        if (wristDist > 10 && wristDist < 250) {
-          // Calculate card pixels based on wrist/hand distance holding the card
-          const autoCardPixels = Math.round(Math.max(14, wristDist * 0.95));
-          setReferencePixels(autoCardPixels);
+    if ((inputSource === 'image' || inputSource === 'webcam') && processedFrontLandmarks.length > 0) {
+      const nasionPt = processedFrontLandmarks.find(l => l.id === 'nasion');
+      const lAnkle = processedFrontLandmarks.find(l => l.id === 'left_ankle');
+      const rAnkle = processedFrontLandmarks.find(l => l.id === 'right_ankle');
+
+      if (nasionPt && lAnkle && rAnkle) {
+        const ankleY = (lAnkle.y + rAnkle.y) / 2;
+        const bodyHeightPixels = Math.max(120, ankleY - nasionPt.y);
+
+        if (input.calibrationType === 'card') {
+          // Standard card 8.56cm on an adult body (~170cm height)
+          const autoCardPixels = Math.round(bodyHeightPixels * (8.56 / 170));
+          setReferencePixels(Math.max(10, Math.min(250, autoCardPixels)));
+        } else if (input.calibrationType === 'a4') {
+          // Standard A4 paper 21.0cm on an adult body (~170cm height)
+          const autoA4Pixels = Math.round(bodyHeightPixels * (21.0 / 170));
+          setReferencePixels(Math.max(20, Math.min(450, autoA4Pixels)));
+        } else if (input.calibrationType === 'ipd') {
+          // Standard IPD 6.3cm on an adult body (~170cm height)
+          const autoIpdPixels = Math.round(bodyHeightPixels * (6.3 / 170));
+          setReferencePixels(Math.max(8, Math.min(150, autoIpdPixels)));
         }
       }
     }

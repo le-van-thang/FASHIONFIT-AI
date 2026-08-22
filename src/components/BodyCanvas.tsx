@@ -765,34 +765,35 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   }, [inputSource]);
 
   // Automatic pose detection trigger on image source/view change
+  const handleManualImagePoseScan = useCallback(async () => {
+    if (inputSource !== 'image') return;
+    const targetImgSrc = uploadedImage || (
+      gender === 'male'
+        ? (view === 'front' ? '/sample_mannequin_male_front.png' : '/sample_mannequin_male_side.png')
+        : (view === 'front' ? '/sample_mannequin_female_front.png' : '/sample_mannequin_female_side.png')
+    );
+
+    setIsModelLoading(true);
+    try {
+      const poseResult = await detectPoseFromImage(targetImgSrc, gender, view);
+      if (poseResult && poseResult.length > 0) {
+        const { onLandmarksBatchChange } = trackingParamsRef.current;
+        if (onLandmarksBatchChange) {
+          onLandmarksBatchChange(poseResult);
+        }
+      }
+    } catch (err) {
+      console.error("Image pose detection error:", err);
+    } finally {
+      setIsModelLoading(false);
+    }
+  }, [inputSource, uploadedImage, gender, view]);
+
   useEffect(() => {
     if (inputSource === 'image') {
-      const runDetection = async () => {
-        const targetImgSrc = uploadedImage || (
-          gender === 'male'
-            ? (view === 'front' ? '/sample_mannequin_male_front.png' : '/sample_mannequin_female_front.png')
-            : (view === 'front' ? '/sample_mannequin_female_front.png' : '/sample_mannequin_female_side.png')
-        );
-
-        setIsModelLoading(true);
-        try {
-          const poseResult = await detectPoseFromImage(targetImgSrc, gender, view);
-          if (poseResult && poseResult.length > 0) {
-            const { onLandmarksBatchChange } = trackingParamsRef.current;
-            if (onLandmarksBatchChange) {
-              onLandmarksBatchChange(poseResult);
-            }
-          }
-        } catch (err) {
-          console.error("Auto image pose detection error:", err);
-        } finally {
-          setIsModelLoading(false);
-        }
-      };
-
-      runDetection();
+      handleManualImagePoseScan();
     }
-  }, [uploadedImage, inputSource, view, gender]);
+  }, [uploadedImage, inputSource, view, gender, handleManualImagePoseScan]);
 
   // Make sure to stop webcam on component unmount
   useEffect(() => {
@@ -2479,6 +2480,24 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               {/* Image upload / clear buttons */}
               {inputSource === 'image' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleManualImagePoseScan}
+                    title="Tự động quét các khớp xương bằng AI"
+                    disabled={isModelLoading}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.25rem',
+                      background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.9), rgba(59, 130, 246, 0.9))',
+                      backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                      border: '1px solid rgba(14, 165, 233, 0.6)',
+                      borderRadius: '20px', padding: '0.28rem 0.65rem', fontSize: '0.68rem', fontWeight: 600,
+                      color: '#ffffff', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <Sparkles size={11} className={isModelLoading ? 'spin' : ''} />
+                    <span>{isModelLoading ? 'AI Đang Quét...' : '⚡ AI Quét Khớp Xương'}</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}

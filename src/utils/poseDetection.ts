@@ -37,6 +37,35 @@ export const loadMediaPipeScripts = (): Promise<void> => {
   });
 };
 
+// Singleton cache for loaded Pose instance to avoid repeated WASM binary downloads
+let cachedPoseInstance: any = null;
+
+const getOrCreatePoseInstance = async () => {
+  await loadMediaPipeScripts();
+  const Pose = (window as any).Pose;
+  if (!Pose) return null;
+
+  if (!cachedPoseInstance) {
+    const pose = new Pose({
+      locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+    });
+
+    pose.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: false,
+      enableSegmentation: false,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    if (typeof pose.initialize === 'function') {
+      await pose.initialize();
+    }
+    cachedPoseInstance = pose;
+  }
+  return cachedPoseInstance;
+};
+
 // Robust pose extraction function for any image source (Data URL, Blob, sample image)
 export const detectPoseFromImage = async (
   imgSrc: string,
@@ -44,30 +73,21 @@ export const detectPoseFromImage = async (
   view: 'front' | 'side'
 ): Promise<Landmark[] | null> => {
   try {
-    await loadMediaPipeScripts();
-    const Pose = (window as any).Pose;
-    if (!Pose) return null;
+    const pose = await getOrCreatePoseInstance();
+    if (!pose) {
+      console.warn("[MediaPipe] Pose library unavailable.");
+      return null;
+    }
 
     return new Promise((resolve) => {
-      const pose = new Pose({
-        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-      });
-
-      pose.setOptions({
-        modelComplexity: 1,
-        smoothLandmarks: false,
-        enableSegmentation: false,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
-
       let resolved = false;
       const timeoutTimer = setTimeout(() => {
         if (!resolved) {
           resolved = true;
+          console.warn("[MediaPipe] Pose detection timed out after 12s.");
           resolve(null);
         }
-      }, 4000);
+      }, 12000);
 
       pose.onResults((results: any) => {
         if (resolved) return;
@@ -75,6 +95,7 @@ export const detectPoseFromImage = async (
         resolved = true;
 
         if (!results || !results.poseLandmarks || results.poseLandmarks.length === 0) {
+          console.warn("[MediaPipe] No pose landmarks detected in image.");
           resolve(null);
           return;
         }
@@ -142,7 +163,11 @@ export const detectPoseFromImage = async (
       });
 
       const img = new Image();
-      img.crossOrigin = "anonymous";
+      // Only set crossOrigin for remote HTTP URLs, NEVER for data: or blob: URLs!
+      if (!imgSrc.startsWith('data:') && !imgSrc.startsWith('blob:')) {
+        img.crossOrigin = "anonymous";
+      }
+
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.naturalWidth || 400;
@@ -150,7 +175,8 @@ export const detectPoseFromImage = async (
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.drawImage(img, 0, 0);
-          pose.send({ image: canvas }).catch(() => {
+          pose.send({ image: canvas }).catch((err: any) => {
+            console.error("[MediaPipe] send canvas error:", err);
             if (!resolved) {
               resolved = true;
               clearTimeout(timeoutTimer);
@@ -165,13 +191,16 @@ export const detectPoseFromImage = async (
           }
         }
       };
-      img.onerror = () => {
+
+      img.onerror = (err) => {
+        console.error("[MediaPipe] Image load failed for pose detection:", err);
         if (!resolved) {
           resolved = true;
           clearTimeout(timeoutTimer);
           resolve(null);
         }
       };
+
       img.src = imgSrc;
     });
   } catch (err) {

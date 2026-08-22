@@ -770,49 +770,53 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     // Note: we do NOT auto-open file dialog here — user presses the button manually
   }, [inputSource]);
 
-  // Automatic pose detection on uploaded image
+  // Automatic pose detection on image (both uploaded and sample images)
   useEffect(() => {
-    if (inputSource === 'image' && uploadedImage) {
+    if (inputSource === 'image') {
+      const targetImgSrc = uploadedImage || (
+        gender === 'male'
+          ? (view === 'front' ? '/sample_mannequin_male_front.png' : '/sample_mannequin_male_side.png')
+          : (view === 'front' ? '/sample_mannequin_female_front.png' : '/sample_mannequin_female_side.png')
+      );
+
       const runImagePoseDetection = async () => {
         setIsModelLoading(true);
         try {
           await loadMediaPipeScripts();
           
-          if (!poseInstanceRef.current) {
-            const Pose = (window as any).Pose;
-            const pose = new Pose({
-              locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-            });
+          const Pose = (window as any).Pose;
+          const pose = poseInstanceRef.current || new Pose({
+            locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+          });
 
-            pose.setOptions({
-              modelComplexity: 1,
-              smoothLandmarks: true,
-              enableSegmentation: false,
-              minDetectionConfidence: 0.5,
-              minTrackingConfidence: 0.5
-            });
+          pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+          });
 
-            pose.onResults((results: any) => {
-              if (results.poseLandmarks) {
-                updateLandmarksFromMediaPipe(results);
-              }
-            });
+          pose.onResults((results: any) => {
+            if (results.poseLandmarks) {
+              updateLandmarksFromMediaPipe(results);
+            }
+          });
 
-            poseInstanceRef.current = pose;
-          }
+          poseInstanceRef.current = pose;
 
           const img = new Image();
           img.crossOrigin = "anonymous";
           img.onload = async () => {
             try {
-              await poseInstanceRef.current.send({ image: img });
+              await pose.send({ image: img });
             } catch (err) {
               console.error("Error sending image to MediaPipe Pose:", err);
             } finally {
               setIsModelLoading(false);
             }
           };
-          img.src = uploadedImage;
+          img.src = targetImgSrc;
         } catch (err) {
           console.error("Failed to run image pose detection:", err);
           setIsModelLoading(false);
@@ -821,7 +825,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
       runImagePoseDetection();
     }
-  }, [uploadedImage, inputSource]);
+  }, [uploadedImage, inputSource, view, gender]);
 
   // Make sure to stop webcam on component unmount
   useEffect(() => {

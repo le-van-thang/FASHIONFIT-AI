@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { Landmark, Gender, BodyMeasurements, SizeRecommendation } from '../types';
 import { RefreshCw, Maximize2, Minimize2, Camera, CameraOff, Upload, Trash2, Sun, Moon, Sparkles } from 'lucide-react';
 import { Mannequin3DView } from './Mannequin3DView';
+import { detectPoseFromImage } from '../utils/poseDetection';
 
 
 
@@ -763,61 +764,33 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     // Note: we do NOT auto-open file dialog here — user presses the button manually
   }, [inputSource]);
 
-  // Trigger MediaPipe Pose detection using off-screen 2D canvas buffer for 100% reliable parsing
-  const triggerImagePoseDetection = async () => {
-    if (inputSource !== 'image' || !imageRef.current) return;
-    const imgEl = imageRef.current;
-    if (!imgEl.complete || imgEl.naturalWidth === 0) return;
-
-    setIsModelLoading(true);
-    try {
-      await loadMediaPipeScripts();
-      const Pose = (window as any).Pose;
-      const pose = new Pose({
-        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-      });
-
-      pose.setOptions({
-        modelComplexity: 1,
-        smoothLandmarks: true,
-        enableSegmentation: false,
-        minDetectionConfidence: 0.5,
-        minTrackingConfidence: 0.5
-      });
-
-      pose.onResults((results: any) => {
-        if (results.poseLandmarks) {
-          updateLandmarksFromMediaPipe(results);
-        }
-      });
-
-      poseInstanceRef.current = pose;
-
-      // Render image onto clean off-screen canvas buffer to avoid CORS or DOM decoding issues
-      const canvas = document.createElement('canvas');
-      canvas.width = imgEl.naturalWidth || 400;
-      canvas.height = imgEl.naturalHeight || 650;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(imgEl, 0, 0);
-        await pose.send({ image: canvas });
-      }
-    } catch (err) {
-      console.error("Failed to run image pose detection on Canvas buffer:", err);
-    } finally {
-      setIsModelLoading(false);
-    }
-  };
-
   // Automatic pose detection trigger on image source/view change
   useEffect(() => {
     if (inputSource === 'image') {
-      const timer = setTimeout(() => {
-        if (imageRef.current && imageRef.current.complete) {
-          triggerImagePoseDetection();
+      const runDetection = async () => {
+        const targetImgSrc = uploadedImage || (
+          gender === 'male'
+            ? (view === 'front' ? '/sample_mannequin_male_front.png' : '/sample_mannequin_female_front.png')
+            : (view === 'front' ? '/sample_mannequin_female_front.png' : '/sample_mannequin_female_side.png')
+        );
+
+        setIsModelLoading(true);
+        try {
+          const poseResult = await detectPoseFromImage(targetImgSrc, gender, view);
+          if (poseResult && poseResult.length > 0) {
+            const { onLandmarksBatchChange } = trackingParamsRef.current;
+            if (onLandmarksBatchChange) {
+              onLandmarksBatchChange(poseResult);
+            }
+          }
+        } catch (err) {
+          console.error("Auto image pose detection error:", err);
+        } finally {
+          setIsModelLoading(false);
         }
-      }, 150);
-      return () => clearTimeout(timer);
+      };
+
+      runDetection();
     }
   }, [uploadedImage, inputSource, view, gender]);
 
@@ -3053,7 +3026,6 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               )}
               className="background-media uploaded-image-view"
               alt="Uploaded mannequin source"
-              onLoad={() => triggerImagePoseDetection()}
             />
           )}
 

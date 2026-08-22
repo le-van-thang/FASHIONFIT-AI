@@ -1,4 +1,68 @@
-import type { BodyMeasurements, Gender, CalibrationType } from '../types';
+import type { Landmark, BodyMeasurements, Gender, CalibrationType } from '../types/index';
+
+export const getInitialLandmarks = (gender: 'male' | 'female', view: 'front' | 'side'): Landmark[] => {
+  if (gender === 'male') {
+    if (view === 'front') {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 200, y: 100, label: 'Gốc Mũi' },
+        { id: 'left_shoulder', name: 'Vai trái', x: 142, y: 145, label: 'Vai Trái' },
+        { id: 'right_shoulder', name: 'Vai phải', x: 258, y: 145, label: 'Vai Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 95, y: 145, label: 'Khuỷu Tay Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 50, y: 145, label: 'Cổ Tay Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 305, y: 145, label: 'Khuỷu Tay Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 350, y: 145, label: 'Cổ Tay Phải' },
+        { id: 'left_hip', name: 'Hông trái', x: 165, y: 295, label: 'Hông Trái' },
+        { id: 'right_hip', name: 'Hông phải', x: 235, y: 295, label: 'Hông Phải' },
+        { id: 'left_knee', name: 'Đầu gối trái', x: 170, y: 395, label: 'Đầu Gối Trái' },
+        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 580, label: 'Cổ Chân Trái' },
+        { id: 'right_knee', name: 'Đầu gối phải', x: 230, y: 395, label: 'Đầu Gối Phải' },
+        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 580, label: 'Cổ Chân Phải' }
+      ];
+    } else {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 215, y: 100, label: 'Gốc Mũi' },
+        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 145, label: 'Khớp Vai' },
+        { id: 'elbow', name: 'Khuỷu tay', x: 190, y: 238, label: 'Khuỷu Tay' },
+        { id: 'wrist', name: 'Cổ tay', x: 185, y: 320, label: 'Cổ Tay' },
+        { id: 'hip', name: 'Khớp hông', x: 200, y: 295, label: 'Khớp Hông' },
+        { id: 'knee', name: 'Khớp gối', x: 200, y: 395, label: 'Khớp Gối' },
+        { id: 'ankle', name: 'Cổ chân', x: 200, y: 580, label: 'Cổ Chân' },
+        { id: 'chest_depth', name: 'Độ sâu ngực', x: 232, y: 195, label: 'Độ Sâu Ngực' },
+        { id: 'buttock_depth', name: 'Độ sâu mông', x: 168, y: 305, label: 'Độ Sâu Mông' }
+      ];
+    }
+  } else {
+    if (view === 'front') {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 200, y: 110, label: 'Gốc Mũi' },
+        { id: 'left_shoulder', name: 'Vai trái', x: 146, y: 152, label: 'Vai Trái' },
+        { id: 'right_shoulder', name: 'Vai phải', x: 254, y: 152, label: 'Vai Phải' },
+        { id: 'left_elbow', name: 'Khuỷu tay trái', x: 100, y: 152, label: 'Khuỷu Tay Trái' },
+        { id: 'left_wrist', name: 'Cổ tay trái', x: 50, y: 152, label: 'Cổ Tay Trái' },
+        { id: 'right_elbow', name: 'Khuỷu tay phải', x: 300, y: 152, label: 'Khuỷu Tay Phải' },
+        { id: 'right_wrist', name: 'Cổ tay phải', x: 350, y: 152, label: 'Cổ Tay Phải' },
+        { id: 'left_hip', name: 'Hông trái', x: 168, y: 305, label: 'Hông Trái' },
+        { id: 'right_hip', name: 'Hông phải', x: 232, y: 305, label: 'Hông Phải' },
+        { id: 'left_knee', name: 'Đầu gối trái', x: 172, y: 405, label: 'Đầu Gối Trái' },
+        { id: 'left_ankle', name: 'Cổ chân trái', x: 175, y: 580, label: 'Cổ Chân Trái' },
+        { id: 'right_knee', name: 'Đầu gối phải', x: 228, y: 405, label: 'Đầu Gối Phải' },
+        { id: 'right_ankle', name: 'Cổ chân phải', x: 225, y: 580, label: 'Cổ Chân Phải' }
+      ];
+    } else {
+      return [
+        { id: 'nasion', name: 'Gốc mũi', x: 215, y: 110, label: 'Gốc Mũi' },
+        { id: 'shoulder', name: 'Khớp vai', x: 200, y: 152, label: 'Khớp Vai' },
+        { id: 'elbow', name: 'Khuỷu tay', x: 185, y: 248, label: 'Khuỷu Tay' },
+        { id: 'wrist', name: 'Cổ tay', x: 180, y: 328, label: 'Cổ Tay' },
+        { id: 'hip', name: 'Khớp hông', x: 200, y: 305, label: 'Khớp Hông' },
+        { id: 'knee', name: 'Khớp gối', x: 200, y: 405, label: 'Khớp Gối' },
+        { id: 'ankle', name: 'Cổ chân', x: 200, y: 580, label: 'Cổ Chân' },
+        { id: 'chest_depth', name: 'Độ sâu ngực', x: 232, y: 200, label: 'Độ Sâu Ngực' },
+        { id: 'buttock_depth', name: 'Độ sâu mông', x: 168, y: 315, label: 'Độ Sâu Mông' }
+      ];
+    }
+  }
+};
 
 // Constants for human anthropometry
 // Average density of human body: ~1.01 g/cm3 (equivalent to 1.01 kg/L or 0.00101 kg/cm3)

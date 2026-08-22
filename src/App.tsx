@@ -546,10 +546,13 @@ function App() {
         return { x: (lAnkle.x + rAnkle.x) / 2, y: (lAnkle.y + rAnkle.y) / 2 };
       })();
 
-      const heightPixels = Math.max(180, anklePt.y - nasionPt.y);
+      const heightPixels = Math.max(100, anklePt.y - nasionPt.y);
       const rawScale = (heightVal - 9.5) / heightPixels;
-      // Clamp scale to safe physical limits (0.16 to 0.36 cm/pixel for standard webcams)
-      return Math.max(0.16, Math.min(0.36, rawScale));
+      if (inputSource === 'image') {
+        return rawScale; // 100% exact mathematical scale factor for uploaded photos!
+      }
+      // Clamp scale to safe physical limits for live webcams
+      return Math.max(0.10, Math.min(0.45, rawScale));
     }
     return calculateScaleFactor(referencePixels, input.calibrationType);
   }, [referencePixels, input.calibrationType, input.customHeight, input.scanRange, processedFrontLandmarks, inputSource]);

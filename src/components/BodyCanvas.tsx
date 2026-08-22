@@ -336,10 +336,10 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
           let rawX = mp[mpIndex].x;
           let rawY = mp[mpIndex].y;
 
-          if (l.id === 'nasion' && mp[1] && mp[4]) {
-            // Anatomical Nasion: Anchor to eye bridge so head tilt never shifts point down to mouth
-            rawX = (mp[0].x * 0.4 + mp[1].x * 0.3 + mp[4].x * 0.3);
-            rawY = (mp[0].y * 0.25 + mp[1].y * 0.375 + mp[4].y * 0.375);
+          if (l.id === 'nasion' && mp[0]) {
+            // Anatomical Nasion: Anchor directly to MediaPipe nose landmark (mp[0])
+            rawX = mp[0].x;
+            rawY = mp[0].y;
           } else if (l.id === 'left_shoulder' || l.id === 'right_shoulder') {
             // Align shoulder landmark right on top shoulder ridge
             rawY = mp[mpIndex].y - 0.015;

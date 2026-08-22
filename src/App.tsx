@@ -217,16 +217,16 @@ function App() {
         const bodyHeightPixels = Math.max(120, ankleY - nasionPt.y);
 
         if (input.calibrationType === 'card') {
-          // Standard card 8.56cm on an adult body (~170cm height)
-          const autoCardPixels = Math.round(bodyHeightPixels * (8.56 / 170));
+          // Standard card 8.56cm on an adult body (~167.5cm average height)
+          const autoCardPixels = Math.round(bodyHeightPixels * (8.56 / 167.5));
           setReferencePixels(Math.max(10, Math.min(250, autoCardPixels)));
         } else if (input.calibrationType === 'a4') {
-          // Standard A4 paper 21.0cm on an adult body (~170cm height)
-          const autoA4Pixels = Math.round(bodyHeightPixels * (21.0 / 170));
+          // Standard A4 paper 21.0cm on an adult body (~167.5cm average height)
+          const autoA4Pixels = Math.round(bodyHeightPixels * (21.0 / 167.5));
           setReferencePixels(Math.max(20, Math.min(450, autoA4Pixels)));
         } else if (input.calibrationType === 'ipd') {
-          // Standard IPD 6.3cm on an adult body (~170cm height)
-          const autoIpdPixels = Math.round(bodyHeightPixels * (6.3 / 170));
+          // Standard IPD 6.3cm on an adult body (~167.5cm average height)
+          const autoIpdPixels = Math.round(bodyHeightPixels * (6.3 / 167.5));
           setReferencePixels(Math.max(8, Math.min(150, autoIpdPixels)));
         }
       }
@@ -608,7 +608,7 @@ function App() {
     // Lock physical height to customHeight in half-body mode to prevent runaway values
     const height = input.scanRange === 'half'
       ? (input.customHeight || 165)
-      : Math.max(50, Math.min(220, heightPixels * scale + 9.5));
+      : Math.max(50, Math.min(220, heightPixels * scale));
 
     // Raw calculated physical lengths in cm
     const rawShoulderWidth = dist(lShoulder, rShoulder) * scale;

@@ -167,6 +167,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
   const [showPip3D, setShowPip3D] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
   const cameraInstanceRef = useRef<any>(null);
   const poseInstanceRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -770,60 +771,46 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
     // Note: we do NOT auto-open file dialog here — user presses the button manually
   }, [inputSource]);
 
-  // Automatic pose detection on image (both uploaded and sample images)
-  useEffect(() => {
-    if (inputSource === 'image') {
-      const targetImgSrc = uploadedImage || (
-        gender === 'male'
-          ? (view === 'front' ? '/sample_mannequin_male_front.png' : '/sample_mannequin_male_side.png')
-          : (view === 'front' ? '/sample_mannequin_female_front.png' : '/sample_mannequin_female_side.png')
-      );
+  // Trigger MediaPipe Pose detection directly on DOM HTMLImageElement
+  const triggerImagePoseDetection = async () => {
+    if (inputSource !== 'image' || !imageRef.current) return;
+    setIsModelLoading(true);
+    try {
+      await loadMediaPipeScripts();
+      const Pose = (window as any).Pose;
+      const pose = poseInstanceRef.current || new Pose({
+        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+      });
 
-      const runImagePoseDetection = async () => {
-        setIsModelLoading(true);
-        try {
-          await loadMediaPipeScripts();
-          
-          const Pose = (window as any).Pose;
-          const pose = poseInstanceRef.current || new Pose({
-            locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
-          });
+      pose.setOptions({
+        modelComplexity: 1,
+        smoothLandmarks: true,
+        enableSegmentation: false,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
 
-          pose.setOptions({
-            modelComplexity: 1,
-            smoothLandmarks: true,
-            enableSegmentation: false,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-          });
-
-          pose.onResults((results: any) => {
-            if (results.poseLandmarks) {
-              updateLandmarksFromMediaPipe(results);
-            }
-          });
-
-          poseInstanceRef.current = pose;
-
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = async () => {
-            try {
-              await pose.send({ image: img });
-            } catch (err) {
-              console.error("Error sending image to MediaPipe Pose:", err);
-            } finally {
-              setIsModelLoading(false);
-            }
-          };
-          img.src = targetImgSrc;
-        } catch (err) {
-          console.error("Failed to run image pose detection:", err);
-          setIsModelLoading(false);
+      pose.onResults((results: any) => {
+        if (results.poseLandmarks) {
+          updateLandmarksFromMediaPipe(results);
         }
-      };
+      });
 
-      runImagePoseDetection();
+      poseInstanceRef.current = pose;
+      await pose.send({ image: imageRef.current });
+    } catch (err) {
+      console.error("Failed to run image pose detection on DOM image:", err);
+    } finally {
+      setIsModelLoading(false);
+    }
+  };
+
+  // Automatic pose detection trigger on image source/view change
+  useEffect(() => {
+    if (inputSource === 'image' && imageRef.current) {
+      if (imageRef.current.complete) {
+        triggerImagePoseDetection();
+      }
     }
   }, [uploadedImage, inputSource, view, gender]);
 
@@ -3051,6 +3038,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
 
           {inputSource === 'image' && (
             <img
+              ref={imageRef}
               src={uploadedImage || (
                 gender === 'male'
                   ? (view === 'front' ? '/sample_mannequin_male_front.png' : '/sample_mannequin_male_side.png')
@@ -3058,6 +3046,7 @@ export const BodyCanvas: React.FC<BodyCanvasProps> = ({
               )}
               className="background-media uploaded-image-view"
               alt="Uploaded mannequin source"
+              onLoad={() => triggerImagePoseDetection()}
             />
           )}
 

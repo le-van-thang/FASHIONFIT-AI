@@ -217,16 +217,16 @@ function App() {
         const bodyHeightPixels = Math.max(120, ankleY - nasionPt.y);
 
         if (input.calibrationType === 'card') {
-          // Standard card 8.56cm on an adult body (~167.5cm average height)
-          const autoCardPixels = Math.round(bodyHeightPixels * (8.56 / 167.5));
+          // Standard card 8.56cm (Nasion-to-Ankle = 158cm, Total Height = 158 + 9.5 = 167.5cm)
+          const autoCardPixels = Math.round(bodyHeightPixels * (8.56 / 158.0));
           setReferencePixels(Math.max(10, Math.min(250, autoCardPixels)));
         } else if (input.calibrationType === 'a4') {
-          // Standard A4 paper 21.0cm on an adult body (~167.5cm average height)
-          const autoA4Pixels = Math.round(bodyHeightPixels * (21.0 / 167.5));
+          // Standard A4 paper 21.0cm (Nasion-to-Ankle = 158cm, Total Height = 158 + 9.5 = 167.5cm)
+          const autoA4Pixels = Math.round(bodyHeightPixels * (21.0 / 158.0));
           setReferencePixels(Math.max(20, Math.min(450, autoA4Pixels)));
         } else if (input.calibrationType === 'ipd') {
-          // Standard IPD 6.3cm on an adult body (~167.5cm average height)
-          const autoIpdPixels = Math.round(bodyHeightPixels * (6.3 / 167.5));
+          // Standard IPD 6.3cm (Nasion-to-Ankle = 158cm, Total Height = 158 + 9.5 = 167.5cm)
+          const autoIpdPixels = Math.round(bodyHeightPixels * (6.3 / 158.0));
           setReferencePixels(Math.max(8, Math.min(150, autoIpdPixels)));
         }
       }
@@ -602,13 +602,13 @@ function App() {
     const dist = (p1: Landmark, p2: Landmark) =>
       Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 
-    // Height calculation (From nasion to midpoint of ankles)
+    // Height calculation (From nasion to midpoint of ankles + 9.5cm cranial crown offset)
     const midAnkleY = (lAnkle.y + rAnkle.y) / 2;
     const heightPixels = midAnkleY - nasionF.y;
     // Lock physical height to customHeight in half-body mode to prevent runaway values
     const height = input.scanRange === 'half'
       ? (input.customHeight || 165)
-      : Math.max(50, Math.min(220, heightPixels * scale));
+      : Math.max(50, Math.min(220, heightPixels * scale + 9.5));
 
     // Raw calculated physical lengths in cm
     const rawShoulderWidth = dist(lShoulder, rShoulder) * scale;

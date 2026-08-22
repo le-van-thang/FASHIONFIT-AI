@@ -193,7 +193,7 @@ BẮT BUỘC trả về duy nhất định dạng JSON nguyên bản (không s�
 
     try {
       console.log(`[Client Gemini API] Rotating Key #${clientKeyIndex + 1} (Attempt ${attempts}/${GEMINI_API_KEYS.length})...`);
-      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

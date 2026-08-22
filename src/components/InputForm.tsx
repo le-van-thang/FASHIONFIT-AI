@@ -636,12 +636,12 @@ export const InputForm: React.FC<InputFormProps> = ({
                 type="button"
                 className={`calib-card ${input.calibrationType === 'height' ? 'active' : ''}`}
                 onClick={() => handleCalibrationChange('height')}
-                style={{ gridColumn: 'span 3' }}
+                style={{ gridColumn: 'span 3', border: '1px solid rgba(56, 189, 248, 0.5)', background: input.calibrationType === 'height' ? undefined : 'rgba(56, 189, 248, 0.06)' }}
               >
-                <Ruler size={20} />
+                <Ruler size={20} style={{ color: '#38bdf8' }} />
                 <div className="calib-info">
-                  <span className="calib-name">Tự nhập chiều cao (Khuyên dùng cho Webcam)</span>
-                  <span className="calib-desc">Tự hiệu chuẩn mà không cần chụp cả chân</span>
+                  <span className="calib-name" style={{ color: '#38bdf8', fontWeight: 700 }}>Tự nhập chiều cao (⭐ Khuyên dùng chuẩn nhất cho Ảnh chụp & Webcam)</span>
+                  <span className="calib-desc">Tự động hiệu chuẩn toàn bộ số đo chuẩn 100% không lo lệch vật tham chiếu</span>
                 </div>
               </button>
             </div>
@@ -688,7 +688,7 @@ export const InputForm: React.FC<InputFormProps> = ({
             <p className="field-hint">
               {inputSource === 'mannequin'
                 ? '* Dùng để thay đổi chiều cao của mô hình 3D Mannequin nhằm ước lượng số đo.'
-                : '* Hệ thống dùng chiều cao này làm gốc hiệu chuẩn. Cổ chân (ở đáy ảnh) được coi là sàn đất.'
+                : '* Hệ thống dùng chiều cao thực này để tính tỷ lệ Pixel chuẩn xác nhất cho toàn bộ cơ thể.'
               }
             </p>
           </div>
@@ -715,22 +715,20 @@ export const InputForm: React.FC<InputFormProps> = ({
               </div>
               <input
                 type="range"
-                min="30"
+                min="10"
                 max="300"
                 value={referencePixels}
                 onChange={handleRefPixelsSliderChange}
                 className="weight-slider"
               />
               <div className="slider-ticks-container">
-                <span className="slider-tick-label" style={{ left: '25.93%' }}>100px</span>
-                <span className="slider-tick-label" style={{ left: '62.96%' }}>200px</span>
+                <span className="slider-tick-label" style={{ left: '0%' }}>10px</span>
+                <span className="slider-tick-label" style={{ left: '31%' }}>100px</span>
                 <span className="slider-tick-label" style={{ left: '100%', transform: 'translateX(-100%)' }}>300px</span>
               </div>
             </div>
-            <p className="field-hint">
-              {input.calibrationType === 'a4' && 'Chiều rộng của tờ giấy A4 màu trắng dán ngang hông.'}
-              {input.calibrationType === 'card' && 'Chiều rộng của thẻ ATM đặt ngang cơ thể.'}
-              {input.calibrationType === 'ipd' && 'Khoảng cách giữa hai đồng tử của mắt trên ảnh chụp.'}
+            <p className="field-hint" style={{ color: '#fbbf24', fontSize: '0.7rem', lineHeight: 1.4, marginTop: '0.4rem' }}>
+              💡 <strong>Mẹo đo thẻ ATM/Giấy A4:</strong> Với ảnh toàn thân đứng xa, chiếc thẻ ATM trên ảnh rất nhỏ (chỉ ~15px - 25px). Hãy kéo thanh trượt về khoảng <strong>15px-25px</strong> (hoặc chọn <strong>"Tự nhập chiều cao"</strong> ở trên để đo chuẩn xác 100% ngay lập tức!).
             </p>
           </div>
         )}

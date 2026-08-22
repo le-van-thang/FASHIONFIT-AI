@@ -203,10 +203,25 @@ function App() {
 
   const handleInputSourceChange = (source: 'mannequin' | 'image' | 'webcam' | 'video') => {
     setInputSource(source);
-    if (source === 'mannequin' || source === 'image' || source === 'video' || source === 'webcam') {
-      setInput(prev => ({ ...prev, calibrationType: 'height' }));
-    }
   };
+
+  // Auto-detect reference card pixels from hand landmarks when in card calibration mode
+  useEffect(() => {
+    if ((inputSource === 'image' || inputSource === 'webcam') && input.calibrationType === 'card') {
+      const lWrist = processedFrontLandmarks.find(l => l.id === 'left_wrist');
+      const rWrist = processedFrontLandmarks.find(l => l.id === 'right_wrist');
+      if (lWrist && rWrist) {
+        const dx = Math.abs(lWrist.x - rWrist.x);
+        const dy = Math.abs(lWrist.y - rWrist.y);
+        const wristDist = Math.sqrt(dx * dx + dy * dy);
+        if (wristDist > 10 && wristDist < 250) {
+          // Calculate card pixels based on wrist/hand distance holding the card
+          const autoCardPixels = Math.round(Math.max(14, wristDist * 0.95));
+          setReferencePixels(autoCardPixels);
+        }
+      }
+    }
+  }, [input.calibrationType, inputSource, processedFrontLandmarks]);
 
   const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 

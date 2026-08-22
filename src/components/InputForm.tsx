@@ -612,11 +612,12 @@ export const InputForm: React.FC<InputFormProps> = ({
                 type="button"
                 className={`calib-card ${input.calibrationType === 'card' ? 'active' : ''}`}
                 onClick={() => handleCalibrationChange('card')}
+                style={{ border: '1px solid rgba(34, 211, 238, 0.5)', background: input.calibrationType === 'card' ? undefined : 'rgba(34, 211, 238, 0.06)' }}
               >
-                <CreditCard size={20} />
+                <CreditCard size={20} style={{ color: '#22d3ee' }} />
                 <div className="calib-info">
-                  <span className="calib-name">Thẻ ngân hàng</span>
-                  <span className="calib-desc">Ngang: 8.56 cm</span>
+                  <span className="calib-name" style={{ color: '#22d3ee', fontWeight: 700 }}>✨ Thẻ ngân hàng (AI Tự Quét)</span>
+                  <span className="calib-desc">Ngang: 8.56 cm - Tự động tính pixel</span>
                 </div>
               </button>
 

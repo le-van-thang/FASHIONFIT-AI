@@ -624,34 +624,36 @@ export const InputForm: React.FC<InputFormProps> = ({
 
         {/* Weight Selection */}
         <div className="form-group">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', gap: '6px', flexWrap: 'nowrap' }}>
-            <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+            <label className="form-label" style={{ margin: 0 }}>
               <Scale size={16} />
               <span>Cân nặng thực tế</span>
             </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-              <button
-                type="button"
-                className="calib-help-btn"
-                onClick={() => setShowDisclaimerModal(true)}
-                title="Xem Cảnh Báo Thuật Toán Thể Tích (Disclaimer)"
-                style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: '10px', whiteSpace: 'nowrap' }}
-              >
-                <Info size={11} />
-                <span>Disclaimer</span>
-              </button>
-              <div className="weight-number-box" style={{ width: 'auto', flexShrink: 0 }}>
-                <input
-                  type="text"
-                  value={weightInputVal}
-                  onChange={handleWeightTextInputChange}
-                  onBlur={handleWeightTextInputBlur}
-                  className="weight-input"
-                  style={{ width: '38px', padding: '2px 4px', textAlign: 'center' }}
-                />
-                <span className="unit">kg</span>
-              </div>
+            <div className="weight-number-box" style={{ flexShrink: 0 }}>
+              <input
+                type="text"
+                value={weightInputVal}
+                onChange={handleWeightTextInputChange}
+                onBlur={handleWeightTextInputBlur}
+                className="weight-input"
+                style={{ width: '34px', padding: '2px 3px', textAlign: 'right' }}
+              />
+              <span className="unit" style={{ fontWeight: 700, color: '#334155', marginLeft: '3px' }}>kg</span>
             </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem' }}>
+            <span style={{ fontSize: '0.67rem', color: '#64748b' }}>* Khóa thể tích triệt tiêu áo thụng</span>
+            <button
+              type="button"
+              className="calib-help-btn"
+              onClick={() => setShowDisclaimerModal(true)}
+              title="Xem Cảnh Báo Thuật Toán Thể Tích (Disclaimer)"
+              style={{ fontSize: '0.65rem', padding: '0.15rem 0.45rem', borderRadius: '10px', margin: 0 }}
+            >
+              <Info size={11} />
+              <span>Disclaimer</span>
+            </button>
           </div>
           <div className="slider-wrapper">
             <div className="slider-tooltip" style={{ left: `${Math.max(12, Math.min(88, weightPercent))}%` }}>

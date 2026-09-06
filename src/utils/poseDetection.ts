@@ -37,6 +37,61 @@ export const loadMediaPipeScripts = (): Promise<void> => {
   });
 };
 
+// Helper to dynamically load MediaPipe Face Mesh CDN scripts for 468-facial landmark Nasion anchoring
+export const loadMediaPipeFaceMeshScripts = (): Promise<void> => {
+  return new Promise((resolve) => {
+    if ((window as any).FaceMesh) {
+      resolve();
+      return;
+    }
+    const existing = document.querySelector('script[src*="face_mesh.js"]');
+    if (existing) {
+      const checkInterval = setInterval(() => {
+        if ((window as any).FaceMesh) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 50);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
+    script.async = true;
+    script.onload = () => resolve();
+    document.body.appendChild(script);
+  });
+};
+
+let cachedFaceMeshInstance: any = null;
+
+export const getOrCreateFaceMeshInstance = async () => {
+  try {
+    await loadMediaPipeFaceMeshScripts();
+    const FaceMesh = (window as any).FaceMesh;
+    if (!FaceMesh) return null;
+
+    if (!cachedFaceMeshInstance) {
+      const fm = new FaceMesh({
+        locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+      });
+      fm.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+      if (typeof fm.initialize === 'function') {
+        await fm.initialize();
+      }
+      cachedFaceMeshInstance = fm;
+    }
+    return cachedFaceMeshInstance;
+  } catch (err) {
+    console.warn("[MediaPipe] FaceMesh script load skipped or unavailable:", err);
+    return null;
+  }
+};
+
 // Singleton cache for loaded Pose instance to avoid repeated WASM binary downloads
 let cachedPoseInstance: any = null;
 

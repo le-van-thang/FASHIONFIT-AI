@@ -42,6 +42,7 @@ export const InputForm: React.FC<InputFormProps> = ({
     return localStorage.getItem('fashionfit_show_banner') !== 'false';
   });
   const [showMobileModal, setShowMobileModal] = useState(false);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [computerIp, setComputerIp] = useState(() => {
     return localStorage.getItem('fashionfit_computer_ip') || '';
   });
@@ -277,6 +278,68 @@ export const InputForm: React.FC<InputFormProps> = ({
         </div>
       )}
 
+      {/* Volumetric Disclaimer Modal */}
+      {showDisclaimerModal && (
+        <div className="calib-modal-overlay" onClick={() => setShowDisclaimerModal(false)}>
+          <div className="calib-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <div className="calib-modal-header" style={{ background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' }}>
+              <div className="calib-modal-title-group">
+                <Scale size={20} style={{ color: '#dc2626' }} />
+                <h3 className="calib-modal-title" style={{ color: '#991b1b' }}>Cảnh Báo Thuật Toán Thể Tích (Volumetric Disclaimer)</h3>
+              </div>
+              <button className="calib-modal-close" onClick={() => setShowDisclaimerModal(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="calib-modal-body" style={{ gap: '1rem' }}>
+              <div className="guide-why-box" style={{ background: '#fff1f2', border: '1px solid #fecdd3' }}>
+                <strong style={{ color: '#9f1239' }}>⚠️ Tại sao việc nhập đúng Cân nặng thực tế lại mang tính QUYẾT ĐỊNH?</strong>
+                <p style={{ color: '#881337', marginTop: '4px', lineHeight: 1.5, fontSize: '0.78rem' }}>
+                  Các phần mềm thị giác 2D thông thường chỉ quét viền ngoài quần áo. Khi bạn mặc áo phông thụng (Oversize) hay quần áo rộng, hệ thống 2D thông thường sẽ bị đo thừa từ 5 - 10 cm.
+                </p>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.78rem', color: '#334155' }}>
+                <strong style={{ color: '#0f172a', display: 'block', marginBottom: '6px' }}>🧪 Nguyên Lý Khóa Thể Tích Toán Học (Volume Constraint):</strong>
+                <p style={{ margin: '0 0 6px 0', lineHeight: 1.5 }}>
+                  FashionFit AI sử dụng mật độ sinh học cơ thể người trung bình (ρ ≈ 1.01 g/cm³) kết hợp với Cân nặng (W) và Giới tính để ước tính thể tích khối chuẩn:
+                </p>
+                <div style={{ background: '#0f172a', color: '#38bdf8', padding: '6px 12px', borderRadius: '6px', textAlign: 'center', fontFamily: 'monospace', fontWeight: 700, margin: '6px 0' }}>
+                  V = Cân nặng (kg) / 0.00101 (kg/cm³)
+                </div>
+                <p style={{ margin: '6px 0 0 0', lineHeight: 1.5 }}>
+                  Thuật toán Ramanujan Ellipse sẽ ép thiết diện 3D co bóp xuyên qua lớp vải dựa trên thể tích thật này. Do đó, nếu bạn nhập sai cân nặng (quá nhẹ hoặc quá nặng), toàn bộ thể tích suy luận sẽ bị sai lệch tương ứng.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#ecfdf5', padding: '0.6rem 0.8rem', borderRadius: '6px', border: '1px solid #a7f3d0', fontSize: '0.75rem', color: '#065f46' }}>
+                <span>✅</span>
+                <span>Chỉ số BMI hợp lý chuẩn kiểm định: <strong>14 ≤ BMI ≤ 45 kg/m²</strong>.</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowDisclaimerModal(false)}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '0.6rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Tôi Đã Hiểu & Đã Nhập Đúng Cân Nặng Thực Tế
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* User Guide Banner */}
       {showBanner && (
         inputSource === 'mannequin' ? (
@@ -401,32 +464,58 @@ export const InputForm: React.FC<InputFormProps> = ({
                 }}
               />
             </div>
-            {onSave && (
-              <button
-                type="button"
-                onClick={onSave}
-                style={{
-                  background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '0.45rem 0.8rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)',
-                  marginTop: '0.25rem'
-                }}
-                title="Bấm để lưu hồ sơ vị khách này vào cơ sở dữ liệu"
-              >
-                <Save size={15} />
-                <span>💾 Lưu Hồ Sơ Khách Hàng</span>
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
+              {onSave && (
+                <button
+                  type="button"
+                  onClick={onSave}
+                  style={{
+                    flex: 1,
+                    background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '0.45rem 0.6rem',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(22, 163, 74, 0.3)'
+                  }}
+                  title="Bấm để lưu hồ sơ vị khách này vào cơ sở dữ liệu"
+                >
+                  <Save size={15} />
+                  <span>💾 Lưu Hồ Sơ</span>
+                </button>
+              )}
+              {onNewCustomer && (
+                <button
+                  type="button"
+                  onClick={onNewCustomer}
+                  style={{
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    color: '#2563eb',
+                    border: '1px solid rgba(59, 130, 246, 0.4)',
+                    borderRadius: '6px',
+                    padding: '0.45rem 0.6rem',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                  title="Tạo đơn / Khách hàng mới"
+                >
+                  <User size={14} />
+                  <span>+ Khách Mới</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -540,15 +629,27 @@ export const InputForm: React.FC<InputFormProps> = ({
               <Scale size={16} />
               <span>Cân nặng thực tế (Volume constraint)</span>
             </label>
-            <div className="weight-number-box">
-              <input
-                type="text"
-                value={weightInputVal}
-                onChange={handleWeightTextInputChange}
-                onBlur={handleWeightTextInputBlur}
-                className="weight-input"
-              />
-              <span className="unit">kg</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button
+                type="button"
+                className="calib-help-btn"
+                onClick={() => setShowDisclaimerModal(true)}
+                title="Xem Cảnh Báo Thuật Toán Thể Tích (Disclaimer)"
+                style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem' }}
+              >
+                <Info size={12} />
+                Disclaimer
+              </button>
+              <div className="weight-number-box">
+                <input
+                  type="text"
+                  value={weightInputVal}
+                  onChange={handleWeightTextInputChange}
+                  onBlur={handleWeightTextInputBlur}
+                  className="weight-input"
+                />
+                <span className="unit">kg</span>
+              </div>
             </div>
           </div>
           <div className="slider-wrapper">
@@ -572,6 +673,37 @@ export const InputForm: React.FC<InputFormProps> = ({
               <span className="slider-tick-label" style={{ left: '100%', transform: 'translateX(-100%)' }}>250kg</span>
             </div>
           </div>
+
+          {/* BMI Sanity Check Badge */}
+          {(() => {
+            const currentHeightCm = input.customHeight || 165;
+            const bmiVal = input.weight / Math.pow(currentHeightCm / 100, 2);
+            const isBmiOutOfRange = bmiVal < 14 || bmiVal > 45;
+            return (
+              <div style={{
+                marginTop: '0.65rem',
+                padding: '0.45rem 0.75rem',
+                borderRadius: '8px',
+                background: isBmiOutOfRange ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.1)',
+                border: `1px solid ${isBmiOutOfRange ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.3)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '0.73rem',
+                transition: 'all 0.2s ease'
+              }}>
+                <span style={{ fontWeight: 700, color: isBmiOutOfRange ? '#dc2626' : '#15803d' }}>
+                  📊 BMI ước tính: {bmiVal.toFixed(1)} kg/m² ({bmiVal < 14 ? 'Rất gầy (Dưới 14)' : bmiVal > 45 ? 'Cảnh báo Béo phì (Trên 45)' : 'Chỉ số hợp lý'})
+                </span>
+                {isBmiOutOfRange ? (
+                  <span style={{ color: '#dc2626', fontWeight: 800 }}>⚠️ Nhập sai cân nặng sẽ làm lệch thể tích!</span>
+                ) : (
+                  <span style={{ color: '#16a34a', fontWeight: 700 }}>✓ Đạt dải kiểm định (14 ≤ BMI ≤ 45)</span>
+                )}
+              </div>
+            );
+          })()}
+
           <p className="field-hint">
             * Dùng để tính toán thể tích thực cơ thể và triệt tiêu vải thừa của quần áo thụng.
           </p>

@@ -83,7 +83,6 @@ const initialSideLandmarks: Landmark[] = getInitialLandmarks('female', 'side');
 function App() {
   const [input, setInput] = useState<UserInput>(() => {
     const saved = localStorage.getItem('fashionfit_input');
-    const savedSource = localStorage.getItem('fashionfit_input_source') || 'mannequin';
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -776,7 +775,7 @@ function App() {
         if (formattedPhone && item.customer_phone) {
           return item.customer_phone.trim() === formattedPhone;
         }
-        return item.customer_name.trim().toLowerCase() === formattedName.toLowerCase() && formattedName !== 'Khách Vãng Lai';
+        return (item.customer_name || '').trim().toLowerCase() === formattedName.toLowerCase() && formattedName !== 'Khách Vãng Lai';
       });
 
       if (existingIndex >= 0) {

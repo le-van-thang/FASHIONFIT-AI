@@ -624,29 +624,30 @@ export const InputForm: React.FC<InputFormProps> = ({
 
         {/* Weight Selection */}
         <div className="form-group">
-          <div className="form-group-header">
-            <label className="form-label">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', gap: '6px', flexWrap: 'nowrap' }}>
+            <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', flexShrink: 0 }}>
               <Scale size={16} />
-              <span>Cân nặng thực tế (Volume constraint)</span>
+              <span>Cân nặng thực tế</span>
             </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
               <button
                 type="button"
                 className="calib-help-btn"
                 onClick={() => setShowDisclaimerModal(true)}
                 title="Xem Cảnh Báo Thuật Toán Thể Tích (Disclaimer)"
-                style={{ fontSize: '0.68rem', padding: '0.2rem 0.45rem' }}
+                style={{ fontSize: '0.65rem', padding: '0.15rem 0.4rem', borderRadius: '10px', whiteSpace: 'nowrap' }}
               >
-                <Info size={12} />
-                Disclaimer
+                <Info size={11} />
+                <span>Disclaimer</span>
               </button>
-              <div className="weight-number-box">
+              <div className="weight-number-box" style={{ width: 'auto', flexShrink: 0 }}>
                 <input
                   type="text"
                   value={weightInputVal}
                   onChange={handleWeightTextInputChange}
                   onBlur={handleWeightTextInputBlur}
                   className="weight-input"
+                  style={{ width: '38px', padding: '2px 4px', textAlign: 'center' }}
                 />
                 <span className="unit">kg</span>
               </div>
@@ -681,16 +682,17 @@ export const InputForm: React.FC<InputFormProps> = ({
             const isBmiOutOfRange = bmiVal < 14 || bmiVal > 45;
             return (
               <div style={{
-                marginTop: '0.65rem',
-                padding: '0.45rem 0.75rem',
+                marginTop: '0.55rem',
+                padding: '0.4rem 0.65rem',
                 borderRadius: '8px',
-                background: isBmiOutOfRange ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.1)',
-                border: `1px solid ${isBmiOutOfRange ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.3)'}`,
+                background: isBmiOutOfRange ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.08)',
+                border: `1px solid ${isBmiOutOfRange ? 'rgba(239, 68, 68, 0.35)' : 'rgba(34, 197, 94, 0.3)'}`,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                fontSize: '0.73rem',
-                transition: 'all 0.2s ease'
+                fontSize: '0.72rem',
+                boxSizing: 'border-box',
+                width: '100%'
               }}>
                 <span style={{ fontWeight: 700, color: isBmiOutOfRange ? '#dc2626' : '#15803d' }}>
                   📊 BMI ước tính: {bmiVal.toFixed(1)} kg/m² ({bmiVal < 14 ? 'Rất gầy (Dưới 14)' : bmiVal > 45 ? 'Cảnh báo Béo phì (Trên 45)' : 'Chỉ số hợp lý'})

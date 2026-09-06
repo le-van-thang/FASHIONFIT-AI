@@ -164,8 +164,8 @@ export const InputForm: React.FC<InputFormProps> = ({
 
   return (
     <>
-      {/* Calibration Guide Modal */}
-      {showCalibGuide && (
+      {/* Calibration Guide Modal (Rendered via Portal directly on document.body) */}
+      {showCalibGuide && ReactDOM.createPortal(
         <div className="calib-modal-overlay" onClick={() => setShowCalibGuide(false)}>
           <div className="calib-modal" onClick={e => e.stopPropagation()}>
             <div className="calib-modal-header">
@@ -275,11 +275,12 @@ export const InputForm: React.FC<InputFormProps> = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Volumetric Disclaimer Modal */}
-      {showDisclaimerModal && (
+      {/* Volumetric Disclaimer Modal (Rendered via Portal directly on document.body) */}
+      {showDisclaimerModal && ReactDOM.createPortal(
         <div className="calib-modal-overlay" onClick={() => setShowDisclaimerModal(false)}>
           <div className="calib-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
             <div className="calib-modal-header" style={{ background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)' }}>
@@ -337,7 +338,8 @@ export const InputForm: React.FC<InputFormProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* User Guide Banner */}

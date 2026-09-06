@@ -80,19 +80,29 @@ Bản nguyên mẫu giao diện tương tác được xây dựng bằng **React
 
 ## 🚀 5. Hướng Dẫn Cài Đặt & Chạy Demo
 
-### Yêu cầu hệ thống
-*   Đã cài đặt **Node.js** (Phiên bản v18 trở lên).
+### Cách 1: Chạy bằng Docker (Khuyên dùng - Không cần cài Node.js / Vite / npm thủ công)
+Chỉ cần máy đã cài sẵn **Docker Desktop**, mở Terminal tại thư mục dự án và chạy duy nhất câu lệnh:
+```bash
+docker compose up --build
+```
+> Docker sẽ tự động tải các môi trường cần thiết, cài đặt thư viện bên trong Container và khởi chạy toàn bộ ứng dụng (Frontend + Backend + MongoDB).
+> 
+> * **Frontend (Giao diện Web):** `http://localhost:5173`
+> * **Backend API:** `http://localhost:5000`
 
-### Các bước cài đặt
-1.  Di chuyển vào thư mục dự án và cài đặt các thư viện phụ thuộc:
+---
+
+### Cách 2: Chạy thủ công trên máy local (Dành cho Lập trình viên phát triển trực tiếp)
+* **Yêu cầu:** Đã cài sẵn Node.js (Phiên bản v18 trở lên).
+1. Di chuyển vào thư mục dự án và cài đặt các thư viện phụ thuộc:
     ```bash
     npm install
     ```
-2.  Chạy ứng dụng ở chế độ phát triển thử nghiệm:
+2. Chạy ứng dụng ở chế độ phát triển thử nghiệm:
     ```bash
     npm run dev
     ```
-3.  Mở trình duyệt truy cập vào đường link hiển thị trên terminal (mặc định là: `http://localhost:5173/`).
+3. Mở trình duyệt truy cập vào đường link hiển thị trên terminal (`http://localhost:5173/`).
 
 ---
 

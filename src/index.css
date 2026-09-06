@@ -115,55 +115,21 @@ body {
   gap: 1.25rem;
   padding: 1.25rem 1.5rem;
   flex: 1;
+  overflow: visible;
   align-items: start;
 }
 
-/* Responsive Column Constraints with Independent Scrolling */
+/* Responsive Column Constraints */
 .left-column {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: sticky;
-  top: 1.25rem;
-  padding-right: 4px;
 }
 
 .right-column {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: sticky;
-  top: 1.25rem;
-  padding-right: 4px;
-}
-
-/* Custom smooth thin scrollbars for left and right columns */
-.left-column::-webkit-scrollbar,
-.right-column::-webkit-scrollbar {
-  width: 6px;
-}
-
-.left-column::-webkit-scrollbar-track,
-.right-column::-webkit-scrollbar-track {
-  background: rgba(226, 232, 240, 0.6);
-  border-radius: 4px;
-}
-
-.left-column::-webkit-scrollbar-thumb,
-.right-column::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-
-.left-column::-webkit-scrollbar-thumb:hover,
-.right-column::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
 
 .center-column {

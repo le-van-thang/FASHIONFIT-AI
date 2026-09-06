@@ -124,12 +124,16 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  position: sticky;
+  top: 1.25rem;
 }
 
 .right-column {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  position: sticky;
+  top: 1.25rem;
 }
 
 .center-column {
@@ -156,7 +160,7 @@ body {
   margin: 0;
 }
 
-/* Form Styles */
+/* Form Styles: Independent Scrollbars for Left & Right Cards */
 .input-form-card, .result-panel-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -165,7 +169,32 @@ body {
   box-shadow: var(--shadow-md);
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden;
+  max-height: calc(100vh - 105px);
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Custom Visible Scrollbars for Left & Right Cards */
+.input-form-card::-webkit-scrollbar,
+.result-panel-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.input-form-card::-webkit-scrollbar-track,
+.result-panel-card::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.input-form-card::-webkit-scrollbar-thumb,
+.result-panel-card::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 4px;
+}
+
+.input-form-card::-webkit-scrollbar-thumb:hover,
+.result-panel-card::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* Form card header with inline info note */

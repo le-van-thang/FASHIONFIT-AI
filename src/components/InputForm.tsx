@@ -654,7 +654,7 @@ export const InputForm: React.FC<InputFormProps> = ({
             </div>
           </div>
           <div className="slider-wrapper">
-            <div className="slider-tooltip" style={{ left: `${weightPercent}%` }}>
+            <div className="slider-tooltip" style={{ left: `${Math.max(12, Math.min(88, weightPercent))}%` }}>
               {input.weight} kg
             </div>
             <input
@@ -786,24 +786,25 @@ export const InputForm: React.FC<InputFormProps> = ({
         {/* Reference object size control OR Custom height control */}
         {inputSource === 'mannequin' || input.calibrationType === 'height' ? (
           <div className="form-group">
-            <div className="form-group-header">
-              <label className="form-label">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', gap: '6px', flexWrap: 'nowrap' }}>
+              <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', flexShrink: 0 }}>
                 <Ruler size={16} />
-                <span>Chiều cao thực tế của bạn</span>
+                <span>Chiều cao thực tế</span>
               </label>
-              <div className="weight-number-box">
+              <div className="weight-number-box" style={{ width: 'auto', flexShrink: 0 }}>
                 <input
                   type="text"
                   value={heightInputVal}
                   onChange={handleHeightTextInputChange}
                   onBlur={handleHeightTextInputBlur}
                   className="weight-input"
+                  style={{ width: '38px', padding: '2px 4px', textAlign: 'center' }}
                 />
                 <span className="unit">cm</span>
               </div>
             </div>
             <div className="slider-wrapper">
-              <div className="slider-tooltip" style={{ left: `${(((input.customHeight || 165) - 50) / (220 - 50)) * 100}%` }}>
+              <div className="slider-tooltip" style={{ left: `${Math.max(16, Math.min(84, (((input.customHeight || 165) - 50) / (220 - 50)) * 100))}%` }}>
                 {input.customHeight || 165} cm ({formatHeightMeters(input.customHeight || 165)})
               </div>
               <input
@@ -829,23 +830,25 @@ export const InputForm: React.FC<InputFormProps> = ({
           </div>
         ) : (
           <div className="form-group">
-            <div className="form-group-header">
-              <label className="form-label">
-                <span>Kích thước vật tham chiếu trên ảnh</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', gap: '6px', flexWrap: 'nowrap' }}>
+              <label className="form-label" style={{ margin: 0, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <Eye size={16} />
+                <span>Kích thước vật tham chiếu</span>
               </label>
-              <div className="weight-number-box">
+              <div className="weight-number-box" style={{ width: 'auto', flexShrink: 0 }}>
                 <input
                   type="text"
                   value={refPixelsInputVal}
                   onChange={handleRefPixelsTextInputChange}
                   onBlur={handleRefPixelsTextInputBlur}
                   className="weight-input"
+                  style={{ width: '38px', padding: '2px 4px', textAlign: 'center' }}
                 />
                 <span className="unit">px</span>
               </div>
             </div>
             <div className="slider-wrapper">
-              <div className="slider-tooltip" style={{ left: `${pixelsPercent}%` }}>
+              <div className="slider-tooltip" style={{ left: `${Math.max(12, Math.min(88, pixelsPercent))}%` }}>
                 {referencePixels} px
               </div>
               <input

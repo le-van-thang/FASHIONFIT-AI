@@ -163,6 +163,9 @@ body {
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   box-shadow: var(--shadow-md);
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Form card header with inline info note */
@@ -196,8 +199,23 @@ body {
   opacity: 0.7;
 }
 
+/* Distinct card box with border for each function group */
 .form-group {
-  margin-bottom: 1.1rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group:hover {
+  border-color: #94a3b8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .form-group:last-child {
@@ -210,6 +228,8 @@ body {
   align-items: center;
   margin-bottom: 0.5rem;
   width: 100%;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
 }
 
 .form-group-header .form-label {
@@ -220,21 +240,22 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.82rem;
+  font-weight: 700;
   color: var(--text-main);
   margin-bottom: 0.5rem;
 }
 
 .form-label svg {
-  color: var(--text-muted);
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 /* Toggle Switch Buttons */
 .gender-toggle-wrapper {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background-color: #f1f5f9;
+  background-color: #ffffff;
   padding: 0.25rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
@@ -243,8 +264,8 @@ body {
 .gender-btn {
   background: none;
   border: none;
-  padding: 0.6rem;
-  font-size: 0.85rem;
+  padding: 0.55rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #475569;
   border-radius: var(--radius-sm);
@@ -287,13 +308,17 @@ body {
 .weight-number-box {
   display: flex;
   align-items: center;
-  border: 1.5px solid #cbd5e1;
-  border-radius: var(--radius-md);
-  padding: 0.45rem 0.6rem;
+  border: 1.5px solid #94a3b8;
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.45rem;
   background-color: #ffffff;
-  width: 95px;
+  width: auto;
+  min-width: 54px;
+  max-width: 76px;
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
   transition: border-color 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .weight-number-box:focus-within {
